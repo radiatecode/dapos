@@ -1,0 +1,26 @@
+{
+    "name": "da/admin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nur Alam",
+            "email": "nurmamun@monicotechnologies.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "DA\\Admin\\": "src/",
+            "DA\\Admin\\Database\\Factories\\": "database/factories/",
+            "DA\\Admin\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "DA\\Admin\\Providers\\AdminServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "minimum-stability": "dev"
+}
