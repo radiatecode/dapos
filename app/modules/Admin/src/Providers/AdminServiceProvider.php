@@ -58,7 +58,7 @@ class AdminServiceProvider extends ServiceProvider
 
         Blade::anonymousComponentPath($views.'/components', 'admin');
 
-        View::composer('admin::partials.sidebar', function ($view): void {
+        View::composer('admin::app.partials._left_nav', function ($view): void {
             $admin = auth('admin')->user();
 
             $view->with(

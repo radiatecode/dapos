@@ -7,6 +7,9 @@ enum AdminPermission: string
     case DashboardView = 'dashboard.view';
     case PermissionsView = 'permissions.view';
     case TenantsView = 'tenants.view';
+    case TenantsCreate = 'tenants.create';
+    case TenantsEdit = 'tenants.edit';
+    case TenantsDelete = 'tenants.delete';
     case UsersView = 'users.view';
     case PlansView = 'plans.view';
     case FeaturesView = 'features.view';
@@ -25,6 +28,9 @@ enum AdminPermission: string
             self::DashboardView => 'View dashboard',
             self::PermissionsView => 'View permissions',
             self::TenantsView => 'View tenants',
+            self::TenantsCreate => 'Create tenants',
+            self::TenantsEdit => 'Edit tenants',
+            self::TenantsDelete => 'Delete tenants',
             self::UsersView => 'View users',
             self::PlansView => 'View plans',
             self::FeaturesView => 'View features',
@@ -44,7 +50,7 @@ enum AdminPermission: string
         return match ($this) {
             self::DashboardView => 'Overview',
             self::PermissionsView => 'Account',
-            self::TenantsView, self::UsersView => 'Tenancy',
+            self::TenantsView, self::TenantsCreate, self::TenantsEdit, self::TenantsDelete, self::UsersView => 'Tenancy',
             self::PlansView, self::FeaturesView, self::AddonsView => 'Catalog',
             self::SubscriptionsView, self::InvoicesView, self::PaymentsView, self::CouponsView => 'Billing',
             self::UsageView, self::SubscriptionEventsView => 'Operations',

@@ -45,8 +45,7 @@ describe('dashboard and profile', function () {
 
         $this->get('/admin')
             ->assertOk()
-            ->assertSee('Dashboard')
-            ->assertSee('SaaS control plane');
+            ->assertSee('Dashboard');
     });
 
     it('renders the profile page for a platform admin', function () {
@@ -127,18 +126,56 @@ describe('permissions', function () {
         $this->get('/admin')
             ->assertOk()
             ->assertSee('Permissions')
-            ->assertDontSee('Tenants');
+            ->assertSee(route('admin.permissions'), false)
+            ->assertDontSee('Tenants')
+            ->assertDontSee('Tenancy')
+            ->assertDontSee(route('admin.tenants.index'), false);
     });
 
-    it('shows permitted navigation items including upcoming modules', function () {
-        actingAsPlatformAdmin([
-            AdminPermission::PermissionsView,
-            AdminPermission::TenantsView,
-        ]);
+    it('renders a single nav link for items without children', function () {
+        actingAsPlatformAdmin([AdminPermission::PermissionsView]);
 
         $this->get('/admin')
             ->assertOk()
+            ->assertSee('Dashboard')
+            ->assertSee(route('admin.dashboard'), false)
+            ->assertDontSee('has-treeview', false);
+    });
+
+    it('renders both tenant children when the tenants tree is visible', function () {
+        actingAsPlatformAdmin([AdminPermission::TenantsView]);
+
+        $this->get('/admin')
+            ->assertOk()
+            ->assertSee('has-treeview', false)
+            ->assertSee('Tenancy')
             ->assertSee('Tenants')
-            ->assertSee('Soon');
+            ->assertSee('List')
+            ->assertSee('New')
+            ->assertSee(route('admin.tenants.index'), false)
+            ->assertSee(route('admin.tenants.create'), false);
+    });
+
+    it('hides a nav header when none of its items are visible', function () {
+        actingAsPlatformAdmin([AdminPermission::PermissionsView]);
+
+        $this->get('/admin')
+            ->assertOk()
+            ->assertSee('Overview')
+            ->assertSee('System')
+            ->assertDontSee('Tenancy')
+            ->assertDontSee('Catalog');
+    });
+
+    it('opens the tenants tree on the tenant create page', function () {
+        actingAsPlatformAdmin([
+            AdminPermission::TenantsView,
+            AdminPermission::TenantsCreate,
+        ]);
+
+        $this->get(route('admin.tenants.create'))
+            ->assertOk()
+            ->assertSee('menu-open', false)
+            ->assertSee(route('admin.tenants.create'), false);
     });
 });
