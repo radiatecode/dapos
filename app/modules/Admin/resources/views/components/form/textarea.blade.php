@@ -1,4 +1,4 @@
-<div class="form-group {{ $attributes['form-group-class'] }}">
+<div class="form-group admin-field {{ $attributes['form-group-class'] }}">
     @if (!$attributes['no-label'])
         <label id="{{ $attributes['name'] }}_label" for="{{ $attributes['name'] }}">
             <i class="{{ $attributes['label-icon'] ?: 'fas fa-pen-square' }}"></i>
@@ -13,7 +13,7 @@
         {{ $attributes->merge([
             'id' => $attributes['name'],
             'name' => $attributes['name'],
-            'class' => 'form-control' . ($errors->has($attributes['name']) ? ' is-invalid' : ''),
+            'class' => 'form-control admin-input' . ($errors->has($attributes['name']) ? ' is-invalid' : ''),
             'placeholder' => $attributes['label'] ?? str_label($attributes['name']) . '...',
         ]) }}>{{ old($attributes['name'], $attributes['default-value']) }}</textarea>
     <span class="error invalid-feedback">{{ $errors->first($attributes['name']) }}</span>

@@ -3,7 +3,7 @@
     'helpBlockClass' => $attributes['block-class'] ? "help-block {$attributes['block-class']}" : 'help-block',
 ])
 
-<div class="form-group {{ $id }}-form-group {{ $attributes['form-group-class'] }}">
+<div class="form-group admin-field {{ $id }}-form-group {{ $attributes['form-group-class'] }}">
     @if (!$attributes['no-label'])
         <label for="{{ $attributes['name'] }}">
             <i class="{{ $attributes['label-icon'] ?: 'fas fa-pen-square' }}"></i>
@@ -21,7 +21,7 @@
             'id' => $id,
             'type' => 'text',
             'name' => $attributes['name'],
-            'class' => 'form-control cinput' . ($errors->has($attributes['name']) ? ' is-invalid' : ''),
+            'class' => 'form-control cinput admin-input' . ($errors->has($attributes['name']) ? ' is-invalid' : ''),
             'placeholder' => $attributes['label'] ?? str_label($attributes['name']) . '...',
             'value' => old($attributes['name'], $attributes['default-value']),
         ]) }}

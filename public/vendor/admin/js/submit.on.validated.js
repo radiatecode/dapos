@@ -17,14 +17,36 @@ function ajaxSubmitOnValidated(
 ) {
     let $form = $("#" + formId);
 
+    if (typeof bindTabErrorNavigation === "function") {
+        bindTabErrorNavigation($form);
+    }
+
     $form
         .parsley()
         .on("field:validated", function () {
             let ok = $(".parsley-error").length === 0;
             $(".bs-callout-info").toggleClass("hidden", !ok);
             $(".bs-callout-warning").toggleClass("hidden", ok);
+
+            if (typeof markErrorTabs === "function" && $form.find(".tab-pane").length) {
+                markErrorTabs($form[0]);
+            }
         })
         .on("form:submit", function (e) {
+            if (typeof includeHiddenTabFields === "function") {
+                includeHiddenTabFields($form);
+            }
+
+            if ($form.find(".tab-pane").length && $form.parsley().isValid({ force: true }) === false) {
+                $form.parsley().validate({ force: true });
+
+                if (typeof showFirstErrorTab === "function") {
+                    showFirstErrorTab($form[0]);
+                }
+
+                return false;
+            }
+
             $.removeLaravelErrors();
 
             if (callback) {
@@ -83,11 +105,22 @@ function ajaxSubmitOnValidated(
                 },
                 function (error) {
                     if (error.status === 422) {
-                        $.laravelErrorShow(
-                            error.responseJSON.errors,
-                            errorType,
-                            errorWithCustomArrayIndex
-                        );
+                        var errors =
+                            error.responseJSON && error.responseJSON.errors
+                                ? error.responseJSON.errors
+                                : null;
+
+                        if (errors) {
+                            $.laravelErrorShow(
+                                errors,
+                                errorType,
+                                errorWithCustomArrayIndex
+                            );
+                        }
+
+                        if (typeof showFirstErrorTab === "function") {
+                            showFirstErrorTab($form[0], errors);
+                        }
 
                         return;
                     }
@@ -120,9 +153,13 @@ function ajaxSubmitClickOnValidate(
 ) {
     let $form = $("#" + formId);
 
-    $form.parsley().validate();
+    if (typeof includeHiddenTabFields === "function") {
+        includeHiddenTabFields($form);
+    }
 
-    if ($form.parsley().isValid()) {
+    $form.parsley().validate({ force: true });
+
+    if ($form.parsley().isValid({ force: true })) {
         $.removeLaravelErrors();
 
         if (callback) {
@@ -168,11 +205,22 @@ function ajaxSubmitClickOnValidate(
             },
             function (error) {
                 if (error.status === 422) {
-                    $.laravelErrorShow(
-                        error.responseJSON.errors,
-                        errorType,
-                        errorWithCustomArrayIndex
-                    );
+                    var clickErrors =
+                        error.responseJSON && error.responseJSON.errors
+                            ? error.responseJSON.errors
+                            : null;
+
+                    if (clickErrors) {
+                        $.laravelErrorShow(
+                            clickErrors,
+                            errorType,
+                            errorWithCustomArrayIndex
+                        );
+                    }
+
+                    if (typeof showFirstErrorTab === "function") {
+                        showFirstErrorTab($form[0], clickErrors);
+                    }
 
                     return;
                 }

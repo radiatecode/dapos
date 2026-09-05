@@ -2,8 +2,8 @@
     'id' => str_replace('[]', '', $attributes['name']),
 ])
 
-<div class="form-group">
-    <div class="custom-control custom-checkbox">
+<div class="form-group admin-field">
+    <div class="custom-control custom-checkbox admin-check">
         <input class="custom-control-input" type="checkbox" {{ $attributes->merge([
             'id' => $id,
             'name' => $attributes['name']

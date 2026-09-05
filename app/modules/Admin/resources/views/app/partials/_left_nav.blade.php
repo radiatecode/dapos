@@ -1,12 +1,16 @@
-<aside class="main-sidebar sidebar-light-olive elevation-4">
-    <a href="{{ route('admin.dashboard') }}" class="brand-link">
-        <img src="{{ asset('vendor/admin/pos-logo-thumb.jpeg') }}" alt="Logo"
-            class="brand-image img-circle elevation-2" style="opacity: .8">
-        <span class="brand-text font-weight-light">{{ config('app.name') }}</span>
+<aside class="main-sidebar admin-sidebar elevation-4">
+    <a href="{{ route('admin.dashboard') }}" class="brand-link admin-brand">
+        <span class="admin-brand__mark">
+            <img src="{{ asset('vendor/admin/pos-logo-thumb.jpeg') }}" alt="Logo" class="brand-image">
+        </span>
+        <span class="brand-text admin-brand__copy">
+            <small>Provider</small>
+            <strong>{{ config('app.name') }}</strong>
+        </span>
     </a>
 
     <div class="sidebar">
-        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="user-panel admin-user-panel">
             <div class="image">
                 <img src="{{ auth('admin')->user()->avatar_path ?? asset('vendor/admin/media/no-avatar.png') }}"
                     class="img-circle elevation-2" alt="User Image">
@@ -15,6 +19,7 @@
                 <a href="{{ route('admin.profile') }}" class="d-block">
                     {{ auth('admin')->check() ? auth('admin')->user()->name : 'No User' }}
                 </a>
+                <span>Platform admin</span>
             </div>
         </div>
 

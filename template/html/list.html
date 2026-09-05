@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Records | Admin template</title>
+    <meta name="color-scheme" content="dark light">
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem('admin-theme');
+                if (theme !== 'dark' && theme !== 'light') theme = 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="../assets/css/custom.css">
+    <script src="../assets/js/theme.js"></script>
+</head>
+<body class="sidebar-mini layout-fixed admin-shell dark-mode">
+<div class="wrapper">
+    <nav class="main-header navbar navbar-expand admin-topbar">
+        <ul class="navbar-nav">
+            <li class="nav-item"><a class="nav-link admin-topbar__icon-link" data-widget="pushmenu" href="#"><i class="fas fa-bars"></i></a></li>
+            <li class="nav-item d-none d-sm-inline-block"><a href="preview.html" class="nav-link admin-topbar__text-link">Dashboard</a></li>
+        </ul>
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <button type="button" id="theme-mode" class="admin-theme-toggle" title="Switch to light mode">
+                    <i id="theme-mode-icon" class="fas fa-sun"></i>
+                </button>
+            </li>
+        </ul>
+    </nav>
+    <aside class="main-sidebar admin-sidebar elevation-4">
+        <a href="preview.html" class="brand-link admin-brand">
+            <span class="admin-brand__mark">A</span>
+            <span class="brand-text admin-brand__copy"><small>Console</small><strong>Admin kit</strong></span>
+        </a>
+        <div class="sidebar">
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column">
+                    <li class="nav-item"><a href="preview.html" class="nav-link"><i class="nav-icon fas fa-tachometer-alt"></i><p>Dashboard</p></a></li>
+                    <li class="nav-item"><a href="list.html" class="nav-link active"><i class="nav-icon fas fa-list"></i><p>List</p></a></li>
+                    <li class="nav-item"><a href="form.html" class="nav-link"><i class="nav-icon fas fa-plus-circle"></i><p>Create</p></a></li>
+                    <li class="nav-item"><a href="show.html" class="nav-link"><i class="nav-icon fas fa-eye"></i><p>Details</p></a></li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
+    <div class="content-wrapper">
+        <section class="content-header"><div class="container-fluid"><h1>Records</h1></div></section>
+        <section class="content">
+            <div class="container-fluid">
+                <div class="card admin-surface-card card-green-light card-outline">
+                    <div class="card-header admin-surface-card__header">
+                        <div>
+                            <h3 class="card-title">Records</h3>
+                            <p class="admin-card-hint mb-0">Every item on the platform, ready to review or update.</p>
+                        </div>
+                        <a href="form.html" class="btn admin-btn btn-primary"><i class="fa fa-plus"></i> Create</a>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-hover admin-table">
+                            <thead>
+                                <tr><th>Name</th><th>Contact</th><th>Status</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Harbor Cafe</td>
+                                    <td>mina@harbor.test</td>
+                                    <td><span class="tenant-status tenant-status--success">Active</span></td>
+                                    <td>
+                                        <a href="show.html" class="btn btn-sm admin-table-btn admin-table-btn-view">Details</a>
+                                        <a href="form.html" class="btn btn-sm admin-table-btn admin-table-btn-edit">Edit</a>
+                                        <button type="button" class="btn btn-sm admin-table-btn admin-table-btn-delete">Delete</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+</body>
+</html>

@@ -10,13 +10,14 @@ function networkRequest(loader = 'overlay', csrf = true) {
     var customAjax = {};
     var defaults = {};
 
-    if (csrf) {
-        defaults.headers = {
-            'X-CSRF-TOKEN': token
-        }
-    }
-
     customAjax.ajax = function (options, successCallback, errorCallback) {
+        if (csrf) {
+            defaults.headers = $.extend({}, options.headers || {}, {
+                'X-CSRF-TOKEN': token,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            });
+        }
 
         if (loader === 'overlay') {
             ajax_spinner.removeClass('hidden');

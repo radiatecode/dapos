@@ -24,6 +24,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->middleware('admin.permission:permissions.view')
             ->name('permissions');
 
-        Route::resource('tenants', TenantController::class)->except(['show']);
+        Route::post('tenants/{tenant}/suspend', [TenantController::class, 'suspend'])->name('tenants.suspend');
+        Route::post('tenants/{tenant}/activate', [TenantController::class, 'activate'])->name('tenants.activate');
+        Route::resource('tenants', TenantController::class);
     });
 });

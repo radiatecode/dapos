@@ -6,24 +6,14 @@ use DA\Admin\DTO\TenantDTO;
 use DA\Admin\Models\Tenant;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class UpdateTenant
 {
-    /**
-     * Create a new class instance.
-     */
-    public function __construct()
-    {
-        //
-    }
-
     public function handle(Tenant $tenant, TenantDTO $tenantDTO, ?UploadedFile $logo = null): Tenant
     {
         $tenant = Tenant::queries()->findById($tenant->id);
 
         $tenant->name = $tenantDTO->name;
-        $tenant->slug = $tenantDTO->slug ?: $this->uniqueSlug($tenantDTO->name);
         $tenant->timezone = $tenantDTO->timezone;
         $tenant->currency = $tenantDTO->currency;
         $tenant->address_line_1 = $tenantDTO->address_line_1;
@@ -46,6 +36,10 @@ class UpdateTenant
         $tenant->billing_postal_code = $tenantDTO->billing_postal_code;
         $tenant->billing_country = $tenantDTO->billing_country;
 
+        if (is_string($tenantDTO->slug) && $tenantDTO->slug !== '') {
+            $tenant->slug = $tenantDTO->slug;
+        }
+
         if ($logo instanceof UploadedFile) {
             if (is_string($tenant->logo)) {
                 Storage::disk('public')->delete($tenant->logo);
@@ -57,19 +51,5 @@ class UpdateTenant
         $tenant->save();
 
         return $tenant->refresh();
-    }
-
-    private function uniqueSlug(string $name): string
-    {
-        $base = Str::slug($name) ?: 'tenant';
-        $slug = $base;
-        $suffix = 1;
-
-        while (Tenant::withTrashed()->where('slug', $slug)->exists()) {
-            $slug = $base.'-'.$suffix;
-            $suffix++;
-        }
-
-        return $slug;
     }
 }

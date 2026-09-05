@@ -6,11 +6,30 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <meta name="app-name" content="{{ config('app.name') }}">
 <meta name="app-url" content="{{ config('app.url') }}">
+<meta name="color-scheme" content="dark light">
+<script>
+    (function () {
+        try {
+            var theme = localStorage.getItem('admin-theme');
+
+            if (theme !== 'dark' && theme !== 'light') {
+                theme = 'dark';
+            }
+
+            document.documentElement.setAttribute('data-theme', theme);
+            document.documentElement.classList.toggle('dark', theme === 'dark');
+        } catch (error) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    })();
+</script>
 
 @yield('metas')
 
-<!-- Google Font: Source Sans Pro -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+<!-- Google Font: Plus Jakarta Sans + Source Sans Pro -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Source+Sans+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap">
 
 <!-- Font Awesome -->
 {{-- <link rel="stylesheet" href="{{asset('js/plugins/fontawesome-free/css/all.min.css')}}"> --}}
@@ -50,7 +69,8 @@
 {{-- <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.css"> --}}
 
 <!-- custom css -->
-<link rel="stylesheet" href="{{ asset('vendor/admin/css/custom.css') }}">
+<link rel="stylesheet" href="{{ asset('vendor/admin/css/custom.css') }}?v={{ filemtime(public_path('vendor/admin/css/custom.css')) }}">
+<script src="{{ asset('vendor/admin/js/theme.js') }}?v={{ filemtime(public_path('vendor/admin/js/theme.js')) }}"></script>
 
 <style>
     .hidden {

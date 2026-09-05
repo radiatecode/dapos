@@ -1,7 +1,7 @@
 @props([
     'id' => str_replace('[]', '', $attributes['name'])
 ])
-<div class="form-group {{ $attributes['form-group-class'] }}">
+<div class="form-group admin-field {{ $attributes['form-group-class'] }}">
     @if(! $attributes['no-label'])
         <label id="{{ $id }}_label" for="{{ $id }}">
             <i class="{{ $attributes['label-icon'] ?: 'fas fa-check-square' }}"></i>
@@ -10,7 +10,7 @@
     @endif
     <select {{ $attributes->merge([
     'id' => $id,
-    'class'=> 'form-control select2'.($errors->has($id) ? ' is-invalid' : ''),
+    'class'=> 'form-control select2 admin-input'.($errors->has($id) ? ' is-invalid' : ''),
     ]) }}>
         {{ $slot }}
     </select>

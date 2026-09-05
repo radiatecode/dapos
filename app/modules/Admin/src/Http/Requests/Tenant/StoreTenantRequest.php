@@ -6,7 +6,9 @@ use DA\Admin\DTO\TenantDTO;
 use DA\Admin\Enums\TenantStatus;
 use DA\Admin\Models\AdminUser;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 
@@ -28,7 +30,7 @@ class StoreTenantRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', 'alpha_dash', Rule::unique('tenants', 'slug')],
+            'slug' => ['nullable', 'string', 'max:255', 'alpha_dash', Rule::unique('tenants', 'slug')->whereNull('deleted_at')],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'status' => ['sometimes', 'required', Rule::enum(TenantStatus::class)],
             'timezone' => ['sometimes', 'required', 'timezone'],
@@ -57,6 +59,19 @@ class StoreTenantRequest extends FormRequest
             'billing.address.postal_code' => ['nullable', 'string', 'max:50'],
             'billing.address.country' => ['nullable', 'string', 'max:100'],
         ];
+    }
+
+    protected function failedValidation(Validator $validator): void
+    {
+        if ($this->ajax() || $this->expectsJson()) {
+            throw new HttpResponseException(response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422));
+        }
+
+        parent::failedValidation($validator);
     }
 
     protected function prepareForValidation(): void

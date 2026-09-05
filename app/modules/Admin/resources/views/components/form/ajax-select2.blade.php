@@ -3,7 +3,7 @@
     'width' => $attributes['width'] ?? '100%',
     'external' => $attributes['external_id'] ?: '',
 ])
-<div class="form-group {{ $attributes['form-group-class'] }}">
+<div class="form-group admin-field {{ $attributes['form-group-class'] }}">
     @if (!$attributes['no-label'])
         <label id="{{ $id }}_label" for="{{ $id }}">
             <i class="{{ $attributes['label-icon'] ?: 'fas fa-check-square' }}"></i>
@@ -21,7 +21,7 @@
     <select
         {{ $attributes->merge([
             'id' => $id,
-            'class' => 'form-control' . ($errors->has($id) ? ' is-invalid' : ''),
+            'class' => 'form-control admin-input' . ($errors->has($id) ? ' is-invalid' : ''),
         ]) }}>
         @if (old('_' . $id . '_text'))
             <!-- for array it does not work -->

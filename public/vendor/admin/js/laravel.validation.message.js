@@ -4,74 +4,42 @@
  * @param errorType
  */
 function laravelErrors(errors, errorType = 'inline', isCustomArrayIndex = false) {
-    // remove previous error message
     $.removeLaravelErrors();
 
-    // error loop
     if (errorType === 'inline') {
-
         $.each(errors, function (key, value) {
-            if (key.includes('.')) { // validation multiple array input element
+            var name = (typeof laravelFieldName === 'function') ? laravelFieldName(key) : key;
+            var elements = document.getElementsByName(name);
+
+            if (elements.length === 0 && key.includes('.')) {
                 var split = key.split('.');
-
                 var array_name = split[0];
-                var index = parseInt(split[1]);
-                var name = split[2];
+                var index = parseInt(split[1], 10);
+                var nested = split[2];
 
-                if (name !== undefined) {
-                    var element = document.getElementsByName(array_name + '[' + index + '][' + name + ']');
-
-                    var parent = element[0].parentNode;
-
-                    element[0].classList.add("is-invalid");
-
-                    var invalidFeedback = parent.querySelector(".invalid-feedback");
-
-                    if (invalidFeedback) {
-                        invalidFeedback.innerHTML = value[0]; // value.join(' ') [to show all errors for this key]
-                    } else {
-                        parent.innerHTML += '<span class="error invalid-feedback">' + value[0] + '</span>';
-                    }
-                } else { // it is for non-multilevel array element
-                    let element;
-                    let parent;
-
-                    if (isCustomArrayIndex) {
-                        element = document.getElementsByName(array_name + `[${index}]`);
-                        parent = element[0].parentNode;
-                        element[0].classList.add("is-invalid");
-                    } else {
-                        element = document.getElementsByName(array_name + '[]');
-                        element = element[index];
-                        parent = element.parentNode;
-                        element.classList.add("is-invalid");
-                    }
-
-                    var invalidFeedback = parent.querySelector(".invalid-feedback");
-
-                    if (invalidFeedback) {
-                        invalidFeedback.innerHTML = value[0]; // value.join(' ') [to show all errors for this key]
-                    } else {
-                        parent.innerHTML += '<span class="error invalid-feedback">' + value[0] + '</span>';
-                    }
+                if (nested !== undefined) {
+                    elements = document.getElementsByName(array_name + '[' + index + '][' + nested + ']');
+                } else if (isCustomArrayIndex) {
+                    elements = document.getElementsByName(array_name + '[' + index + ']');
+                } else {
+                    var list = document.getElementsByName(array_name + '[]');
+                    elements = list[index] ? [list[index]] : [];
                 }
+            }
 
+            if (elements.length > 0) {
+                var element = elements[0];
+                element.classList.add('is-invalid');
 
+                var invalidFeedback = element.parentNode.querySelector('.invalid-feedback');
 
-            } else {
-                //TODO: it doesn't work for array elements ex: employee_id[], in future try to use getElementById to fix it or think new approch
-                let singleElm = document.getElementsByName(key);
-
-                if (singleElm.length > 0) {
-                    singleElm[0].classList.add("is-invalid");
-
-                    let invalid = singleElm[0].parentNode.querySelector(".invalid-feedback");
-
-                    if (invalid) {
-                        invalid.innerHTML = value[0]; // value.join(' ') [to show all errors for this key]
-                    } else {
-                        singleElm[0].parentNode.innerHTML += '<span class="error invalid-feedback">' + value[0] + '</span>';
-                    }
+                if (invalidFeedback) {
+                    invalidFeedback.innerHTML = value[0];
+                } else {
+                    element.parentNode.insertAdjacentHTML(
+                        'beforeend',
+                        '<span class="error invalid-feedback">' + value[0] + '</span>'
+                    );
                 }
             }
         });

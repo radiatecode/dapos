@@ -2,8 +2,9 @@
 
 namespace DA\Admin\Models;
 
-use App\Models\Queries\TenantQueries;
+use DA\Admin\Database\Factories\TenantFactory;
 use DA\Admin\Enums\TenantStatus;
+use DA\Admin\Models\Queries\TenantQueries;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -48,7 +49,7 @@ class Tenant extends Model
      * @var array<string, mixed>
      */
     protected $attributes = [
-        'status' => 'active',
+        'status' => TenantStatus::Active->value,
         'timezone' => 'Asia/Dhaka',
         'currency' => 'BDT',
     ];
@@ -74,5 +75,20 @@ class Tenant extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === TenantStatus::Active;
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->status === TenantStatus::Suspended;
+    }
+
+    protected static function newFactory(): TenantFactory
+    {
+        return TenantFactory::new();
     }
 }

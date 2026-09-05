@@ -41,7 +41,7 @@ trait ResolveQueryBuilder
             return $this->model;
         }
 
-        $baseClass = class_basename(__CLASS__);
+        $baseClass = class_basename(static::class);
 
         $model = str_replace('Queries', '', $baseClass);
 

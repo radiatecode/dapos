@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="dark">
 
 <head>
     @include('admin::app.partials._head')
@@ -7,7 +7,7 @@
     @stack('css')
 </head>
 
-<body class="sidebar-mini layout-fixed">
+<body class="sidebar-mini layout-fixed admin-shell dark-mode">
     <!-- Site wrapper -->
     <div class="wrapper">
         <!-- Navbar -->

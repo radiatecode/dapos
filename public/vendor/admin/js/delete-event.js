@@ -4,17 +4,14 @@
         return $(this).data('selector');
     };
 
-    $.fn.delete = function () {
+    $.fn.delete = function (text = 'You want to delete selected items', confirmText = 'Yes, Delete It!') {
         var selector = $(this).getSelector();
 
-        if (selector !== undefined)
-        {
-            $(document).on("click", selector, function ()
-            {
+        if (selector !== undefined) {
+            $(document).on("click", selector, function () {
                 var url = $(this).data('delete-url');
 
-                if (url === undefined)
-                {
+                if (url === undefined) {
                     Swal.fire({
                         title: 'Attribute Missing !',
                         text: 'Add data-delete-url attribute to the deletable button',
@@ -24,6 +21,8 @@
                     deleteAjax({
                         url: url,
                         type: "DELETE",
+                        text: text,
+                        confirmText: confirmText
                     });
                 }
 
@@ -31,31 +30,32 @@
         }
     };
 
-    $.fn.bulkDelete = function (url = null)
-    {
+    $.fn.bulkDelete = function (url = null, text = 'You want to delete selected items', confirmText = 'Yes, Delete It!') {
         var selector = $(this).getSelector();
 
         if (selector !== undefined) {
-            $(document).on("click", selector, function ()
-            {
+            $(document).on("click", selector, function () {
                 var values = checkBoxValues();
 
-                var options = {};
+                var options = {
+                    text: text,
+                    confirmText: confirmText
+                };
 
-                if(! url){
+                if (!url) {
                     options.url = $(this).data('delete-url');
                 }
 
                 if (values.length !== 0) {
                     options.type = "POST";
 
-                    options.data = {selected_items: values};
+                    options.data = { selected_rows: values };
 
                     deleteAjax(options);
                 } else {
                     Swal.fire({
                         title: 'No Items Are Selected!',
-                        text: 'you need to select the items to delete',
+                        text: 'you need to select the items first.',
                         icon: 'warning'
                     });
                 }
@@ -77,39 +77,40 @@
             ajaxOptions.data = options.data;
         }
 
-        let title = "You want to delete selected "
-
         Swal.fire({
             title: 'Are you sure?',
-            text: options.type === 'POST' ? title + "items?" : title + "item?",
+            text: options.text,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, Delete it!',
+            confirmButtonText: options.confirmText,
             showLoaderOnConfirm: true,
             preConfirm: async function () {
                 await $.ajax(ajaxOptions)
-                    .done(function (response) {return response;})
+                    .done(function (response) { return response; })
                     .fail(function (error) {
                         Swal.close();
 
-                        if ($.inArray(error.status,[400,401,403,404,406]) !== -1) {
-                            Swal.fire({
-                                title: 'Error! - '+error.statusText,
-                                text: error.responseJSON.message ? error.responseJSON.message : error.responseJSON,
-                                icon: 'error',
+                        if (error.status >= 400 && error.status < 500) {
+                            toastr.error(error.responseJSON.message, `${error.statusText}- ${error.status}`, {
+                                progressBar: true
                             });
 
                             return;
                         }
 
-                        Swal.fire({
-                            title: 'Error! ' + error.status,
-                            text: 'Something went wrong!',
-                            type: 'error',
+                        if (error.status >= 500) {
+                            toastr.error(error.responseJSON.message, `${error.statusText}- ${error.status}`, {
+                                progressBar: true
+                            });
+
+                            return;
+                        }
+
+                        toastr.error('Something went wrong!', `${error.statusText}- ${error.status}`, {
+                            progressBar: true
                         });
-                        console.error(error);
                     });
             },
             backdrop: true,
