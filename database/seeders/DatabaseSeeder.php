@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use DA\Admin\Database\Seeders\AdminAuthorizationSeeder;
+use DA\Admin\Database\Seeders\CatalogSeeder;
 use DA\Admin\Models\AdminRole;
 use DA\Admin\Models\AdminUser;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -17,7 +18,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(AdminAuthorizationSeeder::class);
+        $this->call([
+            AdminAuthorizationSeeder::class,
+            CatalogSeeder::class,
+        ]);
 
         $admin = AdminUser::factory()->create([
             'name' => 'Test User',

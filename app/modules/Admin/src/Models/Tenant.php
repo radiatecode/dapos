@@ -77,6 +77,14 @@ class Tenant extends Model
         return $this->hasMany(User::class);
     }
 
+    /**
+     * @return HasMany<Subscription, $this>
+     */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
     public function isActive(): bool
     {
         return $this->status === TenantStatus::Active;
@@ -85,6 +93,17 @@ class Tenant extends Model
     public function isSuspended(): bool
     {
         return $this->status === TenantStatus::Suspended;
+    }
+
+    public function notificationEmail(): ?string
+    {
+        foreach ([$this->billing_email, $this->contact_person_email] as $email) {
+            if (is_string($email) && $email !== '') {
+                return $email;
+            }
+        }
+
+        return null;
     }
 
     protected static function newFactory(): TenantFactory

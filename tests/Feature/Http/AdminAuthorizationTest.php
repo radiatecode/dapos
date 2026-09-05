@@ -14,6 +14,13 @@ describe('guests and POS users', function () {
         '/admin/permissions',
         '/admin/tenants',
         '/admin/tenants/create',
+        '/admin/plans',
+        '/admin/plans/create',
+        '/admin/features',
+        '/admin/addons',
+        '/admin/subscriptions',
+        '/admin/subscriptions/create',
+        '/admin/subscription-events',
     ]);
 
     it('redirects a POS user on the web guard away from provider admin pages', function () {

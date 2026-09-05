@@ -699,6 +699,16 @@ span.help-block {
     color: #b91c1c;
 }
 
+.tenant-status--accent {
+    background: rgba(245, 158, 11, 0.14);
+    color: #b45309;
+}
+
+.tenant-status--muted {
+    background: #e2e8f0;
+    color: #475569;
+}
+
 .tenant-section__header {
     align-items: center;
 }
@@ -794,6 +804,20 @@ span.help-block {
     margin-top: 0.35rem;
     padding-top: 0.85rem;
     border-top: 1px dashed #e2e8e4;
+}
+
+.plan-feature-editor__head {
+    margin-bottom: 0.85rem;
+}
+
+.plan-feature-editor__head h4 {
+    margin: 0 0 0.25rem;
+    font-weight: 800;
+}
+
+.plan-limit-controls {
+    display: grid;
+    gap: 0.55rem;
 }
 
 .admin-table-wrap {

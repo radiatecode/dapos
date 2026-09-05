@@ -2,6 +2,7 @@
 
 namespace DA\Admin\Providers;
 
+use DA\Admin\Console\Commands\ProcessSubscriptionPeriods;
 use DA\Admin\Enums\AdminPermission;
 use DA\Admin\Models\AdminUser;
 use DA\Admin\Support\AdminNavigation;
@@ -27,6 +28,12 @@ class AdminServiceProvider extends ServiceProvider
         $this->publishAdminStyles();
 
         $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                ProcessSubscriptionPeriods::class,
+            ]);
+        }
     }
 
     private function publishAdminStyles(): void

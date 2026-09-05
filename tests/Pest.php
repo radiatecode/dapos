@@ -1,9 +1,14 @@
 <?php
 
 use DA\Admin\Enums\AdminPermission;
+use DA\Admin\Enums\BillingInterval;
+use DA\Admin\Enums\FeatureType;
 use DA\Admin\Models\AdminPermission as AdminPermissionModel;
 use DA\Admin\Models\AdminRole;
 use DA\Admin\Models\AdminUser;
+use DA\Admin\Models\Currency;
+use DA\Admin\Models\Plan;
+use DA\Admin\Models\Tenant;
 use Tests\TestCase;
 
 pest()->extend(TestCase::class)
@@ -60,6 +65,89 @@ function seedAdminPermissionCatalog(): void
             ],
         );
     }
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function planPayload(array $overrides = []): array
+{
+    $defaults = [
+        'name' => 'Starter',
+        'code' => 'starter',
+        'description' => 'For small teams',
+        'billing_interval' => BillingInterval::Monthly->value,
+        'price' => '19.00',
+        'trial_days' => 14,
+        'is_active' => '1',
+        'features' => [],
+    ];
+
+    if (! array_key_exists('currency_id', $overrides)) {
+        $defaults['currency_id'] = Currency::factory()->create()->id;
+    }
+
+    return array_replace_recursive($defaults, $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function featurePayload(array $overrides = []): array
+{
+    return array_replace_recursive([
+        'name' => 'Users',
+        'code' => 'users',
+        'type' => FeatureType::Limit->value,
+        'description' => 'Maximum users on the tenant.',
+    ], $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function addonPayload(array $overrides = []): array
+{
+    $defaults = [
+        'name' => 'Extra location',
+        'code' => 'extra-location',
+        'description' => 'Add one more store location.',
+        'billing_interval' => BillingInterval::Monthly->value,
+        'price' => '9.00',
+        'is_active' => '1',
+    ];
+
+    if (! array_key_exists('currency_id', $overrides)) {
+        $defaults['currency_id'] = Currency::factory()->create()->id;
+    }
+
+    return array_replace_recursive($defaults, $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function subscriptionPayload(array $overrides = []): array
+{
+    $defaults = [
+        'start_trial' => '1',
+        'addon_ids' => [],
+        'grace_days' => '7',
+    ];
+
+    if (! array_key_exists('tenant_id', $overrides)) {
+        $defaults['tenant_id'] = Tenant::factory()->create()->id;
+    }
+
+    if (! array_key_exists('plan_id', $overrides)) {
+        $defaults['plan_id'] = Plan::factory()->create(['trial_days' => 14])->id;
+    }
+
+    return array_replace_recursive($defaults, $overrides);
 }
 
 /**

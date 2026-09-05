@@ -15,6 +15,8 @@ enum AdminPermission: string
     case FeaturesView = 'features.view';
     case AddonsView = 'addons.view';
     case SubscriptionsView = 'subscriptions.view';
+    case SubscriptionsCreate = 'subscriptions.create';
+    case SubscriptionsManage = 'subscriptions.manage';
     case InvoicesView = 'invoices.view';
     case PaymentsView = 'payments.view';
     case CouponsView = 'coupons.view';
@@ -36,6 +38,8 @@ enum AdminPermission: string
             self::FeaturesView => 'View features',
             self::AddonsView => 'View add-ons',
             self::SubscriptionsView => 'View subscriptions',
+            self::SubscriptionsCreate => 'Create subscriptions',
+            self::SubscriptionsManage => 'Manage subscriptions',
             self::InvoicesView => 'View invoices',
             self::PaymentsView => 'View payments',
             self::CouponsView => 'View coupons',
@@ -52,7 +56,7 @@ enum AdminPermission: string
             self::PermissionsView => 'Account',
             self::TenantsView, self::TenantsCreate, self::TenantsEdit, self::TenantsDelete, self::UsersView => 'Tenancy',
             self::PlansView, self::FeaturesView, self::AddonsView => 'Catalog',
-            self::SubscriptionsView, self::InvoicesView, self::PaymentsView, self::CouponsView => 'Billing',
+            self::SubscriptionsView, self::SubscriptionsCreate, self::SubscriptionsManage, self::InvoicesView, self::PaymentsView, self::CouponsView => 'Billing',
             self::UsageView, self::SubscriptionEventsView => 'Operations',
             self::SettingsView => 'System',
         };
