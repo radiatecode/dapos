@@ -1,0 +1,26 @@
+{
+    "name": "da/inventory",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nur Alam",
+            "email": "nurmamun@monicotechnologies.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "DA\\Inventory\\": "src/",
+            "DA\\Inventory\\Database\\Factories\\": "database/factories/",
+            "DA\\Inventory\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "DA\\Inventory\\Providers\\InventoryServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "minimum-stability": "dev"
+}

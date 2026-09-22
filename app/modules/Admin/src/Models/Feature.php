@@ -3,6 +3,7 @@
 namespace DA\Admin\Models;
 
 use DA\Admin\Database\Factories\FeatureFactory;
+use DA\Admin\Enums\FeatureEnforcement;
 use DA\Admin\Enums\FeatureType;
 use DA\Admin\Models\Queries\FeatureQueries;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'name',
     'code',
     'type',
+    'enforcement',
     'description',
 ])]
 class Feature extends Model
@@ -34,6 +36,7 @@ class Feature extends Model
     {
         return [
             'type' => FeatureType::class,
+            'enforcement' => FeatureEnforcement::class,
         ];
     }
 
@@ -56,6 +59,14 @@ class Feature extends Model
             ->withTimestamps();
     }
 
+    /**
+     * @return HasMany<TenantUsage, $this>
+     */
+    public function usages(): HasMany
+    {
+        return $this->hasMany(TenantUsage::class);
+    }
+
     public function isBoolean(): bool
     {
         return $this->type === FeatureType::Boolean;
@@ -64,6 +75,25 @@ class Feature extends Model
     public function isLimit(): bool
     {
         return $this->type === FeatureType::Limit;
+    }
+
+    public function isResourceLimit(): bool
+    {
+        return $this->isLimit() && $this->enforcement === FeatureEnforcement::Resource;
+    }
+
+    public function isConsumptionLimit(): bool
+    {
+        return $this->isLimit() && ! $this->isResourceLimit();
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Feature $feature): void {
+            if ($feature->isLimit() && $feature->enforcement === null) {
+                $feature->enforcement = FeatureEnforcement::Consumption;
+            }
+        });
     }
 
     protected static function newFactory(): FeatureFactory

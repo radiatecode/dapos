@@ -4,6 +4,7 @@
 
     $status = $subscription->status;
     $canManage = auth('admin')->user()?->hasAdminPermission(\DA\Admin\Enums\AdminPermission::SubscriptionsManage);
+    $canCreateInvoice = auth('admin')->user()?->hasAdminPermission(\DA\Admin\Enums\AdminPermission::InvoicesCreate);
     $planChanges = $subscription->events->filter(fn ($event) => $event->event_type?->isPlanChange());
 @endphp
 
@@ -304,6 +305,45 @@
                         @endif
                     </div>
                 </div>
+
+                <div class="card admin-surface-card tenant-section mb-3">
+                    <div class="card-header admin-surface-card__header tenant-section__header">
+                        <span class="tenant-section__icon"><i class="fas fa-file-invoice"></i></span>
+                        <h3 class="card-title mb-0">Billing history</h3>
+                    </div>
+                    <div class="card-body">
+                        @if ($subscription->invoices->isEmpty())
+                            <p class="text-secondary mb-0">No invoices have been generated for this subscription.</p>
+                        @else
+                            <div class="table-responsive">
+                                <table class="table admin-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Number</th>
+                                            <th>Status</th>
+                                            <th>Total</th>
+                                            <th>Due</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($subscription->invoices as $invoice)
+                                            <tr>
+                                                <td>
+                                                    <a href="{{ route('admin.invoices.show', $invoice) }}">
+                                                        {{ $invoice->invoice_number }}
+                                                    </a>
+                                                </td>
+                                                <td>{{ $invoice->status->label() }}</td>
+                                                <td>{{ $invoice->formattedTotal() }}</td>
+                                                <td>{{ $invoice->due_date?->toFormattedDateString() }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
 
             <div class="col-lg-4">
@@ -318,6 +358,20 @@
                                 {{ $status?->label() ?? 'Unknown' }}
                             </span>
                         </div>
+
+                        @if ($canCreateInvoice && $subscription->current_period_start)
+                            <form method="POST" action="{{ route('admin.invoices.store') }}" class="mb-3">
+                                @csrf
+                                <input type="hidden" name="subscription_id" value="{{ $subscription->id }}">
+                                <label class="mb-1" for="coupon_code">Generate invoice</label>
+                                <input type="text" name="coupon_code" id="coupon_code"
+                                    class="form-control admin-input mb-2" placeholder="Coupon code (optional)">
+                                <button type="submit" class="btn admin-btn btn-primary tenant-action-btn">
+                                    <i class="fas fa-file-invoice"></i>
+                                    <span>Generate invoice</span>
+                                </button>
+                            </form>
+                        @endif
 
                         @if ($canManage && $subscription->isCurrent())
                             <form method="POST" action="{{ route('admin.subscriptions.grace-days', $subscription) }}" class="mb-3">

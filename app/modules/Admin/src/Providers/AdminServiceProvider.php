@@ -5,6 +5,10 @@ namespace DA\Admin\Providers;
 use DA\Admin\Console\Commands\ProcessSubscriptionPeriods;
 use DA\Admin\Enums\AdminPermission;
 use DA\Admin\Models\AdminUser;
+use DA\Admin\Services\Billing\ManualPaymentProcessor;
+use DA\Admin\Services\Billing\PaymentProcessor;
+use DA\Admin\Services\Entitlements\ResourceUsageRegistry;
+use DA\Admin\Services\Entitlements\UsersResourceCounter;
 use DA\Admin\Support\AdminNavigation;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
@@ -18,6 +22,14 @@ class AdminServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(AdminNavigation::class);
+
+        $this->app->singleton(ResourceUsageRegistry::class, function (): ResourceUsageRegistry {
+            return new ResourceUsageRegistry([
+                new UsersResourceCounter,
+            ]);
+        });
+
+        $this->app->bind(PaymentProcessor::class, ManualPaymentProcessor::class);
     }
 
     public function boot(): void

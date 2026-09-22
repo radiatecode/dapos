@@ -1,9 +1,9 @@
 <?php
 
 use App\Enums\UserRole;
-use App\Models\Tenant;
 use App\Models\User;
-use App\Services\Tenancy\TenantContext;
+use DA\Admin\Models\Tenant;
+use DA\Admin\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Sanctum;
 

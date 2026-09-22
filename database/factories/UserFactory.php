@@ -2,9 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Enums\Permission;
 use App\Enums\UserRole;
-use App\Models\Tenant;
+use App\Models\Role;
 use App\Models\User;
+use DA\Admin\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -32,6 +34,7 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'role' => UserRole::PlatformAdmin,
             'tenant_id' => null,
+            'photo' => null,
         ];
     }
 
@@ -56,5 +59,31 @@ class UserFactory extends Factory
             'role' => UserRole::TenantUser,
             'tenant_id' => $tenant->id,
         ]);
+    }
+
+    /**
+     * @param  list<Permission|string>|null  $permissions
+     */
+    public function withPermissions(?array $permissions = null): static
+    {
+        return $this->afterCreating(function (User $user) use ($permissions): void {
+            if ($user->tenant_id === null) {
+                return;
+            }
+
+            $keys = collect($permissions ?? Permission::cases())
+                ->map(fn (Permission|string $permission): string => $permission instanceof Permission
+                    ? $permission->value
+                    : $permission)
+                ->values()
+                ->all();
+
+            $role = Role::factory()->create([
+                'tenant_id' => $user->tenant_id,
+                'permissions' => $keys,
+            ]);
+
+            $user->roles()->attach($role->id);
+        });
     }
 }

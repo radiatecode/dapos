@@ -3,6 +3,7 @@
 namespace DA\Admin\Database\Seeders;
 
 use DA\Admin\Enums\BillingInterval;
+use DA\Admin\Enums\FeatureEnforcement;
 use DA\Admin\Enums\FeatureType;
 use DA\Admin\Models\Addon;
 use DA\Admin\Models\Currency;
@@ -59,17 +60,17 @@ class CatalogSeeder extends Seeder
     }
 
     /**
-     * @return list<array{name: string, code: string, type: FeatureType, description: string}>
+     * @return list<array{name: string, code: string, type: FeatureType, enforcement: FeatureEnforcement|null, description: string}>
      */
     private function features(): array
     {
         return [
-            ['name' => 'Users', 'code' => 'users', 'type' => FeatureType::Limit, 'description' => 'Maximum users on the tenant.'],
-            ['name' => 'Locations', 'code' => 'locations', 'type' => FeatureType::Limit, 'description' => 'Maximum store locations.'],
-            ['name' => 'Products', 'code' => 'products', 'type' => FeatureType::Limit, 'description' => 'Maximum products in the catalog.'],
-            ['name' => 'Invoices', 'code' => 'invoices', 'type' => FeatureType::Limit, 'description' => 'Maximum invoices per billing period.'],
-            ['name' => 'Multi-location', 'code' => 'multi_location', 'type' => FeatureType::Boolean, 'description' => 'Allow more than one location.'],
-            ['name' => 'Advanced reports', 'code' => 'advanced_reports', 'type' => FeatureType::Boolean, 'description' => 'Unlock advanced reporting.'],
+            ['name' => 'Users', 'code' => 'users', 'type' => FeatureType::Limit, 'enforcement' => FeatureEnforcement::Resource, 'description' => 'Maximum users on the tenant.'],
+            ['name' => 'Locations', 'code' => 'locations', 'type' => FeatureType::Limit, 'enforcement' => FeatureEnforcement::Resource, 'description' => 'Maximum store locations.'],
+            ['name' => 'Products', 'code' => 'products', 'type' => FeatureType::Limit, 'enforcement' => FeatureEnforcement::Resource, 'description' => 'Maximum products in the catalog.'],
+            ['name' => 'Invoices', 'code' => 'invoices', 'type' => FeatureType::Limit, 'enforcement' => FeatureEnforcement::Consumption, 'description' => 'Maximum invoices per billing period.'],
+            ['name' => 'Multi-location', 'code' => 'multi_location', 'type' => FeatureType::Boolean, 'enforcement' => null, 'description' => 'Allow more than one location.'],
+            ['name' => 'Advanced reports', 'code' => 'advanced_reports', 'type' => FeatureType::Boolean, 'enforcement' => null, 'description' => 'Unlock advanced reporting.'],
         ];
     }
 

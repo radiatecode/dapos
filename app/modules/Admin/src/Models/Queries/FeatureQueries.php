@@ -23,6 +23,13 @@ class FeatureQueries extends BaseQueries
             ->orderBy('id', 'desc');
     }
 
+    public function findByCode(string $code): ?Feature
+    {
+        return $this->eloquentBuilder()
+            ->where('code', $code)
+            ->first();
+    }
+
     /**
      * @return Collection<int, Feature>
      */

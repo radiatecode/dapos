@@ -2,8 +2,11 @@
 
 use DA\Admin\Http\Controllers\AddonController;
 use DA\Admin\Http\Controllers\Auth\AuthenticatedSessionController;
+use DA\Admin\Http\Controllers\CouponController;
 use DA\Admin\Http\Controllers\DashboardController;
 use DA\Admin\Http\Controllers\FeatureController;
+use DA\Admin\Http\Controllers\InvoiceController;
+use DA\Admin\Http\Controllers\PaymentController;
 use DA\Admin\Http\Controllers\PermissionController;
 use DA\Admin\Http\Controllers\PlanController;
 use DA\Admin\Http\Controllers\ProfileController;
@@ -75,5 +78,36 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('subscription-events', [SubscriptionEventController::class, 'index'])
             ->middleware('admin.permission:subscription-events.view')
             ->name('subscription-events.index');
+
+        Route::get('invoices/create', [InvoiceController::class, 'create'])
+            ->middleware('admin.permission:invoices.create')
+            ->name('invoices.create');
+        Route::post('invoices', [InvoiceController::class, 'store'])
+            ->middleware('admin.permission:invoices.create')
+            ->name('invoices.store');
+
+        Route::middleware('admin.permission:invoices.view')->group(function () {
+            Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+            Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+        });
+
+        Route::middleware('admin.permission:invoices.manage')->group(function () {
+            Route::post('invoices/{invoice}/mark-paid', [InvoiceController::class, 'markPaid'])->name('invoices.mark-paid');
+            Route::post('invoices/{invoice}/mark-failed', [InvoiceController::class, 'markFailed'])->name('invoices.mark-failed');
+        });
+
+        Route::get('payments', [PaymentController::class, 'index'])
+            ->middleware('admin.permission:payments.view')
+            ->name('payments.index');
+
+        Route::get('coupons', [CouponController::class, 'index'])
+            ->middleware('admin.permission:coupons.view')
+            ->name('coupons.index');
+        Route::post('coupons', [CouponController::class, 'store'])
+            ->middleware('admin.permission:coupons.manage')
+            ->name('coupons.store');
+        Route::put('coupons/{coupon}', [CouponController::class, 'update'])
+            ->middleware('admin.permission:coupons.manage')
+            ->name('coupons.update');
     });
 });

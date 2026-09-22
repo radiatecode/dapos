@@ -55,6 +55,8 @@ class SubscriptionController extends Controller
             'plan.currency',
             'items',
             'events',
+            'invoices.currency',
+            'invoices.payments',
         ]);
 
         $addonIds = $subscription->items

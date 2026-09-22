@@ -18,8 +18,11 @@ enum AdminPermission: string
     case SubscriptionsCreate = 'subscriptions.create';
     case SubscriptionsManage = 'subscriptions.manage';
     case InvoicesView = 'invoices.view';
+    case InvoicesCreate = 'invoices.create';
+    case InvoicesManage = 'invoices.manage';
     case PaymentsView = 'payments.view';
     case CouponsView = 'coupons.view';
+    case CouponsManage = 'coupons.manage';
     case UsageView = 'usage.view';
     case SubscriptionEventsView = 'subscription-events.view';
     case SettingsView = 'settings.view';
@@ -41,8 +44,11 @@ enum AdminPermission: string
             self::SubscriptionsCreate => 'Create subscriptions',
             self::SubscriptionsManage => 'Manage subscriptions',
             self::InvoicesView => 'View invoices',
+            self::InvoicesCreate => 'Create invoices',
+            self::InvoicesManage => 'Manage invoices',
             self::PaymentsView => 'View payments',
             self::CouponsView => 'View coupons',
+            self::CouponsManage => 'Manage coupons',
             self::UsageView => 'View usage',
             self::SubscriptionEventsView => 'View subscription events',
             self::SettingsView => 'View system settings',
@@ -56,7 +62,7 @@ enum AdminPermission: string
             self::PermissionsView => 'Account',
             self::TenantsView, self::TenantsCreate, self::TenantsEdit, self::TenantsDelete, self::UsersView => 'Tenancy',
             self::PlansView, self::FeaturesView, self::AddonsView => 'Catalog',
-            self::SubscriptionsView, self::SubscriptionsCreate, self::SubscriptionsManage, self::InvoicesView, self::PaymentsView, self::CouponsView => 'Billing',
+            self::SubscriptionsView, self::SubscriptionsCreate, self::SubscriptionsManage, self::InvoicesView, self::InvoicesCreate, self::InvoicesManage, self::PaymentsView, self::CouponsView, self::CouponsManage => 'Billing',
             self::UsageView, self::SubscriptionEventsView => 'Operations',
             self::SettingsView => 'System',
         };

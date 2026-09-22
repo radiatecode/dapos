@@ -5,6 +5,7 @@ namespace DA\Admin\Models;
 use DA\Admin\Database\Factories\SubscriptionFactory;
 use DA\Admin\Enums\SubscriptionStatus;
 use DA\Admin\Models\Queries\SubscriptionQueries;
+use DA\Admin\Services\FeatureService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
@@ -105,6 +106,14 @@ class Subscription extends Model
     }
 
     /**
+     * @return HasMany<Invoice, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class)->orderByDesc('id');
+    }
+
+    /**
      * @param  Builder<Subscription>  $query
      * @return Builder<Subscription>
      */
@@ -134,6 +143,46 @@ class Subscription extends Model
         return $this->status === SubscriptionStatus::PastDue
             && $this->grace_ends_at !== null
             && $this->grace_ends_at->isFuture();
+    }
+
+    public function hasFeature(string $code): bool
+    {
+        return $this->entitlements()->hasFeature($this, $code);
+    }
+
+    public function can(string $code): bool
+    {
+        return $this->entitlements()->can($this, $code);
+    }
+
+    public function limit(string $code): ?int
+    {
+        return $this->entitlements()->limit($this, $code);
+    }
+
+    public function isUnlimited(string $code): bool
+    {
+        return $this->entitlements()->isUnlimited($this, $code);
+    }
+
+    public function canConsume(string $code, int $amount = 1): bool
+    {
+        return $this->entitlements()->canConsume($this, $code, $amount);
+    }
+
+    public function consume(string $code, int $amount = 1): void
+    {
+        $this->entitlements()->consume($this, $code, $amount);
+    }
+
+    public function release(string $code, int $amount = 1): void
+    {
+        $this->entitlements()->release($this, $code, $amount);
+    }
+
+    private function entitlements(): FeatureService
+    {
+        return app(FeatureService::class);
     }
 
     protected static function newFactory(): SubscriptionFactory

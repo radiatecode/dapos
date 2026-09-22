@@ -3,27 +3,32 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
-use DA\Admin\Models\Tenant;
-use Database\Factories\UserFactory;
+use App\Models\Concerns\HasPermissions;
+use App\Models\Concerns\ScopedToCurrentTenant;
+use App\Models\Queries\UserQueries;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
- * Users belong to at most one tenant via tenant_id, but this model is not
- * globally tenant-scoped. Auth, login, and platform operations must not be
- * silently filtered by TenantContext.
+ * Users belong to at most one tenant via tenant_id. Queries are filtered by
+ * the current TenantContext when it is set. Auth and platform operations
+ * run without context and therefore see every user.
  */
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'photo'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, HasPermissions, Notifiable, ScopedToCurrentTenant;
+
+    public static function queries(): UserQueries
+    {
+        return new UserQueries(static::class);
+    }
 
     /**
      * @return array<string, string>
@@ -35,23 +40,5 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => UserRole::class,
         ];
-    }
-
-    /**
-     * @return BelongsTo<Tenant, $this>
-     */
-    public function tenant(): BelongsTo
-    {
-        return $this->belongsTo(Tenant::class);
-    }
-
-    public function isPlatformAdmin(): bool
-    {
-        return $this->role === UserRole::PlatformAdmin;
-    }
-
-    public function isTenantUser(): bool
-    {
-        return $this->role === UserRole::TenantUser;
     }
 }

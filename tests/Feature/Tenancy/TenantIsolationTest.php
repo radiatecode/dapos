@@ -1,8 +1,8 @@
 <?php
 
+use App\Models\User;
 use DA\Admin\Exceptions\TenantContextMissingException;
 use DA\Admin\Models\Tenant;
-use DA\Admin\Models\User;
 use DA\Admin\Services\Tenancy\TenantContext;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;

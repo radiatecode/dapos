@@ -2,9 +2,9 @@
 
 namespace DA\Admin\Http\Middleware;
 
-use App\Enums\TenantStatus;
-use App\Services\Tenancy\TenantContext;
 use Closure;
+use DA\Admin\Enums\TenantStatus;
+use DA\Admin\Services\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 

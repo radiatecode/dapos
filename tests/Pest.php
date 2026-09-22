@@ -1,14 +1,19 @@
 <?php
 
+use App\Enums\Permission;
+use App\Models\User;
 use DA\Admin\Enums\AdminPermission;
 use DA\Admin\Enums\BillingInterval;
+use DA\Admin\Enums\CouponDiscountType;
 use DA\Admin\Enums\FeatureType;
+use DA\Admin\Enums\PaymentMethod;
 use DA\Admin\Models\AdminPermission as AdminPermissionModel;
 use DA\Admin\Models\AdminRole;
 use DA\Admin\Models\AdminUser;
 use DA\Admin\Models\Currency;
 use DA\Admin\Models\Plan;
 use DA\Admin\Models\Tenant;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 pest()->extend(TestCase::class)
@@ -21,6 +26,50 @@ expect()->extend('toBeOne', function () {
 /**
  * @param  list<AdminPermission|string>|null  $permissions
  */
+/**
+ * @param  list<Permission|string>|null  $permissions
+ */
+function actingAsTenantUser(?Tenant $tenant = null, ?array $permissions = null): User
+{
+    $tenant ??= Tenant::factory()->create();
+
+    $user = User::factory()
+        ->forTenant($tenant)
+        ->withPermissions($permissions)
+        ->create();
+
+    Sanctum::actingAs($user);
+
+    return $user->fresh(['roles']) ?? $user;
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function tenantUserPayload(array $overrides = []): array
+{
+    return array_replace_recursive([
+        'name' => 'Cashier One',
+        'email' => 'cashier@shop.test',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ], $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function rolePayload(array $overrides = []): array
+{
+    return array_replace_recursive([
+        'name' => 'Cashier',
+        'slug' => 'cashier',
+        'permissions' => [Permission::SalesView->value],
+    ], $overrides);
+}
+
 function actingAsPlatformAdmin(?array $permissions = null, string $guard = 'admin'): AdminUser
 {
     $admin = AdminUser::factory()->create();
@@ -148,6 +197,35 @@ function subscriptionPayload(array $overrides = []): array
     }
 
     return array_replace_recursive($defaults, $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function couponPayload(array $overrides = []): array
+{
+    return array_replace_recursive([
+        'name' => 'Launch discount',
+        'code' => 'SAVE10',
+        'description' => 'Ten percent off',
+        'discount_type' => CouponDiscountType::Percentage->value,
+        'discount_value' => '10.00',
+        'max_redemptions_per_tenant' => '1',
+        'is_active' => '1',
+    ], $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function recordPaymentPayload(array $overrides = []): array
+{
+    return array_replace_recursive([
+        'payment_method' => PaymentMethod::Manual->value,
+        'transaction_id' => null,
+    ], $overrides);
 }
 
 /**

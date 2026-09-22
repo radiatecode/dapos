@@ -2,13 +2,16 @@
 
 namespace DA\Admin\Models;
 
+use App\Models\User;
 use DA\Admin\Database\Factories\TenantFactory;
+use DA\Admin\Enums\SubscriptionStatus;
 use DA\Admin\Enums\TenantStatus;
 use DA\Admin\Models\Queries\TenantQueries;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
@@ -83,6 +86,47 @@ class Tenant extends Model
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * Current (trialing, active, past due, or paused) subscription.
+     *
+     * @return HasOne<Subscription, $this>
+     */
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class)
+            ->whereIn('status', [
+                SubscriptionStatus::Trialing->value,
+                SubscriptionStatus::Active->value,
+                SubscriptionStatus::PastDue->value,
+                SubscriptionStatus::Paused->value,
+            ])
+            ->latest('id');
+    }
+
+    /**
+     * @return HasMany<TenantUsage, $this>
+     */
+    public function usages(): HasMany
+    {
+        return $this->hasMany(TenantUsage::class);
+    }
+
+    /**
+     * @return HasMany<Invoice, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * @return HasMany<SubscriptionPayment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(SubscriptionPayment::class);
     }
 
     public function isActive(): bool

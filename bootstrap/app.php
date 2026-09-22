@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsurePermission;
+use App\Http\Middleware\EnsureTenantUser;
 use DA\Admin\Http\Middleware\EnsureAdminPermission;
 use DA\Admin\Http\Middleware\EnsurePlatformAdmin;
 use DA\Admin\Http\Middleware\ResolveTenant;
@@ -22,6 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'tenant' => ResolveTenant::class,
+            'tenant.user' => EnsureTenantUser::class,
+            'permission' => EnsurePermission::class,
             'platform.admin' => EnsurePlatformAdmin::class,
             'admin.permission' => EnsureAdminPermission::class,
         ]);
