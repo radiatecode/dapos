@@ -14,15 +14,19 @@ trait ScopedToCurrentTenant
 {
     public static function bootScopedToCurrentTenant(): void
     {
-        static::addGlobalScope(new CurrentTenantScope);
+        if (auth()->check()) {
+            static::creating(function (Model $model): void {
+                $model->setAttribute('tenant_id', auth()->user()->tenant_id);
 
-        static::creating(function (Model $model): void {
-            $context = app(TenantContext::class);
+                // $context = app(TenantContext::class);
 
-            if ($context->has()) {
-                $model->setAttribute('tenant_id', $context->id());
-            }
-        });
+                // if ($context->has()) {
+                //     $model->setAttribute('tenant_id', $context->id());
+                // }
+            });
+
+            static::addGlobalScope(new CurrentTenantScope);
+        }
     }
 
     /**

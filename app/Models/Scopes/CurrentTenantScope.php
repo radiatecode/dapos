@@ -14,7 +14,8 @@ class CurrentTenantScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        $tenantId = app(TenantContext::class)->id();
+        // $tenantId = app(TenantContext::class)->id();
+        $tenantId = auth()->user()->tenant_id;
 
         if ($tenantId === null) {
             return;

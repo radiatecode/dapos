@@ -70,6 +70,80 @@ function rolePayload(array $overrides = []): array
     ], $overrides);
 }
 
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function categoryPayload(array $overrides = []): array
+{
+    return array_replace_recursive([
+        'name' => 'Beverages',
+        'slug' => 'beverages',
+        'description' => 'Drinks and juices',
+        'sort_order' => 0,
+        'is_active' => true,
+    ], $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function brandPayload(array $overrides = []): array
+{
+    return array_replace_recursive([
+        'name' => 'Acme',
+        'slug' => 'acme',
+        'description' => 'House brand',
+        'is_active' => true,
+    ], $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function unitPayload(array $overrides = []): array
+{
+    return array_replace_recursive([
+        'name' => 'Kilogram',
+        'short_name' => 'kg',
+        'code' => 'KG',
+        'unit_type' => 'weight',
+        'precision' => 3,
+        'is_active' => true,
+    ], $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function attributePayload(array $overrides = []): array
+{
+    return array_replace_recursive([
+        'name' => 'Color',
+        'slug' => 'color',
+        'input_type' => 'select',
+        'sort_order' => 0,
+        'is_active' => true,
+    ], $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function attributeValuePayload(array $overrides = []): array
+{
+    return array_replace_recursive([
+        'value' => 'Red',
+        'slug' => 'red',
+        'sort_order' => 0,
+        'is_active' => true,
+    ], $overrides);
+}
+
 function actingAsPlatformAdmin(?array $permissions = null, string $guard = 'admin'): AdminUser
 {
     $admin = AdminUser::factory()->create();

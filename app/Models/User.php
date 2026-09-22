@@ -41,4 +41,14 @@ class User extends Authenticatable
             'role' => UserRole::class,
         ];
     }
+
+    public function isPlatformAdmin(): bool
+    {
+        return $this->role === UserRole::PlatformAdmin;
+    }
+
+    public function isTenantUser(): bool
+    {
+        return $this->role === UserRole::TenantUser;
+    }
 }
