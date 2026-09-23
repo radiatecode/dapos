@@ -11,6 +11,7 @@ use DA\Inventory\Http\Requests\Api\V1\Category\UpdateCategoryRequest;
 use DA\Inventory\Http\Resources\Api\V1\CategoryResource;
 use DA\Inventory\Models\Category;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
@@ -25,7 +26,7 @@ class CategoryController extends Controller
     {
         $this->authorize('viewAny', Category::class);
 
-        return CategoryResource::collection(Category::queries()->tree());
+        return CategoryResource::collection(Category::queries()->paginateBySortOrder());
     }
 
     public function store(StoreCategoryRequest $request, CreateCategory $create): JsonResponse
@@ -47,11 +48,16 @@ class CategoryController extends Controller
         return CategoryResource::make($update->handle($category, $request->toDTO()));
     }
 
-    public function destroy(Category $category, DeleteCategory $delete)
+    public function destroy(Request $request, DeleteCategory $delete)
     {
-        $this->authorize('delete', $category);
+        if ($request->input('action') !== 'delete') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid action',
+            ], Response::HTTP_BAD_REQUEST);
+        }
 
-        $delete->handle($category);
+        $delete->handle($request->input('ids'));
 
         return response()->json([
             'status' => 'success',

@@ -8,18 +8,22 @@ use Illuminate\Validation\ValidationException;
 
 class DeleteCategory
 {
-    public function handle(Category $category): void
+    public function handle(array $ids): void
     {
-        if (Category::queries()->hasChildren($category->id)) {
-            throw ValidationException::withMessages([
-                'category' => 'This category has child categories and cannot be deleted.',
-            ]);
-        }
+        foreach ($ids as $id) {
+            $category = Category::findOrFail($id);
 
-        if (is_string($category->image) && $category->image !== '') {
-            Storage::disk('public')->delete($category->image);
-        }
+            if (Category::queries()->hasChildren($category->id)) {
+                throw ValidationException::withMessages([
+                    'category' => 'This category has child categories and cannot be deleted.',
+                ]);
+            }
 
-        $category->delete();
+            if (is_string($category->image) && $category->image !== '') {
+                Storage::disk('public')->delete($category->image);
+            }
+
+            $category->delete();
+        }
     }
 }

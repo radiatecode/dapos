@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Permission;
 use DA\Inventory\Http\Controllers\Api\V1\AttributeController;
 use DA\Inventory\Http\Controllers\Api\V1\AttributeValueController;
 use DA\Inventory\Http\Controllers\Api\V1\BrandController;
@@ -17,7 +18,8 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
         ->name('categories.show');
     Route::post('categories/{category}', [CategoryController::class, 'update'])
         ->name('categories.update');
-    Route::delete('categories/{category}', [CategoryController::class, 'destroy'])
+    Route::post('categories/delete', [CategoryController::class, 'destroy'])
+        ->middleware('permission:'.Permission::CategoriesDelete->value)
         ->name('categories.destroy');
 
     Route::get('brands', [BrandController::class, 'index'])

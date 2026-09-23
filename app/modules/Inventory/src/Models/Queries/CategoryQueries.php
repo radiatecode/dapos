@@ -15,7 +15,7 @@ class CategoryQueries extends BaseQueries
     {
         $categories = $this->eloquentBuilder()
             ->orderBy('sort_order')
-            ->orderBy('id')
+            ->orderBy('id', 'desc')
             ->get();
 
         $grouped = $categories->groupBy(fn (Category $category): int => $category->parent_id ?? 0);
@@ -30,7 +30,7 @@ class CategoryQueries extends BaseQueries
     {
         return $this->eloquentBuilder()
             ->orderBy('sort_order')
-            ->orderBy('id')
+            ->orderBy('id', 'desc')
             ->paginate($perPage);
     }
 

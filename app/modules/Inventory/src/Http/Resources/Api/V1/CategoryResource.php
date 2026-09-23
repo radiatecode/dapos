@@ -30,6 +30,7 @@ class CategoryResource extends JsonResource
                 : null,
             'sort_order' => $this->sort_order,
             'is_active' => $this->is_active,
+            'status' => $this->is_active ? 'Active' : 'Inactive',
             'parent' => self::make($this->whenLoaded('parent')),
             'children' => self::collection($this->whenLoaded('children')),
             'created_at' => $this->created_at,
