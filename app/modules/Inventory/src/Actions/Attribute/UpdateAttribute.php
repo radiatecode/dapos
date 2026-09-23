@@ -7,8 +7,10 @@ use DA\Inventory\Models\Attribute;
 
 class UpdateAttribute
 {
-    public function handle(Attribute $attribute, AttributeDTO $dto): Attribute
+    public function handle(int $id, AttributeDTO $dto): Attribute
     {
+        $attribute = Attribute::findOrFail($id);
+
         $attribute->name = $dto->name;
         $attribute->slug = $dto->slug ?: Attribute::queries()->uniqueSlugFrom($dto->name, 'attribute', $attribute->id);
         $attribute->code = $dto->code;

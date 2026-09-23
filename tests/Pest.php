@@ -144,6 +144,41 @@ function attributeValuePayload(array $overrides = []): array
     ], $overrides);
 }
 
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function productPayload(array $overrides = []): array
+{
+    $payload = [
+        'name' => 'Cola 500ml',
+        'description' => 'Sparkling drink',
+        'product_type' => 'simple',
+        'track_inventory' => true,
+        'is_active' => true,
+        'is_stock_out' => false,
+        'variants' => [
+            [
+                'sku' => 'COLA-500',
+                'barcode' => '1234567890123',
+                'barcode_type' => 'EAN',
+                'cost_price' => '10.0000',
+                'selling_price' => '15.0000',
+                'quantity' => '20.0000',
+                'min_stock_level' => 5,
+                'is_active' => true,
+            ],
+        ],
+    ];
+
+    if (array_key_exists('variants', $overrides)) {
+        $payload['variants'] = $overrides['variants'];
+        unset($overrides['variants']);
+    }
+
+    return array_replace($payload, $overrides);
+}
+
 function actingAsPlatformAdmin(?array $permissions = null, string $guard = 'admin'): AdminUser
 {
     $admin = AdminUser::factory()->create();

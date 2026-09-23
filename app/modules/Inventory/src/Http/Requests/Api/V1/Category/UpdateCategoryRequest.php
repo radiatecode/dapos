@@ -110,8 +110,6 @@ class UpdateCategoryRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $merge = [];
-
         $merge['slug'] = Str::slug($this->input('name'));
 
         if ($this->has('code') && is_string($this->input('code'))) {
@@ -123,9 +121,7 @@ class UpdateCategoryRequest extends FormRequest
             $merge['is_active'] = $this->boolean('is_active');
         }
 
-        if ($merge !== []) {
-            $this->merge($merge);
-        }
+        $this->merge($merge);
     }
 
     public function toDTO(): CategoryDTO

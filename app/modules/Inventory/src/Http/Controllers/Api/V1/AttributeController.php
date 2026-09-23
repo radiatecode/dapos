@@ -10,7 +10,6 @@ use DA\Inventory\Http\Requests\Api\V1\Attribute\StoreAttributeRequest;
 use DA\Inventory\Http\Requests\Api\V1\Attribute\UpdateAttributeRequest;
 use DA\Inventory\Http\Resources\Api\V1\AttributeResource;
 use DA\Inventory\Models\Attribute;
-use DA\Inventory\Services\AttributeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -18,10 +17,10 @@ use Illuminate\Http\Response;
 
 class AttributeController extends Controller
 {
-    public function index(Request $request, AttributeService $attributes): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
         return AttributeResource::collection(
-            $attributes->paginate($request->integer('per_page', 15)),
+            Attribute::queries()->paginateBySortOrder($request->integer('per_page', 15)),
         );
     }
 
@@ -34,22 +33,23 @@ class AttributeController extends Controller
             ->setStatusCode(201);
     }
 
-    public function show(Attribute $attribute, AttributeService $attributes): AttributeResource
+    public function show(int $id): AttributeResource
     {
-        return AttributeResource::make($attributes->show($attribute));
+        return AttributeResource::make(Attribute::with('values')->findOrFail($id));
     }
 
-    public function update(UpdateAttributeRequest $request, Attribute $attribute, UpdateAttribute $update): AttributeResource
+    public function update(UpdateAttributeRequest $request, int $id, UpdateAttribute $update): AttributeResource
     {
-        return AttributeResource::make($update->handle($attribute, $request->toDTO()));
+        return AttributeResource::make($update->handle($id, $request->toDTO()));
     }
 
-    public function destroy(Attribute $attribute, DeleteAttribute $delete): Response
+    public function destroy(int $id, DeleteAttribute $delete)
     {
-        $this->authorize('delete', $attribute);
+        $delete->handle($id);
 
-        $delete->handle($attribute);
-
-        return response()->noContent();
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Attribute deleted successfully',
+        ], Response::HTTP_OK);
     }
 }

@@ -3,8 +3,6 @@
 namespace DA\Inventory\Http\Requests\Api\V1\AttributeValue;
 
 use DA\Inventory\DTO\AttributeValue\AttributeValueDTO;
-use DA\Inventory\Models\Attribute;
-use DA\Inventory\Models\AttributeValue;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -14,10 +12,7 @@ class UpdateAttributeValueRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $attributeValue = $this->route('attribute_value');
-
-        return $attributeValue instanceof AttributeValue
-            && ($this->user()?->can('update', $attributeValue) ?? false);
+        return true;
     }
 
     /**
@@ -25,10 +20,8 @@ class UpdateAttributeValueRequest extends FormRequest
      */
     public function rules(): array
     {
-        $attribute = $this->route('attribute');
-        $attributeValue = $this->route('attribute_value');
-        $attributeId = $attribute instanceof Attribute ? $attribute->id : 0;
-        $attributeValueId = $attributeValue instanceof AttributeValue ? $attributeValue->id : null;
+        $attributeId = $this->route('id');
+        $attributeValueId = $this->route('valueId');
 
         return [
             'value' => ['required', 'string', 'max:255'],

@@ -62,11 +62,7 @@ class StoreBrandRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $merge = [];
-
-        if ($this->has('slug') && is_string($this->input('slug'))) {
-            $merge['slug'] = Str::slug($this->string('slug')->toString()) ?: null;
-        }
+        $merge['slug'] = Str::slug($this->input('name'));
 
         if ($this->has('code') && is_string($this->input('code'))) {
             $code = trim($this->string('code')->toString());
@@ -77,9 +73,7 @@ class StoreBrandRequest extends FormRequest
             $merge['is_active'] = $this->boolean('is_active');
         }
 
-        if ($merge !== []) {
-            $this->merge($merge);
-        }
+        $this->merge($merge);
     }
 
     public function toDTO(): BrandDTO

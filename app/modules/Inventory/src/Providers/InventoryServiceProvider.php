@@ -2,16 +2,8 @@
 
 namespace DA\Inventory\Providers;
 
-use DA\Inventory\Models\Attribute;
-use DA\Inventory\Models\AttributeValue;
-use DA\Inventory\Models\Brand;
 use DA\Inventory\Models\Category;
-use DA\Inventory\Models\Unit;
-use DA\Inventory\Policies\AttributePolicy;
-use DA\Inventory\Policies\AttributeValuePolicy;
-use DA\Inventory\Policies\BrandPolicy;
 use DA\Inventory\Policies\CategoryPolicy;
-use DA\Inventory\Policies\UnitPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -31,10 +23,6 @@ class InventoryServiceProvider extends ServiceProvider
     private function registerPolicies(): void
     {
         Gate::policy(Category::class, CategoryPolicy::class);
-        Gate::policy(Brand::class, BrandPolicy::class);
-        Gate::policy(Unit::class, UnitPolicy::class);
-        Gate::policy(Attribute::class, AttributePolicy::class);
-        Gate::policy(AttributeValue::class, AttributeValuePolicy::class);
     }
 
     private function registerRoutes(): void

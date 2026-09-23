@@ -2,11 +2,8 @@
 
 namespace DA\Inventory\Http\Requests\Api\V1\Unit;
 
-use DA\Admin\Services\Tenancy\TenantContext;
 use DA\Inventory\DTO\Unit\UnitDTO;
 use DA\Inventory\Enums\UnitType;
-use DA\Inventory\Models\Unit;
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -15,9 +12,7 @@ class UpdateUnitRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $unit = $this->route('unit');
-
-        return $unit instanceof Unit && ($this->user()?->can('update', $unit) ?? false);
+        return true;
     }
 
     /**
@@ -25,13 +20,11 @@ class UpdateUnitRequest extends FormRequest
      */
     public function rules(): array
     {
-        $tenantId = app(TenantContext::class)->id();
-        $unit = $this->route('unit');
-        $unitId = $unit instanceof Unit ? $unit->id : null;
+        $tenantId = auth()->user()->tenant_id;
+        $unitId = $this->route('id');
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'short_name' => ['required', 'string', 'max:20'],
             'code' => [
                 'required',
                 'string',
@@ -53,7 +46,6 @@ class UpdateUnitRequest extends FormRequest
     {
         return [
             'name.required' => 'The name field is required.',
-            'short_name.required' => 'The short name field is required.',
             'code.required' => 'The code field is required.',
             'code.unique' => 'The code has already been taken.',
             'unit_type.required' => 'The unit type field is required.',
@@ -83,7 +75,6 @@ class UpdateUnitRequest extends FormRequest
 
         return new UnitDTO(
             name: $data['name'],
-            shortName: $data['short_name'],
             code: $data['code'],
             unitType: UnitType::from($data['unit_type']),
             precision: (int) ($data['precision'] ?? 0),

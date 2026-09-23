@@ -2,10 +2,8 @@
 
 namespace DA\Inventory\Http\Requests\Api\V1\Attribute;
 
-use DA\Admin\Services\Tenancy\TenantContext;
 use DA\Inventory\DTO\Attribute\AttributeDTO;
 use DA\Inventory\Enums\AttributeInputType;
-use DA\Inventory\Models\Attribute;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -15,9 +13,7 @@ class UpdateAttributeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $attribute = $this->route('attribute');
-
-        return $attribute instanceof Attribute && ($this->user()?->can('update', $attribute) ?? false);
+        return true;
     }
 
     /**
@@ -25,9 +21,8 @@ class UpdateAttributeRequest extends FormRequest
      */
     public function rules(): array
     {
-        $tenantId = app(TenantContext::class)->id();
-        $attribute = $this->route('attribute');
-        $attributeId = $attribute instanceof Attribute ? $attribute->id : null;
+        $tenantId = auth()->user()->tenant_id;
+        $attributeId = $this->route('id');
 
         return [
             'name' => ['required', 'string', 'max:255'],

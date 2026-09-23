@@ -4,6 +4,7 @@ use DA\Inventory\Http\Controllers\Api\V1\AttributeController;
 use DA\Inventory\Http\Controllers\Api\V1\AttributeValueController;
 use DA\Inventory\Http\Controllers\Api\V1\BrandController;
 use DA\Inventory\Http\Controllers\Api\V1\CategoryController;
+use DA\Inventory\Http\Controllers\Api\V1\ProductController;
 use DA\Inventory\Http\Controllers\Api\V1\UnitController;
 use Illuminate\Support\Facades\Route;
 
@@ -14,7 +15,7 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
         ->name('categories.store');
     Route::get('categories/{category}', [CategoryController::class, 'show'])
         ->name('categories.show');
-    Route::put('categories/{category}', [CategoryController::class, 'update'])
+    Route::post('categories/{category}', [CategoryController::class, 'update'])
         ->name('categories.update');
     Route::delete('categories/{category}', [CategoryController::class, 'destroy'])
         ->name('categories.destroy');
@@ -28,7 +29,7 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::get('brands/{id}', [BrandController::class, 'show'])
         ->middleware('permission:brands.view')
         ->name('brands.show');
-    Route::put('brands/{id}', [BrandController::class, 'update'])
+    Route::post('brands/{id}', [BrandController::class, 'update'])
         ->middleware('permission:brands.update')
         ->name('brands.update');
     Route::delete('brands/{id}', [BrandController::class, 'destroy'])
@@ -41,13 +42,13 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::post('units', [UnitController::class, 'store'])
         ->middleware('permission:units.create')
         ->name('units.store');
-    Route::get('units/{unit}', [UnitController::class, 'show'])
+    Route::get('units/{id}', [UnitController::class, 'show'])
         ->middleware('permission:units.view')
         ->name('units.show');
-    Route::put('units/{unit}', [UnitController::class, 'update'])
+    Route::put('units/{id}', [UnitController::class, 'update'])
         ->middleware('permission:units.update')
         ->name('units.update');
-    Route::delete('units/{unit}', [UnitController::class, 'destroy'])
+    Route::delete('units/{id}', [UnitController::class, 'destroy'])
         ->middleware('permission:units.delete')
         ->name('units.destroy');
 
@@ -57,31 +58,42 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::post('attributes', [AttributeController::class, 'store'])
         ->middleware('permission:attributes.create')
         ->name('attributes.store');
-    Route::get('attributes/{attribute}', [AttributeController::class, 'show'])
+    Route::get('attributes/{id}', [AttributeController::class, 'show'])
         ->middleware('permission:attributes.view')
         ->name('attributes.show');
-    Route::put('attributes/{attribute}', [AttributeController::class, 'update'])
+    Route::put('attributes/{id}', [AttributeController::class, 'update'])
         ->middleware('permission:attributes.update')
         ->name('attributes.update');
-    Route::delete('attributes/{attribute}', [AttributeController::class, 'destroy'])
+    Route::delete('attributes/{id}', [AttributeController::class, 'destroy'])
         ->middleware('permission:attributes.delete')
         ->name('attributes.destroy');
 
-    Route::scopeBindings()->group(function (): void {
-        Route::get('attributes/{attribute}/values', [AttributeValueController::class, 'index'])
-            ->middleware('permission:attributes.view')
-            ->name('attributes.values.index');
-        Route::post('attributes/{attribute}/values', [AttributeValueController::class, 'store'])
-            ->middleware('permission:attributes.create')
-            ->name('attributes.values.store');
-        Route::get('attributes/{attribute}/values/{attribute_value}', [AttributeValueController::class, 'show'])
-            ->middleware('permission:attributes.view')
-            ->name('attributes.values.show');
-        Route::put('attributes/{attribute}/values/{attribute_value}', [AttributeValueController::class, 'update'])
-            ->middleware('permission:attributes.update')
-            ->name('attributes.values.update');
-        Route::delete('attributes/{attribute}/values/{attribute_value}', [AttributeValueController::class, 'destroy'])
-            ->middleware('permission:attributes.delete')
-            ->name('attributes.values.destroy');
-    });
+    Route::get('attributes/{id}/values', [AttributeValueController::class, 'index'])
+        ->middleware('permission:attributes.view')
+        ->name('attributes.values.index');
+    Route::post('attributes/{id}/values', [AttributeValueController::class, 'store'])
+        ->middleware('permission:attributes.create')
+        ->name('attributes.values.store');
+    Route::get('attributes/{id}/values/{valueId}', [AttributeValueController::class, 'show'])
+        ->middleware('permission:attributes.view')
+        ->name('attributes.values.show');
+    Route::put('attributes/{id}/values/{valueId}', [AttributeValueController::class, 'update'])
+        ->middleware('permission:attributes.update')
+        ->name('attributes.values.update');
+    Route::delete('attributes/{id}/values/{valueId}', [AttributeValueController::class, 'destroy'])
+        ->middleware('permission:attributes.delete')
+        ->name('attributes.values.destroy');
+
+    Route::get('products', [ProductController::class, 'index'])
+        ->middleware('permission:products.view')
+        ->name('products.index');
+    Route::post('products', [ProductController::class, 'store'])
+        ->middleware('permission:products.create')
+        ->name('products.store');
+    Route::get('products/{id}', [ProductController::class, 'show'])
+        ->middleware('permission:products.view')
+        ->name('products.show');
+    Route::put('products/{id}', [ProductController::class, 'update'])
+        ->middleware('permission:products.update')
+        ->name('products.update');
 });

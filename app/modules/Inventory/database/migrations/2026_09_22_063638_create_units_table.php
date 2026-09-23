@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->constrained()->restrictOnDelete();
             $table->string('name');
-            $table->string('short_name');
             $table->string('code');
             $table->string('unit_type'); // quantity, weight, volume, length
             $table->unsignedTinyInteger('precision')->default(0); // for weight unit 1.250 KG, 0.500 KG, 2.50 Meter

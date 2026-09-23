@@ -7,8 +7,12 @@ use DA\Inventory\Models\AttributeValue;
 
 class UpdateAttributeValue
 {
-    public function handle(AttributeValue $attributeValue, AttributeValueDTO $dto): AttributeValue
+    public function handle(int $id, int $valueId, AttributeValueDTO $dto): AttributeValue
     {
+        $attributeValue = AttributeValue::query()
+            ->where('attribute_id', $id)
+            ->findOrFail($valueId);
+
         $attributeValue->value = $dto->value;
         $attributeValue->slug = $dto->slug ?: AttributeValue::queries()->uniqueSlugFromForAttribute(
             $attributeValue->attribute_id,

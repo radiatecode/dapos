@@ -3,8 +3,6 @@
 namespace DA\Inventory\Http\Requests\Api\V1\AttributeValue;
 
 use DA\Inventory\DTO\AttributeValue\AttributeValueDTO;
-use DA\Inventory\Models\Attribute;
-use DA\Inventory\Models\AttributeValue;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -14,7 +12,7 @@ class StoreAttributeValueRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('create', AttributeValue::class) ?? false;
+        return true;
     }
 
     /**
@@ -22,8 +20,7 @@ class StoreAttributeValueRequest extends FormRequest
      */
     public function rules(): array
     {
-        $attribute = $this->route('attribute');
-        $attributeId = $attribute instanceof Attribute ? $attribute->id : 0;
+        $attributeId = $this->route('id');
 
         return [
             'value' => ['required', 'string', 'max:255'],

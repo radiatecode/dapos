@@ -9,7 +9,6 @@ class UnitDTO extends Data
 {
     public function __construct(
         public string $name,
-        public string $shortName,
         public string $code,
         public UnitType $unitType,
         public int $precision,

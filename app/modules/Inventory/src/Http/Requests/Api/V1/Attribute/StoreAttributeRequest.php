@@ -2,10 +2,8 @@
 
 namespace DA\Inventory\Http\Requests\Api\V1\Attribute;
 
-use DA\Admin\Services\Tenancy\TenantContext;
 use DA\Inventory\DTO\Attribute\AttributeDTO;
 use DA\Inventory\Enums\AttributeInputType;
-use DA\Inventory\Models\Attribute;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -15,7 +13,7 @@ class StoreAttributeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('create', Attribute::class) ?? false;
+        return true;
     }
 
     /**
@@ -23,7 +21,7 @@ class StoreAttributeRequest extends FormRequest
      */
     public function rules(): array
     {
-        $tenantId = app(TenantContext::class)->id();
+        $tenantId = auth()->user()->tenant_id;
 
         return [
             'name' => ['required', 'string', 'max:255'],

@@ -6,8 +6,10 @@ use DA\Inventory\Models\Unit;
 
 class DeleteUnit
 {
-    public function handle(Unit $unit): void
+    public function handle(int $id): void
     {
+        $unit = Unit::findOrFail($id);
+
         $unit->delete();
     }
 }

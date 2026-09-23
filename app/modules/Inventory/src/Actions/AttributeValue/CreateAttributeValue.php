@@ -8,8 +8,10 @@ use DA\Inventory\Models\AttributeValue;
 
 class CreateAttributeValue
 {
-    public function handle(Attribute $attribute, AttributeValueDTO $dto): AttributeValue
+    public function handle(int $id, AttributeValueDTO $dto): AttributeValue
     {
+        $attribute = Attribute::findOrFail($id);
+
         $value = new AttributeValue;
         $value->attribute_id = $attribute->id;
         $value->value = $dto->value;

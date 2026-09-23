@@ -10,8 +10,8 @@ class CreateUnit
     public function handle(UnitDTO $dto): Unit
     {
         $unit = new Unit;
+
         $unit->name = $dto->name;
-        $unit->short_name = $dto->shortName;
         $unit->code = $dto->code;
         $unit->unit_type = $dto->unitType;
         $unit->precision = $dto->precision;
