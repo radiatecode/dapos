@@ -33,12 +33,12 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
-            "DA\\Admin\\": "app/modules/Admin/src",
-            "DA\\Admin\\Database\\Factories\\": "app/modules/Admin/database/factories/",
-            "DA\\Admin\\Database\\Seeders\\": "app/modules/Admin/database/seeders/",
-            "DA\\Inventory\\": "app/modules/Inventory/src",
-            "DA\\Inventory\\Database\\Factories\\": "app/modules/Inventory/database/factories/",
-            "DA\\Inventory\\Database\\Seeders\\": "app/modules/Inventory/database/seeders/"
+            "DA\\Admin\\": "modules/Admin/src",
+            "DA\\Admin\\Database\\Factories\\": "modules/Admin/database/factories/",
+            "DA\\Admin\\Database\\Seeders\\": "modules/Admin/database/seeders/",
+            "DA\\Inventory\\": "modules/Inventory/src",
+            "DA\\Inventory\\Database\\Factories\\": "modules/Inventory/database/factories/",
+            "DA\\Inventory\\Database\\Seeders\\": "modules/Inventory/database/seeders/"
         },
         "files": [
             "bootstrap/helpers.php"

@@ -11,8 +11,8 @@ describe('authentication and authorization', function () {
         ['GET', '/api/v1/brands'],
         ['POST', '/api/v1/brands'],
         ['GET', '/api/v1/brands/1'],
-        ['PUT', '/api/v1/brands/1'],
-        ['DELETE', '/api/v1/brands/1'],
+        ['POST', '/api/v1/brands/1'],
+        ['POST', '/api/v1/brands/delete'],
     ]);
 
     it('returns 403 when the user lacks the required permission', function () {
@@ -35,6 +35,18 @@ describe('index and show', function () {
             ->assertJsonPath('data.0.id', $newer->id)
             ->assertJsonPath('data.1.id', $older->id)
             ->assertJsonMissing(['name' => 'Other tenant']);
+    });
+
+    it('filters brands by name', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::BrandsView]);
+        Brand::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Acme Foods']);
+        Brand::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Other Brand']);
+
+        $this->getJson('/api/v1/brands?name=Acme')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.name', 'Acme Foods');
     });
 
     it('returns 404 when tenant A requests a tenant B brand', function () {
@@ -98,7 +110,7 @@ describe('update and destroy', function () {
             'slug' => 'old',
         ]);
 
-        $this->putJson('/api/v1/brands/'.$brand->id, [
+        $this->postJson('/api/v1/brands/'.$brand->id, [
             'name' => 'Updated',
             'slug' => 'updated',
         ])
@@ -118,8 +130,20 @@ describe('update and destroy', function () {
         actingAsTenantUser($tenant, [Permission::BrandsDelete]);
         $brand = Brand::factory()->create(['tenant_id' => $tenant->id]);
 
-        $this->deleteJson('/api/v1/brands/'.$brand->id)->assertNoContent();
+        $this->postJson('/api/v1/brands/delete', [
+            'action' => 'delete',
+            'ids' => [$brand->id],
+        ])->assertOk();
 
         $this->assertDatabaseMissing('brands', ['id' => $brand->id]);
+    });
+
+    it('rejects a delete request with an invalid action', function () {
+        actingAsTenantUser(permissions: [Permission::BrandsDelete]);
+
+        $this->postJson('/api/v1/brands/delete', [
+            'action' => 'archive',
+            'ids' => [1],
+        ])->assertStatus(400);
     });
 });
