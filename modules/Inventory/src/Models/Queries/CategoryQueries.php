@@ -4,6 +4,7 @@ namespace DA\Inventory\Models\Queries;
 
 use DA\Inventory\Models\Category;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class CategoryQueries extends BaseQueries
@@ -32,6 +33,18 @@ class CategoryQueries extends BaseQueries
             ->orderBy('sort_order')
             ->orderBy('id', 'desc')
             ->paginate($perPage);
+    }
+
+    public function select2(?string $search = null): Builder
+    {
+        return $this->eloquentBuilder()
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name');
     }
 
     public function hasChildren(int $categoryId): bool

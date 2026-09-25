@@ -39,6 +39,8 @@ describe('authentication and authorization', function () {
         $this->json($method, $uri)->assertUnauthorized();
     })->with([
         ['GET', '/api/v1/products'],
+        ['GET', '/api/v1/products/generate-sku'],
+        ['GET', '/api/v1/products/generate-barcode'],
         ['POST', '/api/v1/products'],
         ['GET', '/api/v1/products/1'],
         ['PUT', '/api/v1/products/1'],
@@ -68,6 +70,25 @@ describe('index and show', function () {
             ->assertJsonPath('data.0.id', $newer->id)
             ->assertJsonPath('data.1.id', $older->id)
             ->assertJsonMissing(['name' => 'Other tenant']);
+    });
+
+    it('filters products by name', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsView]);
+        $cola = Product::factory()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Cola 500ml',
+        ]);
+        Product::factory()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Orange juice',
+        ]);
+
+        $this->getJson('/api/v1/products?name=Cola')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $cola->id)
+            ->assertJsonPath('data.0.name', 'Cola 500ml');
     });
 
     it('returns the product with its default variant', function () {
@@ -126,6 +147,7 @@ describe('store', function () {
             ->assertJsonPath('data.variants.0.barcode_type', 'EAN')
             ->assertJsonPath('data.variants.0.is_default', true)
             ->assertJsonPath('data.variants.0.selling_price', '15.0000')
+            ->assertJsonPath('data.variants.0.compare_at_price', '5.0000')
             ->assertJsonPath('data.variants.0.quantity', '20.0000')
             ->assertJsonCount(1, 'data.variants');
 
@@ -142,6 +164,106 @@ describe('store', function () {
             'is_default' => true,
         ]);
         $this->assertDatabaseCount('product_attributes', 0);
+    });
+
+    it('generates a datetime sku for the current tenant', function () {
+        actingAsTenantUser(permissions: [Permission::ProductsCreate]);
+
+        $sku = $this->getJson('/api/v1/products/generate-sku')
+            ->assertOk()
+            ->json('sku');
+
+        expect($sku)->toBeString()->toStartWith('DASKU-');
+    });
+
+    it('returns 403 when generating a sku without product permissions', function () {
+        actingAsTenantUser(permissions: [Permission::CategoriesView]);
+
+        $this->getJson('/api/v1/products/generate-sku')->assertForbidden();
+    });
+
+    it('generates the next sequential barcode for the current tenant', function () {
+        actingAsTenantUser(permissions: [Permission::ProductsCreate]);
+
+        $this->getJson('/api/v1/products/generate-barcode')
+            ->assertOk()
+            ->assertJsonPath('barcode', 'DAPR0000001');
+    });
+
+    it('skips reserved barcodes when generating the next barcode', function () {
+        actingAsTenantUser(permissions: [Permission::ProductsCreate]);
+
+        $this->getJson('/api/v1/products/generate-barcode?reserved[]=DAPR0000001')
+            ->assertOk()
+            ->assertJsonPath('barcode', 'DAPR0000002');
+    });
+
+    it('returns 403 when generating a barcode without product permissions', function () {
+        actingAsTenantUser(permissions: [Permission::CategoriesView]);
+
+        $this->getJson('/api/v1/products/generate-barcode')->assertForbidden();
+    });
+
+    it('creates variable variants with sequential barcodes when barcode is omitted', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsCreate]);
+        $color = Attribute::factory()->create(['name' => 'Color']);
+        $red = AttributeValue::factory()->create(['attribute_id' => $color->id, 'value' => 'Red']);
+        $blue = AttributeValue::factory()->create(['attribute_id' => $color->id, 'value' => 'Blue']);
+
+        $this->postJson('/api/v1/products', productPayload([
+            ...productCatalogIds(),
+            'name' => 'T Shirt',
+            'product_type' => 'variable',
+            'attributes' => [
+                ['attribute_id' => $color->id],
+            ],
+            'variants' => [
+                [
+                    'sku' => 'SHIRT-RED',
+                    'selling_price' => '25.0000',
+                    'quantity' => '4.0000',
+                    'is_default' => true,
+                    'attribute_values' => [
+                        ['attribute_id' => $color->id, 'attribute_value_id' => $red->id],
+                    ],
+                ],
+                [
+                    'sku' => 'SHIRT-BLUE',
+                    'selling_price' => '25.0000',
+                    'quantity' => '6.0000',
+                    'attribute_values' => [
+                        ['attribute_id' => $color->id, 'attribute_value_id' => $blue->id],
+                    ],
+                ],
+            ],
+        ]))
+            ->assertCreated()
+            ->assertJsonPath('data.variants.0.barcode', 'DAPR0000001')
+            ->assertJsonPath('data.variants.0.barcode_type', 'CODE128')
+            ->assertJsonPath('data.variants.1.barcode', 'DAPR0000002')
+            ->assertJsonPath('data.variants.1.barcode_type', 'CODE128');
+    });
+
+    it('overwrites a submitted compare price with the cost and selling difference', function () {
+        actingAsTenantUser(permissions: [Permission::ProductsCreate]);
+
+        $this->postJson('/api/v1/products', productPayload([
+            ...productCatalogIds(),
+            'variants' => [
+                [
+                    'sku' => 'COLA-500',
+                    'barcode' => '1234567890123',
+                    'barcode_type' => 'EAN',
+                    'cost_price' => '8.0000',
+                    'selling_price' => '20.0000',
+                    'compare_at_price' => '99.0000',
+                    'quantity' => '1.0000',
+                ],
+            ],
+        ]))
+            ->assertCreated()
+            ->assertJsonPath('data.variants.0.compare_at_price', '12.0000');
     });
 
     it('creates a variable product with variants for each attribute combination', function () {
@@ -344,6 +466,27 @@ describe('store', function () {
         ]))
             ->assertUnprocessable()
             ->assertJsonPath('errors.variants.0', 'A simple product must have exactly one variant.');
+    });
+
+    it('stores min stock when inventory tracking is disabled', function () {
+        actingAsTenantUser(permissions: [Permission::ProductsCreate]);
+
+        $this->postJson('/api/v1/products', productPayload([
+            ...productCatalogIds(),
+            'track_inventory' => false,
+            'variants' => [
+                [
+                    'sku' => 'COLA-500',
+                    'barcode' => '1234567890123',
+                    'barcode_type' => 'EAN',
+                    'min_stock_level' => 4,
+                ],
+            ],
+        ]))
+            ->assertCreated()
+            ->assertJsonPath('data.track_inventory', false)
+            ->assertJsonPath('data.variants.0.quantity', null)
+            ->assertJsonPath('data.variants.0.min_stock_level', 4);
     });
 
     it('returns 422 when quantity is sent without inventory tracking', function () {

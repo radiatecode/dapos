@@ -18,4 +18,16 @@ class AttributeQueries extends BaseQueries
             ->orderBy('id')
             ->paginate($perPage);
     }
+
+    public function select2(?string $search = null)
+    {
+        return $this->eloquentBuilder()
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name');
+    }
 }

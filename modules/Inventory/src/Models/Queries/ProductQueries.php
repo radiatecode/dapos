@@ -11,10 +11,11 @@ class ProductQueries extends BaseQueries
     /**
      * @return LengthAwarePaginator<int, Product>
      */
-    public function paginateNewestFirst(int $perPage = 15): LengthAwarePaginator
+    public function paginateNewestFirst(int $perPage = 15, ?string $name = null): LengthAwarePaginator
     {
         return $this->forAuthenticatedTenant()
             ->with(['category', 'brand', 'unit', 'defaultVariant'])
+            ->when(filled($name), fn ($query) => $query->where('name', 'like', '%'.$name.'%'))
             ->orderByDesc('id')
             ->paginate($perPage);
     }

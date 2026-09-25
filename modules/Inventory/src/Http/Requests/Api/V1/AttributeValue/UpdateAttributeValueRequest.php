@@ -20,10 +20,10 @@ class UpdateAttributeValueRequest extends FormRequest
      */
     public function rules(): array
     {
-        $attributeId = $this->route('id');
         $attributeValueId = $this->route('valueId');
 
         return [
+            'attribute_id' => ['required', 'integer'],
             'value' => ['required', 'string', 'max:255'],
             'slug' => [
                 'nullable',
@@ -31,7 +31,7 @@ class UpdateAttributeValueRequest extends FormRequest
                 'max:255',
                 'alpha_dash',
                 Rule::unique('attribute_values', 'slug')
-                    ->where(fn ($query) => $query->where('attribute_id', $attributeId))
+                    ->where(fn ($query) => $query->where('attribute_id', $this->input('attribute_id')))
                     ->ignore($attributeValueId),
             ],
             'code' => [
@@ -40,7 +40,7 @@ class UpdateAttributeValueRequest extends FormRequest
                 'max:50',
                 Rule::when($this->filled('code'), [
                     Rule::unique('attribute_values', 'code')
-                        ->where(fn ($query) => $query->where('attribute_id', $attributeId))
+                        ->where(fn ($query) => $query->where('attribute_id', $this->input('attribute_id')))
                         ->ignore($attributeValueId),
                 ]),
             ],
@@ -88,6 +88,7 @@ class UpdateAttributeValueRequest extends FormRequest
         $data = $this->validated();
 
         return new AttributeValueDTO(
+            attributeId: (int) $data['attribute_id'],
             value: $data['value'],
             slug: isset($data['slug']) && $data['slug'] !== '' ? $data['slug'] : null,
             code: $data['code'] ?? null,

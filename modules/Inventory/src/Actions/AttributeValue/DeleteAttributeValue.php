@@ -6,12 +6,12 @@ use DA\Inventory\Models\AttributeValue;
 
 class DeleteAttributeValue
 {
-    public function handle(int $id, int $valueId): void
+    public function handle(array $ids): void
     {
-        $attributeValue = AttributeValue::query()
-            ->where('attribute_id', $id)
-            ->findOrFail($valueId);
+        foreach ($ids as $id) {
+            $attributeValue = AttributeValue::query()->findOrFail($id);
 
-        $attributeValue->delete();
+            $attributeValue->delete();
+        }
     }
 }

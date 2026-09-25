@@ -24,6 +24,36 @@ class ProductVariantQueries extends BaseQueries
         return $this->takenCodes('barcode', $barcodes, $ignoreProductId);
     }
 
+    public function skuExists(string $sku): bool
+    {
+        return $this->eloquentBuilder()
+            ->withTrashed()
+            ->where('tenant_id', auth()->user()->tenant_id)
+            ->where('sku', $sku)
+            ->exists();
+    }
+
+    public function latestSequentialBarcodeNumber(string $prefix): int
+    {
+        $barcodes = $this->eloquentBuilder()
+            ->withTrashed()
+            ->where('tenant_id', auth()->user()->tenant_id)
+            ->where('barcode', 'like', $prefix.'%')
+            ->pluck('barcode');
+
+        $highest = 0;
+
+        foreach ($barcodes as $barcode) {
+            if (! is_string($barcode) || ! preg_match('/^'.preg_quote($prefix, '/').'(\d+)$/', $barcode, $matches)) {
+                continue;
+            }
+
+            $highest = max($highest, (int) $matches[1]);
+        }
+
+        return $highest;
+    }
+
     /**
      * @param  list<string>  $codes
      * @return Collection<int, string>

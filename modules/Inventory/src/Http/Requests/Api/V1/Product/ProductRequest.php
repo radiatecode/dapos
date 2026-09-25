@@ -10,6 +10,7 @@ use DA\Inventory\Enums\BarcodeType;
 use DA\Inventory\Enums\ProductType;
 use DA\Inventory\Models\AttributeValue;
 use DA\Inventory\Models\ProductVariant;
+use DA\Inventory\Services\VariantCodeGenerator;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
@@ -104,8 +105,8 @@ abstract class ProductRequest extends FormRequest
                     }),
                 ],
             'variants.*.sku' => ['required', 'string', 'max:100', 'distinct:ignore_case'],
-            'variants.*.barcode' => ['required', 'string', 'max:100', 'distinct:ignore_case'],
-            'variants.*.barcode_type' => ['required', Rule::enum(BarcodeType::class)],
+            'variants.*.barcode' => ['nullable', 'string', 'max:100', 'distinct:ignore_case'],
+            'variants.*.barcode_type' => ['nullable', Rule::enum(BarcodeType::class)],
             'variants.*.name' => ['nullable', 'string', 'max:200'],
             'variants.*.cost_price' => ['nullable', 'numeric', 'min:0', 'decimal:0,4'],
             'variants.*.selling_price' => ['nullable', 'numeric', 'min:0', 'decimal:0,4'],
@@ -118,12 +119,7 @@ abstract class ProductRequest extends FormRequest
                 'min:0',
                 'decimal:0,4',
             ],
-            'variants.*.min_stock_level' => [
-                Rule::prohibitedIf(! $tracksInventory),
-                'nullable',
-                'integer',
-                'min:0',
-            ],
+            'variants.*.min_stock_level' => ['nullable', 'integer', 'min:0'],
             'variants.*.image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'variants.*.is_default' => ['sometimes', 'boolean'],
             'variants.*.is_active' => ['sometimes', 'boolean'],
@@ -168,7 +164,7 @@ abstract class ProductRequest extends FormRequest
             'variants.*.barcode_type.required' => 'The barcode type field is required.',
             'variants.*.quantity.prohibited' => 'Quantity is only allowed when inventory tracking is enabled.',
             'variants.*.quantity.required' => 'The quantity field is required when inventory tracking is enabled.',
-            'variants.*.min_stock_level.prohibited' => 'Minimum stock level is only allowed when inventory tracking is enabled.',
+            'variants.*.min_stock_level.integer' => 'The min stock must be a whole number.',
             'variants.*.attribute_values.prohibited' => 'A simple product variant cannot include attribute values.',
             'variants.*.attribute_values.required' => 'Each variant must include attribute values.',
             'variants.*.attribute_values.min' => 'Each variant must include attribute values.',
@@ -227,7 +223,7 @@ abstract class ProductRequest extends FormRequest
         }
 
         if (is_array($this->input('variants'))) {
-            $merge['variants'] = $this->normalizedVariants();
+            $merge['variants'] = $this->withGeneratedCodes($this->normalizedVariants());
         }
 
         $this->merge($merge);
@@ -430,7 +426,47 @@ abstract class ProductRequest extends FormRequest
                 }
             }
 
+            $variant['compare_at_price'] = $this->compareFromCostAndSell(
+                $variant['cost_price'] ?? null,
+                $variant['selling_price'] ?? null,
+            );
+
             $variants[] = $variant;
+        }
+
+        return $variants;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $variants
+     * @return list<array<string, mixed>>
+     */
+    private function withGeneratedCodes(array $variants): array
+    {
+        $generator = $this->container->make(VariantCodeGenerator::class);
+        $reservedBarcodes = [];
+
+        foreach ($variants as $variant) {
+            if (is_array($variant) && filled($variant['barcode'] ?? null)) {
+                $reservedBarcodes[] = (string) $variant['barcode'];
+            }
+        }
+
+        foreach ($variants as $index => $variant) {
+            if (! is_array($variant)) {
+                continue;
+            }
+
+            if (! filled($variant['barcode'] ?? null)) {
+                $variant['barcode'] = $generator->nextBarcode($reservedBarcodes);
+                $reservedBarcodes[] = $variant['barcode'];
+            }
+
+            if (! filled($variant['barcode_type'] ?? null)) {
+                $variant['barcode_type'] = BarcodeType::Code128->value;
+            }
+
+            $variants[$index] = $variant;
         }
 
         return $variants;
@@ -466,7 +502,7 @@ abstract class ProductRequest extends FormRequest
                 name: $variant['name'] ?? null,
                 costPrice: $this->decimal($variant['cost_price'] ?? null),
                 sellingPrice: $this->decimal($variant['selling_price'] ?? null),
-                compareAtPrice: $this->decimal($variant['compare_at_price'] ?? null),
+                compareAtPrice: $this->compareFromCostAndSell($variant['cost_price'] ?? null, $variant['selling_price'] ?? null),
                 weight: $this->decimal($variant['weight'] ?? null),
                 quantity: array_key_exists('quantity', $variant) ? $this->decimal($variant['quantity']) : null,
                 minStockLevel: isset($variant['min_stock_level']) ? (int) $variant['min_stock_level'] : null,
@@ -497,5 +533,14 @@ abstract class ProductRequest extends FormRequest
         }
 
         return number_format((float) $value, 4, '.', '');
+    }
+
+    private function compareFromCostAndSell(mixed $cost, mixed $sell): ?string
+    {
+        if ($cost === null || $cost === '' || $sell === null || $sell === '') {
+            return null;
+        }
+
+        return number_format(abs((float) $cost - (float) $sell), 4, '.', '');
     }
 }

@@ -4,6 +4,7 @@ namespace DA\Inventory\Models\Queries;
 
 use DA\Inventory\Models\AttributeValue;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
 class AttributeValueQueries extends BaseQueries
@@ -11,13 +12,29 @@ class AttributeValueQueries extends BaseQueries
     /**
      * @return LengthAwarePaginator<int, AttributeValue>
      */
-    public function paginateForAttribute(int $attributeId, int $perPage = 15): LengthAwarePaginator
+    public function paginateForAttribute(int $perPage = 15, ?int $attributeId = null, ?string $value = null): LengthAwarePaginator
     {
         return $this->eloquentBuilder()
-            ->where('attribute_id', $attributeId)
+            ->with('attribute')
+            ->when($attributeId, fn ($query) => $query->where('attribute_id', $attributeId))
+            ->when(filled($value), fn ($query) => $query->where('value', 'like', '%'.$value.'%'))
             ->orderBy('sort_order')
             ->orderBy('id')
             ->paginate($perPage);
+    }
+
+    public function select2(int $attributeId, ?string $search = null): Builder
+    {
+        return $this->eloquentBuilder()
+            ->where('attribute_id', $attributeId)
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('value', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('sort_order')
+            ->orderBy('value');
     }
 
     public function slugExistsForAttribute(int $attributeId, string $slug, ?int $ignoreId = null): bool

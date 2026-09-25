@@ -22,6 +22,10 @@ class AttributeController extends Controller
         $perPage = $request->integer('per_page', $request->integer('limit', 15));
         $name = $request->string('name')->toString();
 
+        if ($name === '') {
+            $name = $request->string('search')->toString();
+        }
+
         return AttributeResource::collection(
             Attribute::queries()->paginateBySortOrder(
                 $perPage,
@@ -49,9 +53,23 @@ class AttributeController extends Controller
         return AttributeResource::make($update->handle($id, $request->toDTO()));
     }
 
-    public function destroy(int $id, DeleteAttribute $delete)
+    public function destroy(Request $request, DeleteAttribute $delete)
     {
-        $delete->handle($id);
+        if ($request->input('action') !== 'delete') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid action',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (! $request->has('ids')) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'IDs are required',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $delete->handle($request->input('ids'));
 
         return response()->json([
             'status' => 'success',

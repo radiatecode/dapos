@@ -6,10 +6,12 @@ use DA\Inventory\Models\Attribute;
 
 class DeleteAttribute
 {
-    public function handle(int $id): void
+    public function handle(array $ids): void
     {
-        $attribute = Attribute::findOrFail($id);
+        foreach ($ids as $id) {
+            $attribute = Attribute::findOrFail($id);
 
-        $attribute->delete();
+            $attribute->delete();
+        }
     }
 }

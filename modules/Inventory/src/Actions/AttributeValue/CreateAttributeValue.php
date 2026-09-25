@@ -3,20 +3,18 @@
 namespace DA\Inventory\Actions\AttributeValue;
 
 use DA\Inventory\DTO\AttributeValue\AttributeValueDTO;
-use DA\Inventory\Models\Attribute;
 use DA\Inventory\Models\AttributeValue;
 
 class CreateAttributeValue
 {
-    public function handle(int $id, AttributeValueDTO $dto): AttributeValue
+    public function handle(AttributeValueDTO $dto): AttributeValue
     {
-        $attribute = Attribute::findOrFail($id);
-
         $value = new AttributeValue;
-        $value->attribute_id = $attribute->id;
+
+        $value->attribute_id = $dto->attributeId;
         $value->value = $dto->value;
         $value->slug = $dto->slug ?: AttributeValue::queries()->uniqueSlugFromForAttribute(
-            $attribute->id,
+            $dto->attributeId,
             $dto->value,
             'value',
         );

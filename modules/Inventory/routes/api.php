@@ -5,11 +5,19 @@ use DA\Inventory\Http\Controllers\Api\V1\AttributeController;
 use DA\Inventory\Http\Controllers\Api\V1\AttributeValueController;
 use DA\Inventory\Http\Controllers\Api\V1\BrandController;
 use DA\Inventory\Http\Controllers\Api\V1\CategoryController;
+use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetAttributesDropdown;
+use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetAttributeValuesDropdown;
+use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetBrandsDropdown;
+use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetCategoriesDropdown;
+use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetUnitsDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\ProductController;
 use DA\Inventory\Http\Controllers\Api\V1\UnitController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(function (): void {
+    Route::get('categories-dropdown', GetCategoriesDropdown::class)
+        ->middleware('permission:'.Permission::CategoriesView->value)
+        ->name('categories.dropdown');
     Route::get('categories', [CategoryController::class, 'index'])
         ->name('categories.index');
     Route::post('categories', [CategoryController::class, 'store'])
@@ -22,6 +30,9 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
         ->middleware('permission:'.Permission::CategoriesDelete->value)
         ->name('categories.destroy');
 
+    Route::get('brands-dropdown', GetBrandsDropdown::class)
+        ->middleware('permission:brands.view')
+        ->name('brands.dropdown');
     Route::get('brands', [BrandController::class, 'index'])
         ->middleware('permission:brands.view')
         ->name('brands.index');
@@ -38,6 +49,9 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
         ->middleware('permission:brands.update')
         ->name('brands.update');
 
+    Route::get('units-dropdown', GetUnitsDropdown::class)
+        ->middleware('permission:units.view')
+        ->name('units.dropdown');
     Route::get('units', [UnitController::class, 'index'])
         ->middleware('permission:units.view')
         ->name('units.index');
@@ -54,6 +68,12 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
         ->middleware('permission:units.delete')
         ->name('units.destroy');
 
+    Route::get('attributes-dropdown', GetAttributesDropdown::class)
+        ->middleware('permission:attributes.view')
+        ->name('attributes.dropdown');
+    Route::get('attribute-values-dropdown', GetAttributeValuesDropdown::class)
+        ->middleware('permission:attributes.view')
+        ->name('attributes.values.dropdown');
     Route::get('attributes', [AttributeController::class, 'index'])
         ->middleware('permission:attributes.view')
         ->name('attributes.index');
@@ -66,26 +86,30 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::put('attributes/{id}', [AttributeController::class, 'update'])
         ->middleware('permission:attributes.update')
         ->name('attributes.update');
-    Route::delete('attributes/{id}', [AttributeController::class, 'destroy'])
+    Route::post('attributes/delete', [AttributeController::class, 'destroy'])
         ->middleware('permission:attributes.delete')
         ->name('attributes.destroy');
 
-    Route::get('attributes/{id}/values', [AttributeValueController::class, 'index'])
+    Route::get('attributes-values', [AttributeValueController::class, 'index'])
         ->middleware('permission:attributes.view')
         ->name('attributes.values.index');
-    Route::post('attributes/{id}/values', [AttributeValueController::class, 'store'])
+    Route::post('attributes-values', [AttributeValueController::class, 'store'])
         ->middleware('permission:attributes.create')
         ->name('attributes.values.store');
-    Route::get('attributes/{id}/values/{valueId}', [AttributeValueController::class, 'show'])
-        ->middleware('permission:attributes.view')
-        ->name('attributes.values.show');
-    Route::put('attributes/{id}/values/{valueId}', [AttributeValueController::class, 'update'])
-        ->middleware('permission:attributes.update')
-        ->name('attributes.values.update');
-    Route::delete('attributes/{id}/values/{valueId}', [AttributeValueController::class, 'destroy'])
+    Route::post('attributes-values/delete', [AttributeValueController::class, 'destroy'])
         ->middleware('permission:attributes.delete')
         ->name('attributes.values.destroy');
+    Route::get('attributes-values/{valueId}', [AttributeValueController::class, 'show'])
+        ->middleware('permission:attributes.view')
+        ->name('attributes.values.show');
+    Route::put('attributes-values/{valueId}', [AttributeValueController::class, 'update'])
+        ->middleware('permission:attributes.update')
+        ->name('attributes.values.update');
 
+    Route::get('products/generate-sku', [ProductController::class, 'generateSku'])
+        ->name('products.generate-sku');
+    Route::get('products/generate-barcode', [ProductController::class, 'generateBarcode'])
+        ->name('products.generate-barcode');
     Route::get('products', [ProductController::class, 'index'])
         ->middleware('permission:products.view')
         ->name('products.index');

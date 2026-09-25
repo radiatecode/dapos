@@ -150,12 +150,12 @@ class ProductWriter
         $variant->is_default = $product->product_type === ProductType::Simple
             || ($hasExplicitDefault ? $dto->isDefault : $index === 0);
 
+        $variant->min_stock_level = $dto->minStockLevel;
+
         if ($product->track_inventory) {
             $variant->quantity = $dto->quantity;
-            $variant->min_stock_level = $dto->minStockLevel;
         } else {
             $variant->quantity = null;
-            $variant->min_stock_level = null;
         }
 
         if ($dto->image !== null) {

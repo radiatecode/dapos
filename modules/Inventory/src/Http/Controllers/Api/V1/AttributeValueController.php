@@ -17,41 +17,62 @@ use Illuminate\Http\Response;
 
 class AttributeValueController extends Controller
 {
-    public function index(Request $request, int $id): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
+        $perPage = $request->integer('per_page', $request->integer('limit', 15));
+        $attributeId = $request->integer('attribute_id');
+        $value = $request->string('value')->toString();
+
         return AttributeValueResource::collection(
-            AttributeValue::queries()->paginateForAttribute($id, $request->integer('per_page', 15)),
+            AttributeValue::queries()->paginateForAttribute(
+                $perPage,
+                $attributeId > 0 ? $attributeId : null,
+                $value !== '' ? $value : null,
+            ),
         );
     }
 
-    public function store(StoreAttributeValueRequest $request, int $id, CreateAttributeValue $create): JsonResponse
+    public function store(StoreAttributeValueRequest $request, CreateAttributeValue $create): JsonResponse
     {
-        $value = $create->handle($id, $request->toDTO());
+        $value = $create->handle($request->toDTO());
 
         return AttributeValueResource::make($value)
             ->response()
             ->setStatusCode(201);
     }
 
-    public function show(int $id, int $valueId): AttributeValueResource
+    public function show(int $valueId): AttributeValueResource
     {
         return AttributeValueResource::make(
-            AttributeValue::query()->where('attribute_id', $id)->findOrFail($valueId),
+            AttributeValue::query()->findOrFail($valueId),
         );
     }
 
     public function update(
         UpdateAttributeValueRequest $request,
-        int $id,
         int $valueId,
         UpdateAttributeValue $update,
     ): AttributeValueResource {
-        return AttributeValueResource::make($update->handle($id, $valueId, $request->toDTO()));
+        return AttributeValueResource::make($update->handle($valueId, $request->toDTO()));
     }
 
-    public function destroy(int $id, int $valueId, DeleteAttributeValue $delete)
+    public function destroy(Request $request, DeleteAttributeValue $delete)
     {
-        $delete->handle($id, $valueId);
+        if ($request->input('action') !== 'delete') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid action',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (! $request->has('ids')) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'IDs are required',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $delete->handle($request->input('ids'));
 
         return response()->json([
             'status' => 'success',
