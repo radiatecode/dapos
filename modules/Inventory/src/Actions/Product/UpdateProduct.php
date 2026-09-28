@@ -8,7 +8,11 @@ use Illuminate\Support\Facades\DB;
 
 class UpdateProduct
 {
-    public function __construct(private ProductWriter $writer) {}
+    public function __construct(
+        private ProductWriter $writer,
+        private GuardProductStock $guard,
+        private PostOpeningStock $openingStock,
+    ) {}
 
     public function handle(int $id, ProductDTO $dto): Product
     {
@@ -17,11 +21,15 @@ class UpdateProduct
             ->findOrFail($id);
 
         return DB::transaction(function () use ($product, $dto): Product {
+            $this->guard->handle($product, $dto);
+
             $this->writer->fill($product, $dto);
 
             $product->save();
 
             $this->writer->sync($product, $dto);
+
+            $this->openingStock->handle($product, $dto->storeId);
 
             return Product::queries()->findForDetail($product->id);
         });

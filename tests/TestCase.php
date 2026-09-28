@@ -24,11 +24,18 @@ abstract class TestCase extends BaseTestCase
             return;
         }
 
+        $connection = $this->app->make('db')->connection();
+
+        // CREATE TABLE implicitly commits on MySQL and drops the wrapping test transaction.
+        $connection->rollBack();
+
         Schema::create('tenant_owned_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id');
             $table->string('title');
             $table->timestamps();
         });
+
+        $connection->beginTransaction();
     }
 }

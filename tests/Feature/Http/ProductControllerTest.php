@@ -10,12 +10,13 @@ use DA\Inventory\Models\Brand;
 use DA\Inventory\Models\Category;
 use DA\Inventory\Models\Product;
 use DA\Inventory\Models\ProductVariant;
+use DA\Inventory\Models\Store;
 use DA\Inventory\Models\Unit;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * @return array{category_id: int, brand_id: int, unit_id: int}
+ * @return array{category_id: int, brand_id: int, unit_id: int, store_id: int}
  */
 function productCatalogIds(): array
 {
@@ -31,6 +32,7 @@ function productCatalogIds(): array
         'category_id' => Category::factory()->create()->id,
         'brand_id' => Brand::factory()->create()->id,
         'unit_id' => $unit->id,
+        'store_id' => Store::factory()->create()->id,
     ];
 }
 
@@ -222,6 +224,7 @@ describe('store', function () {
                 [
                     'sku' => 'SHIRT-RED',
                     'selling_price' => '25.0000',
+                    'cost_price' => '10.0000',
                     'quantity' => '4.0000',
                     'is_default' => true,
                     'attribute_values' => [
@@ -231,6 +234,7 @@ describe('store', function () {
                 [
                     'sku' => 'SHIRT-BLUE',
                     'selling_price' => '25.0000',
+                    'cost_price' => '10.0000',
                     'quantity' => '6.0000',
                     'attribute_values' => [
                         ['attribute_id' => $color->id, 'attribute_value_id' => $blue->id],
@@ -285,6 +289,7 @@ describe('store', function () {
                     'sku' => 'SHIRT-RED',
                     'barcode' => '1000000000001',
                     'barcode_type' => 'CODE128',
+                    'cost_price' => '10.0000',
                     'selling_price' => '25.0000',
                     'quantity' => '4.0000',
                     'is_default' => true,
@@ -296,6 +301,7 @@ describe('store', function () {
                     'sku' => 'SHIRT-BLUE',
                     'barcode' => '1000000000002',
                     'barcode_type' => 'CODE128',
+                    'cost_price' => '10.0000',
                     'selling_price' => '25.0000',
                     'quantity' => '6.0000',
                     'attribute_values' => [
@@ -357,6 +363,8 @@ describe('store', function () {
                     'sku' => 'COLA-500',
                     'barcode' => '1234567890123',
                     'barcode_type' => 'EAN',
+                    'cost_price' => '10.0000',
+                    'selling_price' => '15.0000',
                     'quantity' => '20.0000',
                     'image' => $variantImage,
                 ],
@@ -644,8 +652,9 @@ describe('update', function () {
                     'sku' => 'COLA-1000',
                     'barcode' => '1234567890999',
                     'barcode_type' => 'EAN',
+                    'cost_price' => '10.0000',
                     'selling_price' => '20.0000',
-                    'quantity' => '8.0000',
+                    'quantity' => '20.0000',
                 ],
             ],
         ]))
@@ -685,7 +694,7 @@ describe('update', function () {
                     'sku' => 'SHIRT-RED',
                     'barcode' => '1000000000001',
                     'barcode_type' => 'CODE128',
-                    'quantity' => '4.0000',
+                    'quantity' => '0.0000',
                     'selling_price' => '25.0000',
                     'is_default' => true,
                     'attribute_values' => [
@@ -696,7 +705,7 @@ describe('update', function () {
                     'sku' => 'SHIRT-BLUE',
                     'barcode' => '1000000000002',
                     'barcode_type' => 'CODE128',
-                    'quantity' => '6.0000',
+                    'quantity' => '0.0000',
                     'attribute_values' => [
                         ['attribute_id' => $color->id, 'attribute_value_id' => $blue->id],
                     ],
@@ -721,6 +730,7 @@ describe('update', function () {
                     'sku' => 'SHIRT-RED',
                     'barcode' => '1000000000001',
                     'barcode_type' => 'CODE128',
+                    'cost_price' => '10.0000',
                     'quantity' => '9.0000',
                     'selling_price' => '27.0000',
                     'is_default' => true,
@@ -732,6 +742,7 @@ describe('update', function () {
                     'sku' => 'SHIRT-GREEN',
                     'barcode' => '1000000000003',
                     'barcode_type' => 'CODE128',
+                    'cost_price' => '10.0000',
                     'quantity' => '3.0000',
                     'attribute_values' => [
                         ['attribute_id' => $color->id, 'attribute_value_id' => $green->id],

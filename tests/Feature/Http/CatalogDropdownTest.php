@@ -7,6 +7,8 @@ use DA\Inventory\Models\Attribute;
 use DA\Inventory\Models\AttributeValue;
 use DA\Inventory\Models\Brand;
 use DA\Inventory\Models\Category;
+use DA\Inventory\Models\Store;
+use DA\Inventory\Models\Supplier;
 use DA\Inventory\Models\Unit;
 
 describe('authentication and authorization', function () {
@@ -17,6 +19,8 @@ describe('authentication and authorization', function () {
         '/api/v1/brands-dropdown',
         '/api/v1/units-dropdown',
         '/api/v1/attribute-values-dropdown',
+        '/api/v1/suppliers-dropdown',
+        '/api/v1/stores-dropdown',
     ]);
 
     it('returns 403 when the user lacks the required permission', function (string $uri, Permission $granted) {
@@ -28,6 +32,8 @@ describe('authentication and authorization', function () {
         ['/api/v1/brands-dropdown', Permission::UnitsView],
         ['/api/v1/units-dropdown', Permission::BrandsView],
         ['/api/v1/attribute-values-dropdown', Permission::BrandsView],
+        ['/api/v1/suppliers-dropdown', Permission::StoresView],
+        ['/api/v1/stores-dropdown', Permission::SuppliersView],
     ]);
 });
 
@@ -151,5 +157,48 @@ describe('catalog dropdowns', function () {
             ->assertJsonPath('results.0.attribute_id', $color->id)
             ->assertJsonMissing(['label' => 'Large'])
             ->assertJsonMissing(['label' => 'Foreign red']);
+    });
+
+    it('returns tenant suppliers in select2 format and hides other tenants', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::SuppliersView]);
+        $match = Supplier::factory()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Acme Supplies',
+            'email' => 'orders@acme.test',
+            'phone' => '01700000000',
+        ]);
+        Supplier::withoutEvents(fn () => Supplier::factory()->create([
+            'name' => 'Foreign supplier',
+        ]));
+
+        $this->getJson('/api/v1/suppliers-dropdown?search=Acme')
+            ->assertOk()
+            ->assertJsonPath('results.0.id', $match->id)
+            ->assertJsonPath('results.0.label', 'Acme Supplies')
+            ->assertJsonPath('results.0.email', 'orders@acme.test')
+            ->assertJsonPath('results.0.phone', '01700000000')
+            ->assertJsonPath('pagination.more', false)
+            ->assertJsonMissing(['label' => 'Foreign supplier']);
+    });
+
+    it('returns tenant stores in select2 format and hides other tenants', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::StoresView]);
+        $match = Store::factory()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Main Store',
+        ]);
+        Store::withoutEvents(fn () => Store::factory()->create([
+            'name' => 'Foreign store',
+        ]));
+
+        $this->getJson('/api/v1/stores-dropdown?search=Main')
+            ->assertOk()
+            ->assertJsonPath('results.0.id', $match->id)
+            ->assertJsonPath('results.0.label', 'Main Store')
+            ->assertJsonPath('results.0.name', 'Main Store')
+            ->assertJsonPath('pagination.more', false)
+            ->assertJsonMissing(['label' => 'Foreign store']);
     });
 });

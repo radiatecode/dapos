@@ -53,6 +53,12 @@ abstract class ProductRequest extends FormRequest
                 'integer',
                 Rule::exists('units', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)),
             ],
+            'store_id' => [
+                Rule::requiredIf($tracksInventory),
+                'nullable',
+                'integer',
+                Rule::exists('stores', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->where('is_active', true)),
+            ],
             'name' => ['required', 'string', 'max:255'],
             'slug' => [
                 'nullable',
@@ -148,6 +154,8 @@ abstract class ProductRequest extends FormRequest
             'brand_id.exists' => 'The selected brand is invalid.',
             'unit_id.required' => 'The unit field is required.',
             'unit_id.exists' => 'The selected unit is invalid.',
+            'store_id.required' => 'The store field is required when inventory tracking is enabled.',
+            'store_id.exists' => 'The selected store is invalid.',
             'product_type.required' => 'The product type field is required.',
             'attributes.required' => 'A variable product must include attributes.',
             'attributes.prohibited' => 'A simple product cannot include attributes.',
@@ -179,17 +187,15 @@ abstract class ProductRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
-                if ($validator->errors()->isNotEmpty()) {
-                    return;
+                if ($validator->errors()->isEmpty()) {
+                    $this->validateVariantCodes($validator);
+
+                    if ($this->input('product_type') === ProductType::Variable->value) {
+                        $this->validateVariableVariants($validator);
+                    }
                 }
 
-                $this->validateVariantCodes($validator);
-
-                if ($this->input('product_type') !== ProductType::Variable->value) {
-                    return;
-                }
-
-                $this->validateVariableVariants($validator);
+                $this->validateOpeningCost($validator);
             },
         ];
     }
@@ -252,7 +258,40 @@ abstract class ProductRequest extends FormRequest
             guaranteeInDays: isset($data['guarantee_in_days']) ? (int) $data['guarantee_in_days'] : null,
             attributes: $this->attributeDTOs($data['attributes'] ?? []),
             variants: $this->variantDTOs($data['variants']),
+            storeId: isset($data['store_id']) ? (int) $data['store_id'] : null,
         );
+    }
+
+    private function validateOpeningCost(Validator $validator): void
+    {
+        if (! $this->boolean('track_inventory') || ! is_array($this->input('variants'))) {
+            return;
+        }
+
+        foreach ($this->input('variants') as $index => $variant) {
+            if (! is_array($variant)) {
+                continue;
+            }
+
+            $quantity = $variant['quantity'] ?? null;
+
+            if ($quantity === null || $quantity === '' || ! is_numeric($quantity)) {
+                continue;
+            }
+
+            if (bccomp((string) $quantity, '0', 4) !== 1) {
+                continue;
+            }
+
+            $cost = $variant['cost_price'] ?? null;
+
+            if ($cost === null || $cost === '') {
+                $validator->errors()->add(
+                    "variants.$index.cost_price",
+                    'The cost price is required when the opening quantity is greater than zero.',
+                );
+            }
+        }
     }
 
     private function validateVariantCodes(Validator $validator): void

@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\DB;
 
 class CreateProduct
 {
-    public function __construct(private ProductWriter $writer) {}
+    public function __construct(
+        private ProductWriter $writer,
+        private PostOpeningStock $openingStock,
+    ) {}
 
     public function handle(ProductDTO $dto): Product
     {
@@ -20,6 +23,8 @@ class CreateProduct
             $product->save();
 
             $this->writer->sync($product, $dto);
+
+            $this->openingStock->handle($product, $dto->storeId);
 
             return Product::queries()->findForDetail($product->id);
         });

@@ -30,5 +30,6 @@ class ProductDTO extends Data
         public ?int $guaranteeInDays,
         public array $attributes,
         public array $variants,
+        public ?int $storeId,
     ) {}
 }

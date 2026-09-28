@@ -103,6 +103,63 @@ function brandPayload(array $overrides = []): array
  * @param  array<string, mixed>  $overrides
  * @return array<string, mixed>
  */
+function supplierPayload(array $overrides = []): array
+{
+    return array_replace([
+        'name' => 'Acme Supplies',
+        'email' => 'orders@acme.test',
+        'phone' => '01700000000',
+        'address' => '12 Market Road',
+        'city' => 'Dhaka',
+        'state' => 'Dhaka',
+        'country' => 'Bangladesh',
+        'postal_code' => '1205',
+        'is_active' => true,
+    ], $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function storePayload(array $overrides = []): array
+{
+    return array_replace([
+        'name' => 'Main Store',
+        'address' => '12 Market Road, Dhaka',
+        'is_active' => true,
+    ], $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function purchasePayload(array $overrides = []): array
+{
+    return array_replace([
+        'supplier_id' => 1,
+        'store_id' => 1,
+        'order_date' => '2026-09-26',
+        'currency' => 'bdt',
+        'discount_amount' => '2',
+        'tax_amount' => '1',
+        'shipping_amount' => '3',
+        'notes' => 'Weekly restock',
+        'items' => [[
+            'product_variant_id' => 1,
+            'quantity' => '2',
+            'unit_cost' => '10',
+            'discount_amount' => '1',
+            'tax_amount' => '0.5',
+        ]],
+    ], $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
 function unitPayload(array $overrides = []): array
 {
     return array_replace_recursive([

@@ -46,6 +46,11 @@ enum Permission: string
     case LocationsUpdate = 'locations.update';
     case LocationsDelete = 'locations.delete';
 
+    case StoresView = 'stores.view';
+    case StoresCreate = 'stores.create';
+    case StoresUpdate = 'stores.update';
+    case StoresDelete = 'stores.delete';
+
     case PurchasingView = 'purchasing.view';
     case PurchasingCreate = 'purchasing.create';
     case PurchasingUpdate = 'purchasing.update';
@@ -120,6 +125,10 @@ enum Permission: string
             self::LocationsCreate => 'Create locations',
             self::LocationsUpdate => 'Update locations',
             self::LocationsDelete => 'Delete locations',
+            self::StoresView => 'View stores',
+            self::StoresCreate => 'Create stores',
+            self::StoresUpdate => 'Update stores',
+            self::StoresDelete => 'Delete stores',
             self::PurchasingView => 'View purchasing',
             self::PurchasingCreate => 'Create purchases',
             self::PurchasingUpdate => 'Update purchases',
@@ -163,7 +172,8 @@ enum Permission: string
             self::AttributesView, self::AttributesCreate, self::AttributesUpdate, self::AttributesDelete => 'Catalog',
             self::CustomersView, self::CustomersCreate, self::CustomersUpdate, self::CustomersDelete,
             self::SuppliersView, self::SuppliersCreate, self::SuppliersUpdate, self::SuppliersDelete => 'People',
-            self::LocationsView, self::LocationsCreate, self::LocationsUpdate, self::LocationsDelete => 'Locations',
+            self::LocationsView, self::LocationsCreate, self::LocationsUpdate, self::LocationsDelete,
+            self::StoresView, self::StoresCreate, self::StoresUpdate, self::StoresDelete => 'Locations',
             self::PurchasingView, self::PurchasingCreate, self::PurchasingUpdate, self::PurchasingDelete,
             self::InventoryView, self::InventoryCreate, self::InventoryUpdate, self::InventoryDelete => 'Inventory',
             self::SalesView, self::SalesCreate, self::SalesUpdate, self::SalesDelete,
