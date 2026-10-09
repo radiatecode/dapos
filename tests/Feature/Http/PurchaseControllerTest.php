@@ -2,6 +2,7 @@
 
 use App\Enums\Permission;
 use DA\Admin\Models\Tenant;
+use DA\Inventory\Enums\PurchasePaymentStatus;
 use DA\Inventory\Models\Product;
 use DA\Inventory\Models\ProductVariant;
 use DA\Inventory\Models\Purchase;
@@ -14,6 +15,7 @@ describe('authentication and authorization', function () {
         $this->json($method, $uri, purchasePayload())->assertUnauthorized();
     })->with([
         ['GET', '/api/v1/purchases'],
+        ['GET', '/api/v1/purchases/summary'],
         ['POST', '/api/v1/purchases'],
         ['GET', '/api/v1/purchases/1'],
         ['PUT', '/api/v1/purchases/1'],
@@ -25,6 +27,7 @@ describe('authentication and authorization', function () {
         actingAsTenantUser(permissions: [Permission::CategoriesView]);
 
         $this->getJson('/api/v1/purchases')->assertForbidden();
+        $this->getJson('/api/v1/purchases/summary')->assertForbidden();
     });
 
     it('returns 403 when marking a purchase received without update permission', function () {
@@ -80,11 +83,71 @@ describe('index and show', function () {
         Purchase::factory()->create(['tenant_id' => $tenant->id, 'po_number' => 'PO-ONE']);
         Purchase::factory()->received()->create(['tenant_id' => $tenant->id, 'po_number' => 'PO-TWO']);
 
-        $this->getJson('/api/v1/purchases?limit=1&status=&payment_status=')
+        $this->getJson('/api/v1/purchases?limit=1&status=&payment_status=&search=&supplier_id=&date_from=&date_to=')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('meta.per_page', 1)
             ->assertJsonPath('meta.total', 2);
+    });
+
+    it('summarizes purchases for the current tenant', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::PurchasingView]);
+        Purchase::factory()->create([
+            'tenant_id' => $tenant->id,
+            'grand_total' => '10.0000',
+            'currency' => 'BDT',
+            'payment_status' => PurchasePaymentStatus::Unpaid,
+        ]);
+        Purchase::factory()->received()->create([
+            'tenant_id' => $tenant->id,
+            'grand_total' => '25.5000',
+            'currency' => 'BDT',
+            'payment_status' => PurchasePaymentStatus::Paid,
+        ]);
+        Purchase::withoutEvents(fn () => Purchase::factory()->create(['grand_total' => '99.0000']));
+
+        $this->getJson('/api/v1/purchases/summary')
+            ->assertOk()
+            ->assertJsonPath('data.total_purchases', 2)
+            ->assertJsonPath('data.total_amount', '35.5000')
+            ->assertJsonPath('data.currency', 'BDT')
+            ->assertJsonPath('data.received_count', 1)
+            ->assertJsonPath('data.pending_count', 1)
+            ->assertJsonPath('data.ordered_count', 0)
+            ->assertJsonPath('data.paid_count', 1)
+            ->assertJsonPath('data.unpaid_count', 1)
+            ->assertJsonPath('data.partial_count', 0);
+    });
+
+    it('filters purchases by supplier, date, and purchase number', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::PurchasingView]);
+        $supplier = Supplier::factory()->create(['tenant_id' => $tenant->id, 'name' => 'North Mill']);
+        Purchase::factory()->create([
+            'tenant_id' => $tenant->id,
+            'supplier_id' => $supplier->id,
+            'po_number' => 'PO-MATCH',
+            'order_date' => '2026-09-01',
+        ]);
+        Purchase::factory()->create([
+            'tenant_id' => $tenant->id,
+            'po_number' => 'PO-OTHER',
+            'order_date' => '2026-08-01',
+        ]);
+
+        $this->getJson('/api/v1/purchases?search=PO-MATCH&supplier_id='.$supplier->id.'&date_from=2026-09-01&date_to=2026-09-30')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.po_number', 'PO-MATCH');
+    });
+
+    it('returns 422 when the end date is before the start date', function () {
+        actingAsTenantUser(permissions: [Permission::PurchasingView]);
+
+        $this->getJson('/api/v1/purchases?date_from=2026-09-30&date_to=2026-09-01')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('date_to');
     });
 
     it('returns 422 when the status filter is invalid', function () {
@@ -136,10 +199,13 @@ describe('store', function () {
             ->assertJsonPath('data.payment_status', 'Unpaid')
             ->assertJsonPath('data.notes', 'Weekly restock')
             ->assertJsonPath('data.created_by', $user->id)
+            ->assertJsonPath('data.creator.name', $user->name)
+            ->assertJsonPath('data.creator.email', $user->email)
             ->assertJsonPath('data.updated_by', $user->id)
             ->assertJsonPath('data.supplier.name', $catalog['supplier']->name)
             ->assertJsonPath('data.store.name', $catalog['store']->name)
             ->assertJsonPath('data.items.0.sku', $catalog['variant']->sku)
+            ->assertJsonPath('data.items.0.variant.product.name', $catalog['variant']->product->name)
             ->assertJsonPath('data.items.0.total', '19.5000');
 
         $this->assertDatabaseHas('purchases', [
@@ -149,6 +215,33 @@ describe('store', function () {
             'grand_total' => '21.5000',
             'status' => 'Pending',
         ]);
+    });
+
+    it('stores inclusive tax on the line without adding it to the line total', function () {
+        actingAsTenantUser(permissions: [Permission::PurchasingCreate]);
+        $catalog = purchaseCatalog();
+
+        $this->postJson('/api/v1/purchases', purchasePayload([
+            'supplier_id' => $catalog['supplier']->id,
+            'store_id' => $catalog['store']->id,
+            'discount_amount' => '0',
+            'tax_amount' => '0',
+            'shipping_amount' => '0',
+            'items' => [[
+                'product_variant_id' => $catalog['variant']->id,
+                'quantity' => '1',
+                'unit_cost' => '105',
+                'discount_amount' => '0',
+                'tax_amount' => '5',
+                'tax_included' => true,
+            ]],
+        ]))
+            ->assertCreated()
+            ->assertJsonPath('data.subtotal', '105.0000')
+            ->assertJsonPath('data.tax_amount', '0.0000')
+            ->assertJsonPath('data.grand_total', '105.0000')
+            ->assertJsonPath('data.items.0.tax_amount', '5.0000')
+            ->assertJsonPath('data.items.0.total', '105.0000');
     });
 
     it('stores an explicit po number, ordered status, and payment status', function () {

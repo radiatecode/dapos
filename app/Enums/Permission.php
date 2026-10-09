@@ -89,6 +89,11 @@ enum Permission: string
     case RolesUpdate = 'roles.update';
     case RolesDelete = 'roles.delete';
 
+    case TaxesView = 'taxes.view';
+    case TaxesCreate = 'taxes.create';
+    case TaxesUpdate = 'taxes.update';
+    case TaxesDelete = 'taxes.delete';
+
     public function label(): string
     {
         return match ($this) {
@@ -158,6 +163,10 @@ enum Permission: string
             self::RolesCreate => 'Create roles',
             self::RolesUpdate => 'Update roles',
             self::RolesDelete => 'Delete roles',
+            self::TaxesView => 'View taxes',
+            self::TaxesCreate => 'Create taxes',
+            self::TaxesUpdate => 'Update taxes',
+            self::TaxesDelete => 'Delete taxes',
         };
     }
 
@@ -183,6 +192,7 @@ enum Permission: string
             self::SettingsView, self::SettingsUpdate => 'Settings',
             self::UsersView, self::UsersCreate, self::UsersUpdate, self::UsersDelete,
             self::RolesView, self::RolesCreate, self::RolesUpdate, self::RolesDelete => 'Access',
+            self::TaxesView, self::TaxesCreate, self::TaxesUpdate, self::TaxesDelete => 'Taxes',
         };
     }
 }

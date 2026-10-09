@@ -5,22 +5,29 @@ use DA\Inventory\Http\Controllers\Api\V1\AttributeController;
 use DA\Inventory\Http\Controllers\Api\V1\AttributeValueController;
 use DA\Inventory\Http\Controllers\Api\V1\BrandController;
 use DA\Inventory\Http\Controllers\Api\V1\CategoryController;
+use DA\Inventory\Http\Controllers\Api\V1\CustomerController;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetAttributesDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetAttributeValuesDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetBrandsDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetCategoriesDropdown;
+use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetCustomersDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetStoresDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetSuppliersDropdown;
+use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetTaxesDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetUnitsDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\InventoryController;
 use DA\Inventory\Http\Controllers\Api\V1\InventoryLayerController;
 use DA\Inventory\Http\Controllers\Api\V1\ProductController;
 use DA\Inventory\Http\Controllers\Api\V1\PurchaseController;
+use DA\Inventory\Http\Controllers\Api\V1\PurchaseReturnController;
+use DA\Inventory\Http\Controllers\Api\V1\SaleController;
 use DA\Inventory\Http\Controllers\Api\V1\StockAdjustmentController;
 use DA\Inventory\Http\Controllers\Api\V1\StockMovementController;
 use DA\Inventory\Http\Controllers\Api\V1\StockTransferController;
 use DA\Inventory\Http\Controllers\Api\V1\StoreController;
 use DA\Inventory\Http\Controllers\Api\V1\SupplierController;
+use DA\Inventory\Http\Controllers\Api\V1\TaxController;
+use DA\Inventory\Http\Controllers\Api\V1\TaxSettingController;
 use DA\Inventory\Http\Controllers\Api\V1\UnitController;
 use Illuminate\Support\Facades\Route;
 
@@ -116,6 +123,9 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
         ->middleware('permission:attributes.update')
         ->name('attributes.values.update');
 
+    Route::get('products/summary', [ProductController::class, 'summary'])
+        ->middleware('permission:products.view')
+        ->name('products.summary');
     Route::get('products/generate-sku', [ProductController::class, 'generateSku'])
         ->name('products.generate-sku');
     Route::get('products/generate-barcode', [ProductController::class, 'generateBarcode'])
@@ -132,6 +142,25 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::put('products/{id}', [ProductController::class, 'update'])
         ->middleware('permission:products.update')
         ->name('products.update');
+
+    Route::get('customers-dropdown', GetCustomersDropdown::class)
+        ->middleware('permission:'.Permission::CustomersView->value)
+        ->name('customers.dropdown');
+    Route::get('customers', [CustomerController::class, 'index'])
+        ->middleware('permission:'.Permission::CustomersView->value)
+        ->name('customers.index');
+    Route::post('customers', [CustomerController::class, 'store'])
+        ->middleware('permission:'.Permission::CustomersCreate->value)
+        ->name('customers.store');
+    Route::post('customers/delete', [CustomerController::class, 'destroy'])
+        ->middleware('permission:'.Permission::CustomersDelete->value)
+        ->name('customers.destroy');
+    Route::get('customers/{id}', [CustomerController::class, 'show'])
+        ->middleware('permission:'.Permission::CustomersView->value)
+        ->name('customers.show');
+    Route::put('customers/{id}', [CustomerController::class, 'update'])
+        ->middleware('permission:'.Permission::CustomersUpdate->value)
+        ->name('customers.update');
 
     Route::get('suppliers-dropdown', GetSuppliersDropdown::class)
         ->middleware('permission:suppliers.view')
@@ -174,6 +203,9 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::get('purchases', [PurchaseController::class, 'index'])
         ->middleware('permission:purchasing.view')
         ->name('purchases.index');
+    Route::get('purchases/summary', [PurchaseController::class, 'summary'])
+        ->middleware('permission:purchasing.view')
+        ->name('purchases.summary');
     Route::post('purchases', [PurchaseController::class, 'store'])
         ->middleware('permission:purchasing.create')
         ->name('purchases.store');
@@ -189,6 +221,44 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::put('purchases/{id}', [PurchaseController::class, 'update'])
         ->middleware('permission:purchasing.update')
         ->name('purchases.update');
+
+    Route::get('purchase-returns', [PurchaseReturnController::class, 'index'])
+        ->middleware('permission:purchasing.view')
+        ->name('purchase-returns.index');
+    Route::post('purchase-returns', [PurchaseReturnController::class, 'store'])
+        ->middleware('permission:purchasing.create')
+        ->name('purchase-returns.store');
+    Route::post('purchase-returns/delete', [PurchaseReturnController::class, 'destroy'])
+        ->middleware('permission:purchasing.delete')
+        ->name('purchase-returns.destroy');
+    Route::get('purchase-returns/summary', [PurchaseReturnController::class, 'summary'])
+        ->middleware('permission:purchasing.view')
+        ->name('purchase-returns.summary');
+    Route::get('purchase-returns/purchases/{id}/lines', [PurchaseReturnController::class, 'purchaseLines'])
+        ->middleware('permission:purchasing.view')
+        ->name('purchase-returns.purchase-lines');
+    Route::put('purchase-returns/{id}/status', [PurchaseReturnController::class, 'updateStatus'])
+        ->middleware('permission:purchasing.update')
+        ->name('purchase-returns.status');
+    Route::get('purchase-returns/{id}', [PurchaseReturnController::class, 'show'])
+        ->middleware('permission:purchasing.view')
+        ->name('purchase-returns.show');
+    Route::put('purchase-returns/{id}', [PurchaseReturnController::class, 'update'])
+        ->middleware('permission:purchasing.update')
+        ->name('purchase-returns.update');
+
+    Route::get('sales', [SaleController::class, 'index'])
+        ->middleware('permission:'.Permission::SalesView->value)
+        ->name('sales.index');
+    Route::post('sales', [SaleController::class, 'store'])
+        ->middleware('permission:'.Permission::SalesCreate->value)
+        ->name('sales.store');
+    Route::post('sales/{id}/payments', [SaleController::class, 'storePayment'])
+        ->middleware('permission:'.Permission::SalesCreate->value)
+        ->name('sales.payments.store');
+    Route::get('sales/{id}', [SaleController::class, 'show'])
+        ->middleware('permission:'.Permission::SalesView->value)
+        ->name('sales.show');
 
     Route::get('inventory', [InventoryController::class, 'index'])
         ->middleware('permission:inventory.view')
@@ -231,4 +301,31 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::put('stock-transfers/{id}', [StockTransferController::class, 'update'])
         ->middleware('permission:inventory.update')
         ->name('stock-transfers.update');
+
+    Route::get('taxes-dropdown', GetTaxesDropdown::class)
+        ->middleware('permission:taxes.view')
+        ->name('taxes.dropdown');
+
+    Route::get('tax-settings', [TaxSettingController::class, 'show'])
+        ->middleware('permission:taxes.view')
+        ->name('tax-settings.show');
+    Route::put('tax-settings', [TaxSettingController::class, 'update'])
+        ->middleware('permission:taxes.update')
+        ->name('tax-settings.update');
+
+    Route::get('taxes', [TaxController::class, 'index'])
+        ->middleware('permission:taxes.view')
+        ->name('taxes.index');
+    Route::post('taxes', [TaxController::class, 'store'])
+        ->middleware('permission:taxes.create')
+        ->name('taxes.store');
+    Route::put('taxes/{id}', [TaxController::class, 'update'])
+        ->middleware('permission:taxes.update')
+        ->name('taxes.update');
+    Route::get('taxes/{id}', [TaxController::class, 'show'])
+        ->middleware('permission:taxes.view')
+        ->name('taxes.show');
+    Route::post('taxes/delete', [TaxController::class, 'destroy'])
+        ->middleware('permission:taxes.delete')
+        ->name('taxes.destroy');
 });

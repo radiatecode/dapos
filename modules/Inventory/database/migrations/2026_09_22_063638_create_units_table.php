@@ -20,6 +20,8 @@ return new class extends Migration
             $table->unsignedTinyInteger('precision')->default(0); // for weight unit 1.250 KG, 0.500 KG, 2.50 Meter
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
 
             $table->unique(['tenant_id', 'code']);
             $table->index(['tenant_id', 'unit_type']);

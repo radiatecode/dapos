@@ -24,7 +24,7 @@ return new class extends Migration
             $table->decimal('total_cost', 15, 4)->nullable();
             $table->string('status', 20);
             $table->text('notes')->nullable();
-            $table->foreignId('created_by')->constrained('users')->restrictOnDelete();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
 
             $table->unique(['tenant_id', 'reference_number']);

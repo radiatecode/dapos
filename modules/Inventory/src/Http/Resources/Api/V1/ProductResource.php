@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Http\Resources\Api\V1;
 
+use DA\Inventory\Enums\ItemTaxType;
 use DA\Inventory\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -37,9 +38,21 @@ class ProductResource extends JsonResource
             'expire_date' => $this->expire_date?->toDateString(),
             'warranty_in_days' => $this->warranty_in_days,
             'guarantee_in_days' => $this->guarantee_in_days,
+            'item_tax_type' => $this->item_tax_type,
+            'item_tax_type_label' => ItemTaxType::tryFrom((int) $this->item_tax_type)?->label(),
             'category' => CategoryResource::make($this->whenLoaded('category')),
             'brand' => BrandResource::make($this->whenLoaded('brand')),
             'unit' => UnitResource::make($this->whenLoaded('unit')),
+            'tax_ids' => $this->when(
+                $this->relationLoaded('taxes'),
+                fn (): array => $this->taxes
+                    ->pluck('id')
+                    ->map(fn (mixed $id): int => (int) $id)
+                    ->sort()
+                    ->values()
+                    ->all(),
+            ),
+            'taxes' => TaxResource::collection($this->whenLoaded('taxes')),
             'attributes' => ProductAttributeResource::collection($this->whenLoaded('productAttributes')),
             'variants' => ProductVariantResource::collection($this->whenLoaded('variants')),
             'default_variant' => $this->when(

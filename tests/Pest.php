@@ -103,6 +103,20 @@ function brandPayload(array $overrides = []): array
  * @param  array<string, mixed>  $overrides
  * @return array<string, mixed>
  */
+function customerPayload(array $overrides = []): array
+{
+    return array_replace([
+        'name' => 'Nadia Rahman',
+        'phone' => '01711111111',
+        'email' => 'nadia@shop.test',
+        'address' => '12 Market Road',
+    ], $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
 function supplierPayload(array $overrides = []): array
 {
     return array_replace([

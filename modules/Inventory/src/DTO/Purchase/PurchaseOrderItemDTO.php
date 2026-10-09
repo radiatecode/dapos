@@ -13,5 +13,6 @@ class PurchaseOrderItemDTO extends Data
         public string $unitCost,
         public string $discountAmount,
         public string $taxAmount,
+        public bool $taxIncluded = false,
     ) {}
 }

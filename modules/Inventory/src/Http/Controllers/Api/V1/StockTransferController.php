@@ -21,14 +21,17 @@ class StockTransferController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $filters = $request->validate([
-            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
-            'status' => ['sometimes', Rule::enum(StockTransferStatus::class)],
-        ]);
+        $filters = validator([
+            'per_page' => $request->input('per_page', $request->input('limit', 15)),
+            'status' => $request->filled('status') ? $request->input('status') : null,
+        ], [
+            'per_page' => ['required', 'integer', 'min:1', 'max:100'],
+            'status' => ['nullable', Rule::enum(StockTransferStatus::class)],
+        ])->validate();
 
         return StockTransferResource::collection(
             StockTransfer::queries()->paginateNewestFirst(
-                (int) ($filters['per_page'] ?? 15),
+                (int) $filters['per_page'],
                 isset($filters['status']) ? StockTransferStatus::from($filters['status']) : null,
             ),
         );

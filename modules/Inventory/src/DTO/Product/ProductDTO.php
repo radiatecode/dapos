@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\DTO\Product;
 
+use DA\Inventory\Enums\ItemTaxType;
 use DA\Inventory\Enums\ProductType;
 use Illuminate\Http\UploadedFile;
 use Spatie\LaravelData\Data;
@@ -11,6 +12,7 @@ class ProductDTO extends Data
     /**
      * @param  list<ProductAttributeDTO>  $attributes
      * @param  list<ProductVariantDTO>  $variants
+     * @param  list<int>  $taxIds
      */
     public function __construct(
         public int $categoryId,
@@ -31,5 +33,7 @@ class ProductDTO extends Data
         public array $attributes,
         public array $variants,
         public ?int $storeId,
+        public array $taxIds = [],
+        public int $itemTaxType = ItemTaxType::EXCLUSIVE->value,
     ) {}
 }

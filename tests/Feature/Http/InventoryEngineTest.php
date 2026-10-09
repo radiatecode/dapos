@@ -124,6 +124,14 @@ describe('inventory read api', function () {
             ->assertOk()
             ->assertJsonPath('meta.per_page', 5);
     });
+
+    it('accepts a limit and ignores a blank transfer filter', function () {
+        actingAsTenantUser(permissions: [Permission::InventoryView]);
+
+        $this->getJson('/api/v1/stock-transfers?limit=5&status=')
+            ->assertOk()
+            ->assertJsonPath('meta.per_page', 5);
+    });
 });
 
 describe('opening stock and purchase receipt', function () {

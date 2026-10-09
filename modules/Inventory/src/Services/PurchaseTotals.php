@@ -8,7 +8,8 @@ use Illuminate\Validation\ValidationException;
 class PurchaseTotals
 {
     /**
-     * Line total is quantity × unit cost − line discount + line tax.
+     * Line total is quantity × unit cost − line discount, plus line tax when the tax is exclusive.
+     * Inclusive line tax is stored on the line and left out of the line total.
      * Subtotal is the sum of quantity × unit cost.
      * Grand total is the sum of line totals − header discount + header tax + shipping.
      *
@@ -22,7 +23,8 @@ class PurchaseTotals
 
         foreach ($dto->items as $item) {
             $gross = bcmul($item->quantity, $item->unitCost, 4);
-            $lineTotal = bcadd(bcsub($gross, $item->discountAmount, 4), $item->taxAmount, 4);
+            $net = bcsub($gross, $item->discountAmount, 4);
+            $lineTotal = $item->taxIncluded ? $net : bcadd($net, $item->taxAmount, 4);
             $lines[] = $lineTotal;
             $subtotal = bcadd($subtotal, $gross, 4);
             $lineTotalsSum = bcadd($lineTotalsSum, $lineTotal, 4);

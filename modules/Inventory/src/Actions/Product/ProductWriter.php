@@ -34,6 +34,7 @@ class ProductWriter
         $product->expire_date = $dto->expireDate;
         $product->warranty_in_days = $dto->warrantyInDays;
         $product->guarantee_in_days = $dto->guaranteeInDays;
+        $product->item_tax_type = $dto->itemTaxType;
 
         if ($dto->image !== null) {
             if (is_string($product->image) && $product->image !== '') {
@@ -48,6 +49,20 @@ class ProductWriter
     {
         $this->syncAttributes($product, $dto);
         $this->syncVariants($product, $dto);
+        $this->syncTaxes($product, $dto);
+    }
+
+    private function syncTaxes(Product $product, ProductDTO $dto): void
+    {
+        $tenantId = auth()->user()->tenant_id;
+
+        $product->taxes()->sync(
+            collect($dto->taxIds)
+                ->mapWithKeys(fn (int $taxId): array => [
+                    $taxId => ['tenant_id' => $tenantId],
+                ])
+                ->all()
+        );
     }
 
     private function syncAttributes(Product $product, ProductDTO $dto): void

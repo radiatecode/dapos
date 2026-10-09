@@ -7,6 +7,7 @@ use DA\Inventory\DTO\Product\ProductDTO;
 use DA\Inventory\DTO\Product\ProductVariantDTO;
 use DA\Inventory\DTO\Product\VariantAttributeValueDTO;
 use DA\Inventory\Enums\BarcodeType;
+use DA\Inventory\Enums\ItemTaxType;
 use DA\Inventory\Enums\ProductType;
 use DA\Inventory\Models\AttributeValue;
 use DA\Inventory\Models\ProductVariant;
@@ -41,23 +42,29 @@ abstract class ProductRequest extends FormRequest
             'category_id' => [
                 'required',
                 'integer',
-                Rule::exists('categories', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)),
             ],
             'brand_id' => [
                 'required',
                 'integer',
-                Rule::exists('brands', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)),
             ],
             'unit_id' => [
                 'required',
                 'integer',
-                Rule::exists('units', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)),
+            ],
+            'tax_ids' => ['array'],
+            'tax_ids.*' => [
+                'integer',
+                'distinct',
+            ],
+            'item_tax_type' => [
+                'required',
+                'integer',
+                Rule::in(array_column(ItemTaxType::cases(), 'value')),
             ],
             'store_id' => [
                 Rule::requiredIf($tracksInventory),
                 'nullable',
                 'integer',
-                Rule::exists('stores', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->where('is_active', true)),
             ],
             'name' => ['required', 'string', 'max:255'],
             'slug' => [
@@ -232,6 +239,18 @@ abstract class ProductRequest extends FormRequest
             $merge['variants'] = $this->withGeneratedCodes($this->normalizedVariants());
         }
 
+        if (! is_array($this->input('tax_ids'))) {
+            $merge['tax_ids'] = [];
+        }
+
+        $taxIds = $merge['tax_ids'] ?? $this->input('tax_ids', []);
+
+        if (! is_array($taxIds) || $taxIds === []) {
+            $merge['item_tax_type'] = ItemTaxType::EXCLUSIVE->value;
+        } elseif ($this->filled('item_tax_type')) {
+            $merge['item_tax_type'] = (int) $this->input('item_tax_type');
+        }
+
         $this->merge($merge);
     }
 
@@ -259,6 +278,8 @@ abstract class ProductRequest extends FormRequest
             attributes: $this->attributeDTOs($data['attributes'] ?? []),
             variants: $this->variantDTOs($data['variants']),
             storeId: isset($data['store_id']) ? (int) $data['store_id'] : null,
+            taxIds: array_map(intval(...), $data['tax_ids'] ?? []),
+            itemTaxType: (int) ($data['item_tax_type'] ?? ItemTaxType::EXCLUSIVE->value),
         );
     }
 

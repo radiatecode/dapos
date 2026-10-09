@@ -19,5 +19,6 @@ final class DecreaseStockData
         public StockReferenceType $referenceType,
         public int $referenceId,
         public ?int $referenceItemId,
+        public ?string $productVariationName = null,
     ) {}
 }

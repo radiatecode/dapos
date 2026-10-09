@@ -97,7 +97,7 @@ class InventoryService
             $tenantId = $this->tenantId();
             $this->assertStore($data->storeId);
             $this->assertVariant($tenantId, $data->productVariantId);
-            $this->assertPositiveQuantity($data->quantity);
+            $this->assertPositiveQuantity($data->quantity, $data->productVariationName);
             InventoryBalance::queries()->lockForStoreVariant($tenantId, $data->storeId, $data->productVariantId);
 
             $existing = InventoryAllocation::queries()->forSource(
@@ -333,6 +333,11 @@ class InventoryService
         });
     }
 
+    public function recalculateBalance(int $storeId, int $productVariantId): void
+    {
+        $this->recalculate($this->tenantId(), $storeId, $productVariantId);
+    }
+
     /**
      * @return list<array{layer: InventoryLayer, quantity: string, unit_cost: string, total_cost: string}>
      */
@@ -340,7 +345,7 @@ class InventoryService
     {
         $tenantId = $this->tenantId();
         $balance = InventoryBalance::queries()->lockForStoreVariant($tenantId, $data->storeId, $data->productVariantId);
-        $this->assertAvailable($balance, $data->quantity);
+        $this->assertAvailable($balance, $data->quantity, $data->productVariationName);
 
         $layers = InventoryLayer::queries()->lockOpenForFifo($tenantId, $data->storeId, $data->productVariantId);
         $slices = $this->costing->allocate($layers, $data->quantity);
@@ -516,7 +521,7 @@ class InventoryService
         ) instanceof StockMovement;
     }
 
-    private function assertAvailable(InventoryBalance $balance, string $quantity): void
+    private function assertAvailable(InventoryBalance $balance, string $quantity, ?string $productVariationName = null): void
     {
         if (config('inventory.allow_negative_stock')) {
             return;
@@ -524,16 +529,20 @@ class InventoryService
 
         if (Decimal::compare($balance->available_quantity, $quantity) < 0) {
             throw ValidationException::withMessages([
-                'quantity' => 'Insufficient stock for this operation.',
+                'quantity' => $productVariationName !== null
+                ? 'Insufficient stock of '.$productVariationName.' for this operation.'
+                : 'Insufficient stock for this operation.',
             ]);
         }
     }
 
-    private function assertPositiveQuantity(string $quantity): void
+    private function assertPositiveQuantity(string $quantity, ?string $productVariationName = null): void
     {
         if (! Decimal::isPositive($quantity)) {
             throw ValidationException::withMessages([
-                'quantity' => 'The quantity must be greater than zero.',
+                'quantity' => $productVariationName !== null
+                ? 'The quantity of '.$productVariationName.' must be greater than zero.'
+                : 'The quantity must be greater than zero.',
             ]);
         }
     }

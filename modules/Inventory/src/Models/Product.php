@@ -4,12 +4,14 @@ namespace DA\Inventory\Models;
 
 use App\Models\Concerns\ScopedToCurrentTenant;
 use DA\Inventory\Database\Factories\ProductFactory;
+use DA\Inventory\Enums\ItemTaxType;
 use DA\Inventory\Enums\ProductType;
 use DA\Inventory\Models\Queries\ProductQueries;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -30,6 +32,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'expire_date',
     'warranty_in_days',
     'guarantee_in_days',
+    'item_tax_type',
 ])]
 class Product extends Model
 {
@@ -43,6 +46,7 @@ class Product extends Model
         'track_inventory' => true,
         'is_active' => true,
         'is_stock_out' => false,
+        'item_tax_type' => ItemTaxType::EXCLUSIVE->value,
     ];
 
     public static function queries(): ProductQueries
@@ -64,6 +68,7 @@ class Product extends Model
             'expire_date' => 'date',
             'warranty_in_days' => 'integer',
             'guarantee_in_days' => 'integer',
+            'item_tax_type' => 'integer',
         ];
     }
 
@@ -89,6 +94,16 @@ class Product extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    /**
+     * @return BelongsToMany<Tax, $this>
+     */
+    public function taxes(): BelongsToMany
+    {
+        return $this->belongsToMany(Tax::class, 'product_taxes')
+            ->withPivot('tenant_id')
+            ->withTimestamps();
     }
 
     /**

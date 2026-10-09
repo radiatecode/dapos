@@ -7,9 +7,12 @@ use DA\Inventory\Models\Attribute;
 use DA\Inventory\Models\AttributeValue;
 use DA\Inventory\Models\Brand;
 use DA\Inventory\Models\Category;
+use DA\Inventory\Models\Customer;
 use DA\Inventory\Models\Store;
 use DA\Inventory\Models\Supplier;
+use DA\Inventory\Models\Tax;
 use DA\Inventory\Models\Unit;
+use Illuminate\Support\Facades\Storage;
 
 describe('authentication and authorization', function () {
     it('returns 401 when no token is provided', function (string $uri) {
@@ -19,8 +22,10 @@ describe('authentication and authorization', function () {
         '/api/v1/brands-dropdown',
         '/api/v1/units-dropdown',
         '/api/v1/attribute-values-dropdown',
+        '/api/v1/customers-dropdown',
         '/api/v1/suppliers-dropdown',
         '/api/v1/stores-dropdown',
+        '/api/v1/taxes-dropdown',
     ]);
 
     it('returns 403 when the user lacks the required permission', function (string $uri, Permission $granted) {
@@ -32,8 +37,10 @@ describe('authentication and authorization', function () {
         ['/api/v1/brands-dropdown', Permission::UnitsView],
         ['/api/v1/units-dropdown', Permission::BrandsView],
         ['/api/v1/attribute-values-dropdown', Permission::BrandsView],
+        ['/api/v1/customers-dropdown', Permission::SuppliersView],
         ['/api/v1/suppliers-dropdown', Permission::StoresView],
         ['/api/v1/stores-dropdown', Permission::SuppliersView],
+        ['/api/v1/taxes-dropdown', Permission::StoresView],
     ]);
 });
 
@@ -45,6 +52,7 @@ describe('catalog dropdowns', function () {
             'tenant_id' => $tenant->id,
             'name' => 'Beverages',
             'code' => 'BEV',
+            'image' => 'categories/beverages.jpg',
         ]);
         Category::factory()->create([
             'tenant_id' => $tenant->id,
@@ -59,6 +67,7 @@ describe('catalog dropdowns', function () {
             ->assertJsonPath('results.0.id', $match->id)
             ->assertJsonPath('results.0.label', 'Beverages')
             ->assertJsonPath('results.0.code', 'BEV')
+            ->assertJsonPath('results.0.image_url', Storage::disk('public')->url('categories/beverages.jpg'))
             ->assertJsonPath('pagination.more', false)
             ->assertJsonCount(1, 'results')
             ->assertJsonMissing(['label' => 'Foreign category']);
@@ -159,6 +168,32 @@ describe('catalog dropdowns', function () {
             ->assertJsonMissing(['label' => 'Foreign red']);
     });
 
+    it('returns tenant customers in select2 format and hides other tenants', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::CustomersView]);
+        $match = Customer::factory()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Nadia Rahman',
+            'email' => 'nadia@shop.test',
+            'phone' => '01711111111',
+            'address' => '12 Market Road',
+        ]);
+        Customer::withoutEvents(fn () => Customer::factory()->create([
+            'name' => 'Foreign customer',
+        ]));
+
+        $this->getJson('/api/v1/customers-dropdown?search=Nadia')
+            ->assertOk()
+            ->assertJsonPath('results.0.id', $match->id)
+            ->assertJsonPath('results.0.label', 'Nadia Rahman')
+            ->assertJsonPath('results.0.name', 'Nadia Rahman')
+            ->assertJsonPath('results.0.email', 'nadia@shop.test')
+            ->assertJsonPath('results.0.phone', '01711111111')
+            ->assertJsonPath('results.0.address', '12 Market Road')
+            ->assertJsonPath('pagination.more', false)
+            ->assertJsonMissing(['label' => 'Foreign customer']);
+    });
+
     it('returns tenant suppliers in select2 format and hides other tenants', function () {
         $tenant = Tenant::factory()->create();
         actingAsTenantUser($tenant, [Permission::SuppliersView]);
@@ -200,5 +235,32 @@ describe('catalog dropdowns', function () {
             ->assertJsonPath('results.0.name', 'Main Store')
             ->assertJsonPath('pagination.more', false)
             ->assertJsonMissing(['label' => 'Foreign store']);
+    });
+
+    it('returns active tenant taxes in select2 format and hides inactive and foreign taxes', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::TaxesView]);
+        $match = Tax::factory()->create([
+            'tenant_id' => $tenant->id,
+            'tax_name' => 'VAT',
+            'tax_rate' => 15,
+        ]);
+        Tax::factory()->inactive()->create([
+            'tenant_id' => $tenant->id,
+            'tax_name' => 'Old VAT',
+        ]);
+        Tax::withoutEvents(fn () => Tax::factory()->create([
+            'tax_name' => 'Foreign VAT',
+        ]));
+
+        $this->getJson('/api/v1/taxes-dropdown?search=VAT')
+            ->assertOk()
+            ->assertJsonCount(1, 'results')
+            ->assertJsonPath('results.0.id', $match->id)
+            ->assertJsonPath('results.0.label', 'VAT (15%)')
+            ->assertJsonPath('results.0.name', 'VAT')
+            ->assertJsonPath('pagination.more', false)
+            ->assertJsonMissing(['label' => 'Old VAT'])
+            ->assertJsonMissing(['name' => 'Foreign VAT']);
     });
 });

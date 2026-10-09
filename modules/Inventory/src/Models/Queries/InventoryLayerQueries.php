@@ -61,6 +61,31 @@ class InventoryLayerQueries extends BaseQueries
     /**
      * @return Collection<int, InventoryLayer>
      */
+    public function lockOpenForGoodsReceipt(
+        int $tenantId,
+        int $storeId,
+        int $productVariantId,
+        int $purchaseId,
+        int $purchaseOrderItemId,
+    ): Collection {
+        return $this->eloquentBuilder()
+            ->where('tenant_id', $tenantId)
+            ->where('store_id', $storeId)
+            ->where('product_variant_id', $productVariantId)
+            ->where('source_type', InventoryLayerSourceType::GoodsReceipt)
+            ->where('source_id', $purchaseId)
+            ->where('source_item_id', $purchaseOrderItemId)
+            ->where('status', InventoryLayerStatus::Open)
+            ->where('remaining_qty', '>', 0)
+            ->orderBy('received_at')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+    }
+
+    /**
+     * @return Collection<int, InventoryLayer>
+     */
     public function lockOpenForFifo(int $tenantId, int $storeId, int $productVariantId): Collection
     {
         return $this->eloquentBuilder()

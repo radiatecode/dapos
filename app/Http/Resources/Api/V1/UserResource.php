@@ -23,6 +23,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'photo' => $this->photo,
             'is_super_admin' => (bool) $this->is_super_admin,
+            'currency' => $this->tenant?->currency ?? 'BDT',
             'photo_url' => is_string($this->photo) && $this->photo !== ''
                 ? Storage::disk('public')->url($this->photo)
                 : null,

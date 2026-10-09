@@ -3,6 +3,7 @@
 namespace DA\Inventory\Database\Factories;
 
 use DA\Admin\Models\Tenant;
+use DA\Inventory\Enums\ItemTaxType;
 use DA\Inventory\Enums\ProductType;
 use DA\Inventory\Enums\UnitType;
 use DA\Inventory\Models\Brand;
@@ -64,6 +65,7 @@ class ProductFactory extends Factory
             'expire_date' => null,
             'warranty_in_days' => null,
             'guarantee_in_days' => null,
+            'item_tax_type' => ItemTaxType::EXCLUSIVE->value,
         ];
     }
 

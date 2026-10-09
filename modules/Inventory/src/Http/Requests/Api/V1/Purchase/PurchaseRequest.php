@@ -75,6 +75,7 @@ abstract class PurchaseRequest extends FormRequest
             'items.*.unit_cost' => ['required', 'numeric', 'min:0', 'decimal:0,4'],
             'items.*.discount_amount' => ['sometimes', 'numeric', 'min:0', 'decimal:0,4'],
             'items.*.tax_amount' => ['sometimes', 'numeric', 'min:0', 'decimal:0,4'],
+            'items.*.tax_included' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -175,6 +176,7 @@ abstract class PurchaseRequest extends FormRequest
                     unitCost: $this->money($item['unit_cost']),
                     discountAmount: $this->money($item['discount_amount'] ?? 0),
                     taxAmount: $this->money($item['tax_amount'] ?? 0),
+                    taxIncluded: (bool) ($item['tax_included'] ?? false),
                 ),
                 $validated['items'],
             ),

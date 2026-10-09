@@ -7,6 +7,7 @@ use App\Services\Select2;
 use DA\Inventory\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 
 class GetCategoriesDropdown extends Controller
 {
@@ -22,6 +23,9 @@ class GetCategoriesDropdown extends Controller
                     'label' => $item->name,
                     'name' => $item->name,
                     'code' => $item->code,
+                    'image_url' => is_string($item->image) && $item->image !== ''
+                        ? Storage::disk('public')->url($item->image)
+                        : null,
                 ];
             })
             ->render();

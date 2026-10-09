@@ -31,6 +31,8 @@ return new class extends Migration
             $table->unsignedInteger('guarantee_in_days')->nullable();
             $table->timestamps();
             $table->softDeletes();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
 
             $table->unique(['tenant_id', 'slug']);
         });

@@ -33,6 +33,11 @@ class PurchaseResource extends JsonResource
             'notes' => $this->notes,
             'created_by' => $this->created_by,
             'updated_by' => $this->updated_by,
+            'creator' => $this->whenLoaded('creator', fn (): ?array => $this->creator === null ? null : [
+                'id' => $this->creator->id,
+                'name' => $this->creator->name,
+                'email' => $this->creator->email,
+            ]),
             'items_count' => $this->whenCounted('items'),
             'supplier' => SupplierResource::make($this->whenLoaded('supplier')),
             'store' => StoreResource::make($this->whenLoaded('store')),

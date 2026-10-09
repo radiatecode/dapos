@@ -27,8 +27,8 @@ return new class extends Migration
             $table->string('status', 20);
             $table->string('payment_status', 20);
             $table->text('notes')->nullable();
-            $table->foreignId('created_by')->constrained('users')->restrictOnDelete();
-            $table->foreignId('updated_by')->constrained('users')->restrictOnDelete();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
             $table->unique(['tenant_id', 'po_number']);

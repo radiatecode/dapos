@@ -53,6 +53,6 @@ class AuthController extends Controller
         $user = $request->user();
         assert($user instanceof User);
 
-        return UserResource::make($user->loadMissing('roles'));
+        return UserResource::make($user->loadMissing(['roles', 'tenant']));
     }
 }

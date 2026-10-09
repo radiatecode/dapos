@@ -22,8 +22,8 @@ return new class extends Migration
             $table->string('reason');
             $table->string('status', 20);
             $table->text('notes')->nullable();
-            $table->foreignId('created_by')->constrained('users')->restrictOnDelete();
-            $table->foreignId('updated_by')->constrained('users')->restrictOnDelete();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->decimal('system_quantity', 15, 4)->nullable();
             $table->decimal('adjusted_quantity', 15, 4);
             $table->decimal('difference_quantity', 15, 4)->nullable();

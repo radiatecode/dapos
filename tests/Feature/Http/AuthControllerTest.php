@@ -22,7 +22,8 @@ describe('login', function () {
             ->assertOk()
             ->assertJsonPath('data.token_type', 'Bearer')
             ->assertJsonPath('data.user.id', $user->id)
-            ->assertJsonPath('data.user.email', 'owner@shop.test');
+            ->assertJsonPath('data.user.email', 'owner@shop.test')
+            ->assertJsonPath('data.user.currency', $tenant->currency);
 
         expect($response->json('data.token'))->toBeString()->not->toBeEmpty();
         $this->assertDatabaseHas('personal_access_tokens', [
@@ -99,7 +100,8 @@ describe('logout and me', function () {
             ->assertOk()
             ->assertJsonPath('data.id', $user->id)
             ->assertJsonPath('data.email', $user->email)
-            ->assertJsonPath('data.permissions.0', Permission::DashboardView->value);
+            ->assertJsonPath('data.permissions.0', Permission::DashboardView->value)
+            ->assertJsonPath('data.currency', $user->tenant->currency);
     });
 
     it('returns 403 for a platform admin', function () {

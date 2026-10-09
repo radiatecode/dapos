@@ -11,6 +11,7 @@ use DA\Inventory\Models\Category;
 use DA\Inventory\Models\Product;
 use DA\Inventory\Models\ProductVariant;
 use DA\Inventory\Models\Store;
+use DA\Inventory\Models\Tax;
 use DA\Inventory\Models\Unit;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -41,6 +42,7 @@ describe('authentication and authorization', function () {
         $this->json($method, $uri)->assertUnauthorized();
     })->with([
         ['GET', '/api/v1/products'],
+        ['GET', '/api/v1/products/summary'],
         ['GET', '/api/v1/products/generate-sku'],
         ['GET', '/api/v1/products/generate-barcode'],
         ['POST', '/api/v1/products'],
@@ -52,6 +54,7 @@ describe('authentication and authorization', function () {
         actingAsTenantUser(permissions: [Permission::CategoriesView]);
 
         $this->getJson('/api/v1/products')->assertForbidden();
+        $this->getJson('/api/v1/products/summary')->assertForbidden();
     });
 });
 
@@ -91,6 +94,46 @@ describe('index and show', function () {
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $cola->id)
             ->assertJsonPath('data.0.name', 'Cola 500ml');
+    });
+
+    it('summarizes products for the current tenant', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsView]);
+        Product::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Active one']);
+        Product::factory()->inactive()->create(['tenant_id' => $tenant->id, 'name' => 'Inactive one']);
+        $foreignTenant = Tenant::factory()->create();
+        Product::withoutEvents(fn () => Product::factory()->create([
+            'tenant_id' => $foreignTenant->id,
+            'name' => 'Foreign product',
+        ]));
+
+        $this->getJson('/api/v1/products/summary')
+            ->assertOk()
+            ->assertJsonPath('data.total_products', 2)
+            ->assertJsonPath('data.active_count', 1)
+            ->assertJsonPath('data.inactive_count', 1);
+    });
+
+    it('filters products by category, brand, status, and sku', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsView]);
+        $match = Product::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Match product']);
+        ProductVariant::factory()->default()->create([
+            'product_id' => $match->id,
+            'tenant_id' => $tenant->id,
+            'sku' => 'MATCH-SKU',
+            'barcode' => '1112223334445',
+        ]);
+        Product::factory()->inactive()->create(['tenant_id' => $tenant->id, 'name' => 'Other product']);
+
+        $this->getJson('/api/v1/products?search=MATCH-SKU&category_id='.$match->category_id.'&brand_id='.$match->brand_id.'&is_active=1')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $match->id);
+
+        $this->getJson('/api/v1/products?search=&category_id=&brand_id=&is_active=')
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
     });
 
     it('returns the product with its default variant', function () {
@@ -771,5 +814,182 @@ describe('update', function () {
 
         $this->putJson('/api/v1/products/'.$foreign->id, productPayload(productCatalogIds()))
             ->assertNotFound();
+    });
+});
+
+describe('product taxes', function () {
+    it('stores the selected active taxes on the product', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsCreate, Permission::ProductsView]);
+        $vat = Tax::factory()->create([
+            'tenant_id' => $tenant->id,
+            'tax_name' => 'VAT',
+            'tax_rate' => 15,
+        ]);
+        $fee = Tax::factory()->fixed()->create([
+            'tenant_id' => $tenant->id,
+            'tax_name' => 'Bottle fee',
+            'tax_rate' => 2,
+        ]);
+
+        $response = $this->postJson('/api/v1/products', productPayload([
+            ...productCatalogIds(),
+            'tax_ids' => [$fee->id, $vat->id],
+            'item_tax_type' => 1,
+        ]))->assertCreated();
+
+        $taxIds = collect([$vat->id, $fee->id])->sort()->values()->all();
+
+        $response
+            ->assertJsonPath('data.tax_ids', $taxIds)
+            ->assertJsonPath('data.item_tax_type', 1)
+            ->assertJsonPath('data.item_tax_type_label', 'Inclusive Tax')
+            ->assertJsonCount(2, 'data.taxes');
+
+        $this->assertDatabaseHas('product_taxes', [
+            'tenant_id' => $tenant->id,
+            'product_id' => $response->json('data.id'),
+            'tax_id' => $vat->id,
+        ]);
+        $this->assertDatabaseHas('product_taxes', [
+            'tenant_id' => $tenant->id,
+            'product_id' => $response->json('data.id'),
+            'tax_id' => $fee->id,
+        ]);
+
+        $this->getJson('/api/v1/products/'.$response->json('data.id'))
+            ->assertOk()
+            ->assertJsonPath('data.tax_ids', $taxIds);
+    });
+
+    it('returns 422 when a tax belongs to another tenant', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsCreate]);
+        $foreignTenant = Tenant::factory()->create();
+        $foreignTax = Tax::withoutEvents(fn () => Tax::factory()->create([
+            'tenant_id' => $foreignTenant->id,
+        ]));
+
+        $this->postJson('/api/v1/products', productPayload([
+            ...productCatalogIds(),
+            'tax_ids' => [$foreignTax->id],
+            'item_tax_type' => 2,
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['tax_ids.0']);
+
+        $this->assertDatabaseCount('product_taxes', 0);
+    });
+
+    it('returns 422 when a tax is inactive', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsCreate]);
+        $inactive = Tax::factory()->inactive()->create([
+            'tenant_id' => $tenant->id,
+        ]);
+
+        $this->postJson('/api/v1/products', productPayload([
+            ...productCatalogIds(),
+            'tax_ids' => [$inactive->id],
+            'item_tax_type' => 2,
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['tax_ids.0']);
+    });
+
+    it('replaces product taxes and clears them when none are sent', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsCreate, Permission::ProductsUpdate]);
+        $catalog = productCatalogIds();
+        $vat = Tax::factory()->create(['tenant_id' => $tenant->id, 'tax_name' => 'VAT']);
+        $service = Tax::factory()->create(['tenant_id' => $tenant->id, 'tax_name' => 'Service']);
+        $created = $this->postJson('/api/v1/products', productPayload([
+            ...$catalog,
+            'tax_ids' => [$vat->id, $service->id],
+            'item_tax_type' => 2,
+        ]))->assertCreated();
+        $productId = $created->json('data.id');
+        $variantId = $created->json('data.variants.0.id');
+
+        $this->putJson('/api/v1/products/'.$productId, productPayload([
+            ...$catalog,
+            'tax_ids' => [$service->id],
+            'item_tax_type' => 1,
+            'variants' => [
+                [
+                    'id' => $variantId,
+                    'sku' => 'COLA-500',
+                    'barcode' => '1234567890123',
+                    'barcode_type' => 'EAN',
+                    'cost_price' => '10.0000',
+                    'selling_price' => '15.0000',
+                    'quantity' => '20.0000',
+                ],
+            ],
+        ]))
+            ->assertOk()
+            ->assertJsonPath('data.tax_ids', [$service->id])
+            ->assertJsonPath('data.item_tax_type', 1);
+
+        $this->assertDatabaseMissing('product_taxes', [
+            'product_id' => $productId,
+            'tax_id' => $vat->id,
+        ]);
+        $this->assertDatabaseHas('product_taxes', [
+            'product_id' => $productId,
+            'tax_id' => $service->id,
+        ]);
+
+        $this->putJson('/api/v1/products/'.$productId, productPayload([
+            ...$catalog,
+            'tax_ids' => [],
+            'variants' => [
+                [
+                    'id' => $variantId,
+                    'sku' => 'COLA-500',
+                    'barcode' => '1234567890123',
+                    'barcode_type' => 'EAN',
+                    'cost_price' => '10.0000',
+                    'selling_price' => '15.0000',
+                    'quantity' => '20.0000',
+                ],
+            ],
+        ]))
+            ->assertOk()
+            ->assertJsonPath('data.tax_ids', []);
+
+        $this->assertDatabaseMissing('product_taxes', [
+            'product_id' => $productId,
+        ]);
+        $this->assertDatabaseHas('products', [
+            'id' => $productId,
+            'item_tax_type' => 2,
+        ]);
+    });
+
+    it('returns 422 when taxes are selected without an item tax type', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsCreate]);
+        $vat = Tax::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->postJson('/api/v1/products', productPayload([
+            ...productCatalogIds(),
+            'tax_ids' => [$vat->id],
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['item_tax_type']);
+    });
+
+    it('stores exclusive tax when the product has no taxes', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsCreate]);
+
+        $this->postJson('/api/v1/products', productPayload([
+            ...productCatalogIds(),
+            'item_tax_type' => 1,
+        ]))
+            ->assertCreated()
+            ->assertJsonPath('data.item_tax_type', 2)
+            ->assertJsonPath('data.tax_ids', []);
     });
 });
