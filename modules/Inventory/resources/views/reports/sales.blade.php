@@ -1,6 +1,7 @@
 @php
     /** @var \DA\Inventory\DTO\Report\SalesReportExportDTO $report */
     $numbers = $report->numbers;
+    $totals = $report->totals;
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -15,6 +16,11 @@
         .meta { width: 100%; margin-bottom: 12px; border-collapse: collapse; }
         .meta td { padding: 2px 8px 2px 0; vertical-align: top; }
         .meta .label { color: #6c757d; width: 90px; }
+        table.summary { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+        table.summary td { width: 25%; border: 1px solid #dee2e6; padding: 8px 10px; vertical-align: top; }
+        table.summary .label { color: #6c757d; font-size: 10px; }
+        table.summary .value { font-size: 16px; font-weight: bold; margin: 2px 0; }
+        table.summary .note { color: #6c757d; font-size: 10px; }
         table.report { width: 100%; border-collapse: collapse; }
         table.report thead { display: table-header-group; }
         table.report tr { page-break-inside: avoid; }
@@ -40,6 +46,31 @@
         <tr>
             <td class="label">Generated at</td>
             <td>{{ $report->generatedAt }}</td>
+        </tr>
+    </table>
+
+    <table class="summary">
+        <tr>
+            <td>
+                <div class="label">Products sold</div>
+                <div class="value">{{ $totals['total_products'] }}</div>
+                <div class="note">Distinct SKUs in the period</div>
+            </td>
+            <td>
+                <div class="label">Quantity sold</div>
+                <div class="value">{{ $numbers->quantity($totals['sold_quantity']) }}</div>
+                <div class="note">Units across all matching sales</div>
+            </td>
+            <td>
+                <div class="label">Sold amount</div>
+                <div class="value">{{ $numbers->amount($totals['sold_amount']) }}</div>
+                <div class="note">After invoice discounts</div>
+            </td>
+            <td>
+                <div class="label">Paid amount</div>
+                <div class="value">{{ $numbers->amount($totals['paid_amount']) }}</div>
+                <div class="note">{{ $report->collectedPercent() }} collected &middot; {{ $numbers->amount($totals['due_amount']) }} due</div>
+            </td>
         </tr>
     </table>
 

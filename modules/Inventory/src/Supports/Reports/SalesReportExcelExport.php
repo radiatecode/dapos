@@ -20,6 +20,7 @@ class SalesReportExcelExport implements FromArray, ShouldAutoSize, WithColumnFor
      */
     public function array(): array
     {
+        $totals = $this->report->totals;
         $sheet = [
             [$this->report->businessName],
             ['Sales Report'],
@@ -30,6 +31,14 @@ class SalesReportExcelExport implements FromArray, ShouldAutoSize, WithColumnFor
         }
 
         $sheet[] = ['Generated at', $this->report->generatedAt];
+        $sheet[] = [null];
+        $sheet[] = ['Summary'];
+        $sheet[] = ['Products sold', $totals['total_products']];
+        $sheet[] = ['Quantity sold', (float) $totals['sold_quantity']];
+        $sheet[] = ['Sold amount', (float) $totals['sold_amount']];
+        $sheet[] = ['Paid amount', (float) $totals['paid_amount']];
+        $sheet[] = ['Collected', $this->report->collectedPercent()];
+        $sheet[] = ['Due amount', (float) $totals['due_amount']];
         $sheet[] = [null];
         $sheet[] = $this->headings();
 
@@ -47,7 +56,6 @@ class SalesReportExcelExport implements FromArray, ShouldAutoSize, WithColumnFor
             ];
         }
 
-        $totals = $this->report->totals;
         $sheet[] = [
             'Total', null, null, null, null, null,
             (float) $totals['sold_quantity'],
@@ -75,12 +83,14 @@ class SalesReportExcelExport implements FromArray, ShouldAutoSize, WithColumnFor
      */
     public function styles(Worksheet $sheet): array
     {
+        $summaryRow = 2 + count($this->report->filterLabels) + 1 + 1 + 1;
         $headingRow = $this->headingRowNumber();
         $totalRow = $headingRow + $this->report->rows->count() + 1;
 
         return [
             1 => ['font' => ['bold' => true, 'size' => 14]],
             2 => ['font' => ['bold' => true, 'size' => 12]],
+            $summaryRow => ['font' => ['bold' => true, 'size' => 12]],
             $headingRow => [
                 'font' => ['bold' => true],
                 'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => 'E9ECEF']],
@@ -116,6 +126,6 @@ class SalesReportExcelExport implements FromArray, ShouldAutoSize, WithColumnFor
 
     private function headingRowNumber(): int
     {
-        return 2 + count($this->report->filterLabels) + 1 + 1 + 1;
+        return 2 + count($this->report->filterLabels) + 1 + 1 + 1 + 6 + 1 + 1;
     }
 }

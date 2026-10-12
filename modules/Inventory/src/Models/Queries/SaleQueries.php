@@ -8,6 +8,7 @@ use DA\Inventory\Models\Sale;
 use DA\Inventory\Services\Decimal;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class SaleQueries extends BaseQueries
 {
@@ -77,6 +78,24 @@ class SaleQueries extends BaseQueries
             'unpaid_count' => (int) ($row?->unpaid_count ?? 0),
             'partial_count' => (int) ($row?->partial_count ?? 0),
         ];
+    }
+
+    /**
+     * @return Collection<int, Sale>
+     */
+    public function invoiceReportRows(
+        ?SaleStatus $status = null,
+        ?SalePaymentStatus $paymentStatus = null,
+        ?int $customerId = null,
+        ?int $storeId = null,
+        ?string $search = null,
+        ?string $dateFrom = null,
+        ?string $dateTo = null,
+    ): Collection {
+        return $this->filtered($status, $paymentStatus, $customerId, $storeId, $search, $dateFrom, $dateTo)
+            ->with(['customer', 'store'])
+            ->orderByDesc('id')
+            ->get();
     }
 
     public function findForDetail(int $id): Sale

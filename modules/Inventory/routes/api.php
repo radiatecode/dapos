@@ -7,6 +7,7 @@ use DA\Inventory\Http\Controllers\Api\V1\BrandController;
 use DA\Inventory\Http\Controllers\Api\V1\CategoryController;
 use DA\Inventory\Http\Controllers\Api\V1\CurrencyController;
 use DA\Inventory\Http\Controllers\Api\V1\CurrencySettingController;
+use DA\Inventory\Http\Controllers\Api\V1\CurrentStockValueReportController;
 use DA\Inventory\Http\Controllers\Api\V1\CustomerController;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetAttributesDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetAttributeValuesDropdown;
@@ -19,10 +20,13 @@ use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetTaxesDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetUnitsDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\InventoryController;
 use DA\Inventory\Http\Controllers\Api\V1\InventoryLayerController;
+use DA\Inventory\Http\Controllers\Api\V1\MinStockReportController;
 use DA\Inventory\Http\Controllers\Api\V1\ProductController;
+use DA\Inventory\Http\Controllers\Api\V1\ProfitReportController;
 use DA\Inventory\Http\Controllers\Api\V1\PurchaseController;
 use DA\Inventory\Http\Controllers\Api\V1\PurchaseReturnController;
 use DA\Inventory\Http\Controllers\Api\V1\SaleController;
+use DA\Inventory\Http\Controllers\Api\V1\SalesInvoiceReportController;
 use DA\Inventory\Http\Controllers\Api\V1\SalesReportController;
 use DA\Inventory\Http\Controllers\Api\V1\StockAdjustmentController;
 use DA\Inventory\Http\Controllers\Api\V1\StockMovementController;
@@ -31,6 +35,7 @@ use DA\Inventory\Http\Controllers\Api\V1\StoreController;
 use DA\Inventory\Http\Controllers\Api\V1\SupplierController;
 use DA\Inventory\Http\Controllers\Api\V1\TaxController;
 use DA\Inventory\Http\Controllers\Api\V1\TaxSettingController;
+use DA\Inventory\Http\Controllers\Api\V1\TopSalesReportController;
 use DA\Inventory\Http\Controllers\Api\V1\UnitController;
 use Illuminate\Support\Facades\Route;
 
@@ -274,6 +279,54 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
             Route::get('summary', [SalesReportController::class, 'summary'])->name('summary');
             Route::get('export/pdf', [SalesReportController::class, 'exportPdf'])->name('export.pdf');
             Route::get('export/excel', [SalesReportController::class, 'exportExcel'])->name('export.excel');
+        });
+
+    Route::prefix('reports/top-sales')
+        ->name('reports.top-sales.')
+        ->middleware('permission:'.Permission::ReportsView->value)
+        ->group(function (): void {
+            Route::get('/', [TopSalesReportController::class, 'index'])->name('index');
+            Route::get('summary', [TopSalesReportController::class, 'summary'])->name('summary');
+            Route::get('export/pdf', [TopSalesReportController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('export/excel', [TopSalesReportController::class, 'exportExcel'])->name('export.excel');
+        });
+
+    Route::prefix('reports/sales-invoices')
+        ->name('reports.sales-invoices.')
+        ->middleware('permission:'.Permission::ReportsView->value)
+        ->group(function (): void {
+            Route::get('export/pdf', [SalesInvoiceReportController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('export/excel', [SalesInvoiceReportController::class, 'exportExcel'])->name('export.excel');
+        });
+
+    Route::prefix('reports/profit')
+        ->name('reports.profit.')
+        ->middleware('permission:'.Permission::ReportsView->value)
+        ->group(function (): void {
+            Route::get('/', [ProfitReportController::class, 'index'])->name('index');
+            Route::get('summary', [ProfitReportController::class, 'summary'])->name('summary');
+            Route::get('export/pdf', [ProfitReportController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('export/excel', [ProfitReportController::class, 'exportExcel'])->name('export.excel');
+        });
+
+    Route::prefix('reports/min-stock')
+        ->name('reports.min-stock.')
+        ->middleware('permission:'.Permission::ReportsView->value)
+        ->group(function (): void {
+            Route::get('/', [MinStockReportController::class, 'index'])->name('index');
+            Route::get('summary', [MinStockReportController::class, 'summary'])->name('summary');
+            Route::get('export/pdf', [MinStockReportController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('export/excel', [MinStockReportController::class, 'exportExcel'])->name('export.excel');
+        });
+
+    Route::prefix('reports/current-stock-value')
+        ->name('reports.current-stock-value.')
+        ->middleware('permission:'.Permission::ReportsView->value)
+        ->group(function (): void {
+            Route::get('/', [CurrentStockValueReportController::class, 'index'])->name('index');
+            Route::get('summary', [CurrentStockValueReportController::class, 'summary'])->name('summary');
+            Route::get('export/pdf', [CurrentStockValueReportController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('export/excel', [CurrentStockValueReportController::class, 'exportExcel'])->name('export.excel');
         });
 
     Route::get('inventory', [InventoryController::class, 'index'])

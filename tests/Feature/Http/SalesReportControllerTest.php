@@ -157,6 +157,7 @@ describe('with recorded sales', function () {
             $this->getJson('/api/v1/reports/sales?category_id='.$this->parentCategory->id)
                 ->assertOk()
                 ->assertJsonCount(1, 'data')
+                ->assertJsonPath('meta.total', 1)
                 ->assertJsonPath('data.0.sku', 'COLA-1');
         });
 
@@ -219,6 +220,9 @@ describe('with recorded sales', function () {
                 ->assertHeader('content-type', 'application/pdf');
 
             SnappyPdf::assertViewIs('inventory::reports.sales');
+            SnappyPdf::assertSeeText('Products sold');
+            SnappyPdf::assertSeeText('Paid amount');
+            SnappyPdf::assertSeeText('collected');
             SnappyPdf::assertSeeText('COLA-1');
             SnappyPdf::assertSeeText($this->mainStore->name);
             SnappyPdf::assertDontSeeText('FOREIGN-1');
@@ -239,7 +243,11 @@ describe('with recorded sales', function () {
                     && $colaRow[7] === 28.0
                     && $colaRow[8] === 22.0
                     && end($sheet)[0] === 'Total'
-                    && in_array(['Brand', 'Acme'], $sheet, true);
+                    && in_array(['Brand', 'Acme'], $sheet, true)
+                    && in_array(['Products sold', 1], $sheet, true)
+                    && in_array(['Sold amount', 28.0], $sheet, true)
+                    && in_array(['Paid amount', 22.0], $sheet, true)
+                    && in_array(['Collected', '78.6%'], $sheet, true);
             });
         });
     });
