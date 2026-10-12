@@ -18,6 +18,10 @@ class ProductResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $imageUrl = is_string($this->image) && $this->image !== '' && $this->image !== null
+            ? Storage::disk('public')->url($this->image)
+            : asset('media/no-image-product.jpg');
+
         return [
             'id' => $this->id,
             'category_id' => $this->category_id,
@@ -27,9 +31,7 @@ class ProductResource extends JsonResource
             'slug' => $this->slug,
             'description' => $this->description,
             'image' => $this->image,
-            'image_url' => is_string($this->image) && $this->image !== ''
-                ? Storage::disk('public')->url($this->image)
-                : null,
+            'image_url' => $imageUrl,
             'product_type' => $this->product_type,
             'track_inventory' => $this->track_inventory,
             'is_active' => $this->is_active,

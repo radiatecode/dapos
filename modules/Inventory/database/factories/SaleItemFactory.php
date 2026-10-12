@@ -28,10 +28,14 @@ class SaleItemFactory extends Factory
                     ->tenant_id;
             },
             'product_variant_id' => ProductVariant::factory(),
-            'product_variant_name' => fake()->words(2, true),
+            'product_id' => fn (array $attributes): int => ProductVariant::query()
+                ->withoutGlobalScopes()
+                ->findOrFail($attributes['product_variant_id'])
+                ->product_id,
+            'product_name' => fake()->words(2, true),
+            'variation_name' => null,
             'quantity' => '1.0000',
             'unit_price' => '15.0000',
-            'discount_amount' => '0.0000',
             'tax_amount' => '0.0000',
             'subtotal' => '15.0000',
             'total' => '15.0000',

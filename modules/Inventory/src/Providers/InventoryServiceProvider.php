@@ -18,6 +18,7 @@ class InventoryServiceProvider extends ServiceProvider
         $this->registerRoutes();
 
         $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
+        $this->loadViewsFrom(__DIR__.'/../../resources/views', 'inventory');
     }
 
     private function registerPolicies(): void

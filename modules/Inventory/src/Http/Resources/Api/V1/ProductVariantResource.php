@@ -27,7 +27,7 @@ class ProductVariantResource extends JsonResource
             'selling_price' => $this->selling_price,
             'compare_at_price' => $this->compare_at_price,
             'weight' => $this->weight,
-            'quantity' => $this->quantity,
+            'quantity' => $this->quantityForResponse(),
             'min_stock_level' => $this->min_stock_level,
             'image' => $this->image,
             'image_url' => is_string($this->image) && $this->image !== ''
@@ -39,5 +39,18 @@ class ProductVariantResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
+    }
+
+    /**
+     * Store-scoped requests eager-load inventory balances for one store.
+     * Quantity is then that store's available stock, or zero when the store has no balance.
+     */
+    private function quantityForResponse(): mixed
+    {
+        if (! $this->relationLoaded('inventoryBalances')) {
+            return $this->quantity;
+        }
+
+        return $this->inventoryBalances->first()?->available_quantity ?? '0.0000';
     }
 }

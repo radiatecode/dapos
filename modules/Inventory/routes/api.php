@@ -5,6 +5,8 @@ use DA\Inventory\Http\Controllers\Api\V1\AttributeController;
 use DA\Inventory\Http\Controllers\Api\V1\AttributeValueController;
 use DA\Inventory\Http\Controllers\Api\V1\BrandController;
 use DA\Inventory\Http\Controllers\Api\V1\CategoryController;
+use DA\Inventory\Http\Controllers\Api\V1\CurrencyController;
+use DA\Inventory\Http\Controllers\Api\V1\CurrencySettingController;
 use DA\Inventory\Http\Controllers\Api\V1\CustomerController;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetAttributesDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetAttributeValuesDropdown;
@@ -21,6 +23,7 @@ use DA\Inventory\Http\Controllers\Api\V1\ProductController;
 use DA\Inventory\Http\Controllers\Api\V1\PurchaseController;
 use DA\Inventory\Http\Controllers\Api\V1\PurchaseReturnController;
 use DA\Inventory\Http\Controllers\Api\V1\SaleController;
+use DA\Inventory\Http\Controllers\Api\V1\SalesReportController;
 use DA\Inventory\Http\Controllers\Api\V1\StockAdjustmentController;
 use DA\Inventory\Http\Controllers\Api\V1\StockMovementController;
 use DA\Inventory\Http\Controllers\Api\V1\StockTransferController;
@@ -250,6 +253,9 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::get('sales', [SaleController::class, 'index'])
         ->middleware('permission:'.Permission::SalesView->value)
         ->name('sales.index');
+    Route::get('sales/summary', [SaleController::class, 'summary'])
+        ->middleware('permission:'.Permission::SalesView->value)
+        ->name('sales.summary');
     Route::post('sales', [SaleController::class, 'store'])
         ->middleware('permission:'.Permission::SalesCreate->value)
         ->name('sales.store');
@@ -259,6 +265,16 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::get('sales/{id}', [SaleController::class, 'show'])
         ->middleware('permission:'.Permission::SalesView->value)
         ->name('sales.show');
+
+    Route::prefix('reports/sales')
+        ->name('reports.sales.')
+        ->middleware('permission:'.Permission::ReportsView->value)
+        ->group(function (): void {
+            Route::get('/', [SalesReportController::class, 'index'])->name('index');
+            Route::get('summary', [SalesReportController::class, 'summary'])->name('summary');
+            Route::get('export/pdf', [SalesReportController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('export/excel', [SalesReportController::class, 'exportExcel'])->name('export.excel');
+        });
 
     Route::get('inventory', [InventoryController::class, 'index'])
         ->middleware('permission:inventory.view')
@@ -312,6 +328,17 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::put('tax-settings', [TaxSettingController::class, 'update'])
         ->middleware('permission:taxes.update')
         ->name('tax-settings.update');
+
+    Route::get('currencies', [CurrencyController::class, 'index'])
+        ->middleware('permission:'.Permission::SettingsView->value)
+        ->name('currencies.index');
+
+    Route::get('currency-settings', [CurrencySettingController::class, 'show'])
+        ->middleware('permission:'.Permission::SettingsView->value)
+        ->name('currency-settings.show');
+    Route::put('currency-settings', [CurrencySettingController::class, 'update'])
+        ->middleware('permission:'.Permission::SettingsUpdate->value)
+        ->name('currency-settings.update');
 
     Route::get('taxes', [TaxController::class, 'index'])
         ->middleware('permission:taxes.view')

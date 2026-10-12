@@ -41,8 +41,6 @@ class Sale extends Model
     protected $attributes = [
         'discount_amount' => 0,
         'tax_amount' => 0,
-        'shipping_amount' => 0,
-        'rounding_amount' => 0,
         'paid_amount' => 0,
         'due_amount' => 0,
         'status' => 'Completed',

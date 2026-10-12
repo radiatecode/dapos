@@ -9,6 +9,9 @@ class SalePaymentDTO extends Data
     public function __construct(
         public int $paymentMethodId,
         public float $receivedAmount,
+        public float $orderAmount,
+        public float $dueAmount,
+        public float $returnedAmount,
         public ?string $referenceNumber,
     ) {}
 }

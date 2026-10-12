@@ -3,8 +3,10 @@
 namespace DA\Inventory\Models\Queries;
 
 use DA\Inventory\Models\Product;
+use DA\Inventory\Models\ProductVariant;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 class ProductQueries extends BaseQueries
 {
@@ -18,9 +20,10 @@ class ProductQueries extends BaseQueries
         ?int $categoryId = null,
         ?int $brandId = null,
         ?bool $isActive = null,
+        ?int $storeId = null,
     ): LengthAwarePaginator {
         return $this->filtered($name, $search, $categoryId, $brandId, $isActive)
-            ->with(['category', 'brand', 'unit', 'variants', 'defaultVariant'])
+            ->with($this->listingRelations($storeId))
             ->orderByDesc('id')
             ->paginate($perPage);
     }
@@ -45,11 +48,11 @@ class ProductQueries extends BaseQueries
         ];
     }
 
-    public function findForDetail(int $id): Product
+    public function findForDetail(int $id, ?int $storeId = null): Product
     {
         /** @var Product $product */
         $product = $this->forAuthenticatedTenant()
-            ->with($this->detailRelations())
+            ->with($this->detailRelations($storeId))
             ->findOrFail($id);
 
         return $product;
@@ -69,20 +72,20 @@ class ProductQueries extends BaseQueries
         $searchTerm = trim((string) $search);
 
         return $this->forAuthenticatedTenant()
-            ->when($nameTerm !== '', fn (Builder $query) => $query->where('name', 'like', '%'.$nameTerm.'%'))
+            ->when($nameTerm !== '', fn (Builder $query) => $query->where('name', 'like', '%'.$this->containsPattern($nameTerm).'%'))
             ->when($categoryId !== null, fn (Builder $query) => $query->where('category_id', $categoryId))
             ->when($brandId !== null, fn (Builder $query) => $query->where('brand_id', $brandId))
             ->when($isActive !== null, fn (Builder $query) => $query->where('is_active', $isActive))
             ->when($searchTerm !== '', function (Builder $query) use ($searchTerm): void {
-                $like = '%'.addcslashes($searchTerm, '%_\\').'%';
-                $query->where(function (Builder $inner) use ($like): void {
-                    $inner->where('name', 'like', $like)
-                        ->orWhereHas('variants', function (Builder $variants) use ($like): void {
-                            $variants->where('sku', 'like', $like)
-                                ->orWhere('barcode', 'like', $like);
-                        });
+                $query->where(function (Builder $inner) use ($searchTerm): void {
+                    $inner->whereIn('id', ProductVariant::queries()->productIdsWithCodeStartingWith($searchTerm));
                 });
             });
+    }
+
+    private function containsPattern(string $term): string
+    {
+        return '%'.addcslashes($term, '%_\\').'%';
     }
 
     /**
@@ -95,11 +98,11 @@ class ProductQueries extends BaseQueries
     }
 
     /**
-     * @return list<string>
+     * @return array<int|string, mixed>
      */
-    public function detailRelations(): array
+    public function detailRelations(?int $storeId = null): array
     {
-        return [
+        return $this->withStoreStock([
             'category',
             'brand',
             'unit',
@@ -109,6 +112,44 @@ class ProductQueries extends BaseQueries
             'productAttributes.attribute',
             'variants.attributeValues.attribute',
             'variants.attributeValues.attributeValue',
-        ];
+        ], $storeId);
+    }
+
+    /**
+     * @return array<int|string, mixed>
+     */
+    private function listingRelations(?int $storeId): array
+    {
+        return $this->withStoreStock([
+            'category',
+            'brand',
+            'unit',
+            'taxes',
+            'variants',
+        ], $storeId);
+    }
+
+    /**
+     * When a store is selected, variant quantity in the response is that store's available stock.
+     *
+     * @param  array<int|string, mixed>  $relations
+     * @return array<int|string, mixed>
+     */
+    private function withStoreStock(array $relations, ?int $storeId): array
+    {
+        if ($storeId === null) {
+            return $relations;
+        }
+
+        $constraint = function (Relation $query) use ($storeId): void {
+            $query->where('store_id', $storeId);
+        };
+        $relations['variants.inventoryBalances'] = $constraint;
+
+        if (in_array('defaultVariant', $relations, true)) {
+            $relations['defaultVariant.inventoryBalances'] = $constraint;
+        }
+
+        return $relations;
     }
 }

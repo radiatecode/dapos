@@ -26,12 +26,14 @@ class ProductController extends Controller
             'category_id' => $request->filled('category_id') ? $request->input('category_id') : null,
             'brand_id' => $request->filled('brand_id') ? $request->input('brand_id') : null,
             'is_active' => $request->filled('is_active') ? $request->input('is_active') : null,
+            'store_id' => $request->filled('store_id') ? $request->input('store_id') : null,
         ], [
             'per_page' => ['required', 'integer', 'min:1', 'max:100'],
             'name' => ['nullable', 'string', 'max:100'],
             'search' => ['nullable', 'string', 'max:100'],
             'category_id' => ['nullable', 'integer', 'min:1'],
             'brand_id' => ['nullable', 'integer', 'min:1'],
+            'store_id' => ['nullable', 'integer'],
             'is_active' => ['nullable', 'boolean'],
         ])->validate();
 
@@ -43,6 +45,7 @@ class ProductController extends Controller
                 isset($filters['category_id']) ? (int) $filters['category_id'] : null,
                 isset($filters['brand_id']) ? (int) $filters['brand_id'] : null,
                 isset($filters['is_active']) ? filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN) : null,
+                isset($filters['store_id']) ? (int) $filters['store_id'] : null,
             ),
         );
     }
@@ -91,9 +94,13 @@ class ProductController extends Controller
             ->setStatusCode(201);
     }
 
-    public function show(int $id): ProductResource
+    public function show(Request $request, int $id): ProductResource
     {
-        return ProductResource::make(Product::queries()->findForDetail($id));
+        $storeId = $request->filled('store_id') ? $request->input('store_id') : null;
+
+        return ProductResource::make(
+            Product::queries()->findForDetail($id, $storeId),
+        );
     }
 
     public function update(UpdateProductRequest $request, int $id, UpdateProduct $update): ProductResource

@@ -37,8 +37,6 @@ class SaleFactory extends Factory
             'subtotal' => '15.0000',
             'discount_amount' => '0.0000',
             'tax_amount' => '0.0000',
-            'shipping_amount' => '0.0000',
-            'rounding_amount' => '0.0000',
             'grand_total' => '15.0000',
             'paid_amount' => '15.0000',
             'due_amount' => '0.0000',

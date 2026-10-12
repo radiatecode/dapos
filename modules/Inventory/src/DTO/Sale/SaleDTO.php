@@ -15,9 +15,12 @@ class SaleDTO extends Data
         public ?int $customerId,
         public string $saleDate,
         public float $discountAmount,
-        public string $taxAmount,
+        public float $taxAmount,
+        public float $total,
+        public float $subtotal,
         public array $items,
         public array $payments,
         public ?int $discountType,
+        public ?int $orderSource,
     ) {}
 }

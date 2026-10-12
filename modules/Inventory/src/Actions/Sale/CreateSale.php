@@ -52,8 +52,8 @@ class CreateSale
             $actor = $this->actor();
             // $variants = $this->variants($dto);
             // $this->sales->assertSellable($dto, $variants);
-            $saleCalculateData = $this->sales->calculate($dto);
-            $paymentAllocationData = $this->payments->allocate($saleCalculateData['grand_total'], $dto->payments);
+            // $saleCalculateData = $this->sales->calculate($dto);
+            $paymentAllocationData = $this->payments->extractPaymentLines($dto->payments);
 
             $sale = new Sale;
             $sale->tenant_id = $actor->tenant_id;
@@ -61,19 +61,19 @@ class CreateSale
             $sale->customer_id = $dto->customerId;
             $sale->invoice_number = Sale::queries()->nextInvoiceNumber();
             $sale->sale_date = $dto->saleDate;
-            $sale->total_items = $saleCalculateData['total_items'];
-            $sale->subtotal = $saleCalculateData['subtotal'];
+            $sale->total_items = count($dto->items);
+            $sale->subtotal = $dto->subtotal;
             $sale->discount_amount = $dto->discountAmount;
             $sale->tax_amount = $dto->taxAmount;
-            $sale->grand_total = $saleCalculateData['grand_total'];
+            $sale->grand_total = $dto->total;
             $sale->paid_amount = $paymentAllocationData['paid_amount'];
             $sale->due_amount = $paymentAllocationData['due_amount'];
             $sale->status = SaleStatus::Completed;
-            $sale->payment_status = $this->payments->paymentStatus($saleCalculateData['grand_total'], $paymentAllocationData['paid_amount']);
+            $sale->payment_status = $this->payments->paymentStatus($dto->total, $paymentAllocationData['paid_amount']);
             $sale->cashier_id = $actor->id;
             $sale->save();
 
-            $items = $this->createItems($sale, $dto, $saleCalculateData['cart_items']);
+            $items = $this->createItems($sale, $dto);
             $this->lockTrackedBalances((int) $actor->tenant_id, $dto->storeId, $items);
             $this->applyCosts($sale, $items);
             $this->paymentWriter->create($sale, $paymentAllocationData['lines']);
@@ -86,7 +86,7 @@ class CreateSale
      * @param  list<array{subtotal: string, total: string}>  $lines
      * @return list<SaleItem>
      */
-    private function createItems(Sale $sale, SaleDTO $dto, array $lines): array
+    private function createItems(Sale $sale, SaleDTO $dto): array
     {
         $items = [];
 
@@ -100,9 +100,9 @@ class CreateSale
             $row->variation_name = $item->variationName;
             $row->quantity = $item->quantity;
             $row->unit_price = $item->unitPrice;
-            $row->tax_amount = $lines[$index]['taxamount'];
-            $row->subtotal = $lines[$index]['subtotal'];
-            $row->total = $lines[$index]['total'];
+            $row->tax_amount = $item->taxAmount;
+            $row->subtotal = $item->subtotal;
+            $row->total = $item->total;
             $row->cost_price = '0.0000';
             $row->cogs = '0.0000';
             $row->save();

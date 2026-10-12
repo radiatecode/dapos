@@ -88,6 +88,11 @@ class Product extends Model
         return $this->belongsTo(Brand::class);
     }
 
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class, 'store_id');
+    }
+
     /**
      * @return BelongsTo<Unit, $this>
      */

@@ -3,6 +3,7 @@
 namespace DA\Inventory\Models\Queries;
 
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ProductVariantQueries extends BaseQueries
 {
@@ -31,6 +32,22 @@ class ProductVariantQueries extends BaseQueries
             ->where('tenant_id', auth()->user()->tenant_id)
             ->where('sku', $sku)
             ->exists();
+    }
+
+    /**
+     * Prefix match keeps the lookup on the (tenant_id, sku) and (tenant_id, barcode) unique indexes.
+     */
+    public function productIdsWithCodeStartingWith(string $term)
+    {
+        $prefix = addcslashes($term, '%_\\').'%';
+
+        return DB::table('product_variants')
+            ->select('product_id')
+            ->where('tenant_id', auth()->user()->tenant_id)
+            ->where(function ($query) use ($prefix, $term): void {
+                $query->where('barcode', $term)
+                    ->orWhere('sku', 'like', $prefix);
+            });
     }
 
     public function latestSequentialBarcodeNumber(string $prefix): int

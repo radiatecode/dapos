@@ -19,6 +19,16 @@ class BaseQueries
             );
     }
 
+    public function nameForAuthenticatedTenant(int $id): ?string
+    {
+        $name = $this->eloquentBuilder()
+            ->where('tenant_id', auth()->user()->tenant_id)
+            ->whereKey($id)
+            ->value('name');
+
+        return $name === null ? null : (string) $name;
+    }
+
     public function slugExists(string $slug, ?int $ignoreId = null): bool
     {
         return $this->eloquentBuilder()

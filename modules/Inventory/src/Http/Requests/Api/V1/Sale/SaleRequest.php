@@ -5,7 +5,6 @@ namespace DA\Inventory\Http\Requests\Api\V1\Sale;
 use DA\Inventory\DTO\Sale\SaleDTO;
 use DA\Inventory\DTO\Sale\SaleItemDTO;
 use DA\Inventory\DTO\Sale\SalePaymentDTO;
-use DA\Inventory\Services\Decimal;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -34,9 +33,9 @@ abstract class SaleRequest extends FormRequest
             'sale_date' => ['required', 'date'],
             'discount_type' => ['nullable', 'numeric', 'in:1,2'],
             'discount_amount' => ['sometimes', 'numeric', 'min:0', 'decimal:0,4'],
-            // 'tax_amount' => ['sometimes', 'numeric', 'min:0', 'decimal:0,4'],
-            // 'subtotal' => ['required', 'numeric', 'min:0', 'decimal:0,4'],
-            // 'total_amount' => ['required', 'numeric', 'min:0', 'decimal:0,4'],
+            'tax_amount' => ['sometimes', 'numeric', 'min:0', 'decimal:0,4'],
+            'subtotal' => ['required', 'numeric', 'min:0', 'decimal:0,4'],
+            'total' => ['required', 'numeric', 'min:0', 'decimal:0,4'],
 
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => [
@@ -56,13 +55,11 @@ abstract class SaleRequest extends FormRequest
                 'string',
             ],
             'items.*.quantity' => ['required', 'numeric', 'gt:0', 'decimal:0,4'],
-            'items.*.unit_price' => ['required', 'numeric', 'min:0', 'decimal:0,4'],
+            'items.*.unitprice' => ['required', 'numeric', 'min:0', 'decimal:0,4'],
             'items.*.item_tax_type' => ['nullable', 'numeric', 'in:1,2'],
-            'items.*.taxes' => ['nullable', 'array'],
-            // 'items.*.tax_amount' => ['sometimes', 'numeric', 'min:0', 'decimal:0,4'],
-            // 'items.*.total_price' => ['required', 'numeric', 'min:0', 'decimal:0,4'],
-            // 'items.*.grand_total' => ['required', 'numeric', 'min:0', 'decimal:0,4'],
-
+            'items.*.taxamount' => ['sometimes', 'numeric', 'min:0', 'decimal:0,4'],
+            'items.*.subtotal' => ['sometimes', 'numeric', 'min:0', 'decimal:0,4'],
+            'items.*.total' => ['required', 'numeric', 'min:0', 'decimal:0,4'],
             'payments' => ['required', 'array', 'min:1'],
             'payments.*.payment_method_id' => [
                 'required',
@@ -109,7 +106,10 @@ abstract class SaleRequest extends FormRequest
             saleDate: $validated['sale_date'],
             discountAmount: $validated['discount_amount'] ?? 0,
             discountType: $validated['discount_type'],
-            taxAmount: Decimal::normalize($validated['tax_amount'] ?? 0),
+            taxAmount: $validated['tax_amount'] ?? 0,
+            total: $validated['total'] ?? 0,
+            subtotal: $validated['subtotal'] ?? 0,
+            orderSource: $validated['order_source'],
             items: array_map(
                 fn (array $item): SaleItemDTO => new SaleItemDTO(
                     productVariantId: (int) $item['product_variant_id'],
@@ -117,17 +117,22 @@ abstract class SaleRequest extends FormRequest
                     productName: $item['name'],
                     variationName: $item['variation_name'] ?? null,
                     quantity: (float) $item['quantity'],
-                    unitPrice: (float) $item['unit_price'],
-                    taxes: $item['taxes'] ?? [],
+                    unitPrice: (float) $item['unitprice'],
                     itemTaxType: $item['item_tax_type'],
+                    taxAmount: $item['taxamount'] ?? 0,
+                    subtotal: $item['subtotal'] ?? 0,
+                    total: $item['total'],
                 ),
                 $validated['items'],
             ),
             payments: array_map(
                 fn (array $payment): SalePaymentDTO => new SalePaymentDTO(
                     paymentMethodId: (int) $payment['payment_method_id'],
-                    receivedAmount: Decimal::normalize($payment['received_amount']),
+                    receivedAmount: $payment['received_amount'],
                     referenceNumber: $payment['reference_number'] ?? null,
+                    orderAmount: $payment['order_amount'],
+                    dueAmount: $payment['due_amount'] ?? 0,
+                    returnedAmount: $payment['returned_amount'] ?? 0,
                 ),
                 $validated['payments'],
             ),

@@ -9,6 +9,37 @@ use Illuminate\Validation\ValidationException;
 class PaymentService
 {
     /**
+     * @param  list<SalePaymentDTO>  $payments
+     */
+    public function extractPaymentLines(array $payments): array
+    {
+        $paid = 0;
+        $due = 0;
+        $lines = [];
+        foreach ($payments as $index => $payment) {
+
+            $paid += min($payment->receivedAmount, $payment->orderAmount);
+            $due += $payment->dueAmount;
+
+            $lines[] = [
+                'payment_method_id' => $payment->paymentMethodId,
+                'bill_amount' => $payment->orderAmount,
+                'received_amount' => $payment->receivedAmount,
+                'paid_amount' => $paid,
+                'due_amount' => $payment->dueAmount,
+                'returned_amount' => $payment->returnedAmount,
+                'reference_number' => $payment->referenceNumber,
+            ];
+        }
+
+        return [
+            'paid_amount' => $paid,
+            'due_amount' => $due,
+            'lines' => $lines,
+        ];
+    }
+
+    /**
      * Apply received amounts to a bill. Paid amount cannot exceed the remaining bill.
      * The extra received amount is change.
      *

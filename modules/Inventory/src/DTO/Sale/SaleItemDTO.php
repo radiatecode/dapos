@@ -12,7 +12,9 @@ class SaleItemDTO extends Data
         public string $productName,
         public float $quantity,
         public float $unitPrice,
-        public array $taxes,
+        public float $taxAmount,
+        public float $subtotal,
+        public float $total,
         public ?string $variationName,
         public ?int $itemTaxType,
     ) {}

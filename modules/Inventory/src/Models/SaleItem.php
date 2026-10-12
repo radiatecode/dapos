@@ -32,7 +32,6 @@ class SaleItem extends Model
      * @var array<string, mixed>
      */
     protected $attributes = [
-        'discount_amount' => 0,
         'tax_amount' => 0,
     ];
 

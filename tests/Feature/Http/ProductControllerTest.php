@@ -8,6 +8,7 @@ use DA\Inventory\Models\Attribute;
 use DA\Inventory\Models\AttributeValue;
 use DA\Inventory\Models\Brand;
 use DA\Inventory\Models\Category;
+use DA\Inventory\Models\InventoryBalance;
 use DA\Inventory\Models\Product;
 use DA\Inventory\Models\ProductVariant;
 use DA\Inventory\Models\Store;
@@ -136,6 +137,112 @@ describe('index and show', function () {
             ->assertJsonCount(2, 'data');
     });
 
+    it('searches products by barcode prefix', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsView]);
+        $match = Product::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Scanned product']);
+        ProductVariant::factory()->default()->create([
+            'product_id' => $match->id,
+            'tenant_id' => $tenant->id,
+            'barcode' => '8801234567890',
+        ]);
+        Product::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Unrelated product']);
+
+        $this->getJson('/api/v1/products?search=880123')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $match->id)
+            ->assertJsonPath('data.0.default_variant.barcode', '8801234567890');
+    });
+
+    it('treats wildcard characters in the name filter literally', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsView]);
+        $discounted = Product::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Cola 50% off']);
+        Product::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Cola 500ml']);
+
+        $this->getJson('/api/v1/products?name=50%25')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $discounted->id);
+    });
+
+    it('returns the selected store available quantity on the product list', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsView]);
+        $product = Product::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Store stock']);
+        $variant = ProductVariant::factory()->default()->create([
+            'product_id' => $product->id,
+            'tenant_id' => $tenant->id,
+            'quantity' => '20.0000',
+        ]);
+        $store = Store::factory()->create(['tenant_id' => $tenant->id]);
+        InventoryBalance::factory()->create([
+            'tenant_id' => $tenant->id,
+            'store_id' => $store->id,
+            'product_variant_id' => $variant->id,
+            'quantity' => '4.0000',
+            'available_quantity' => '4.0000',
+        ]);
+
+        $this->getJson('/api/v1/products?store_id='.$store->id)
+            ->assertOk()
+            ->assertJsonPath('data.0.default_variant.quantity', '4.0000')
+            ->assertJsonPath('data.0.variants.0.quantity', '4.0000');
+    });
+
+    it('keeps the catalog quantity when no store is selected', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsView]);
+        $product = Product::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Catalog stock']);
+        $variant = ProductVariant::factory()->default()->create([
+            'product_id' => $product->id,
+            'tenant_id' => $tenant->id,
+            'quantity' => '20.0000',
+        ]);
+        $store = Store::factory()->create(['tenant_id' => $tenant->id]);
+        InventoryBalance::factory()->create([
+            'tenant_id' => $tenant->id,
+            'store_id' => $store->id,
+            'product_variant_id' => $variant->id,
+            'available_quantity' => '4.0000',
+        ]);
+
+        $this->getJson('/api/v1/products')
+            ->assertOk()
+            ->assertJsonPath('data.0.default_variant.quantity', '20.0000');
+    });
+
+    it('returns zero quantity when the selected store has no balance', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsView]);
+        $product = Product::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Empty store']);
+        ProductVariant::factory()->default()->create([
+            'product_id' => $product->id,
+            'tenant_id' => $tenant->id,
+            'quantity' => '20.0000',
+        ]);
+        $store = Store::factory()->create(['tenant_id' => $tenant->id]);
+
+        $this->getJson('/api/v1/products?store_id='.$store->id)
+            ->assertOk()
+            ->assertJsonPath('data.0.default_variant.quantity', '0.0000')
+            ->assertJsonPath('data.0.variants.0.quantity', '0.0000');
+    });
+
+    it('returns 422 when the store belongs to another tenant', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsView]);
+        $foreignTenant = Tenant::factory()->create();
+        $foreignStore = Store::withoutEvents(fn () => Store::factory()->create([
+            'tenant_id' => $foreignTenant->id,
+        ]));
+
+        $this->getJson('/api/v1/products?store_id='.$foreignStore->id)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['store_id' => 'The selected store is invalid.']);
+    });
+
     it('returns the product with its default variant', function () {
         $tenant = Tenant::factory()->create();
         actingAsTenantUser($tenant, [Permission::ProductsView]);
@@ -154,6 +261,29 @@ describe('index and show', function () {
             ->assertJsonPath('data.name', 'Shown')
             ->assertJsonPath('data.variants.0.sku', 'SHOWN-1')
             ->assertJsonPath('data.variants.0.is_default', true);
+    });
+
+    it('returns the selected store available quantity for a product', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsView]);
+        $product = Product::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Shown stock']);
+        $variant = ProductVariant::factory()->default()->create([
+            'product_id' => $product->id,
+            'tenant_id' => $tenant->id,
+            'quantity' => '20.0000',
+        ]);
+        $store = Store::factory()->create(['tenant_id' => $tenant->id]);
+        InventoryBalance::factory()->create([
+            'tenant_id' => $tenant->id,
+            'store_id' => $store->id,
+            'product_variant_id' => $variant->id,
+            'available_quantity' => '7.0000',
+        ]);
+
+        $this->getJson('/api/v1/products/'.$product->id.'?store_id='.$store->id)
+            ->assertOk()
+            ->assertJsonPath('data.variants.0.quantity', '7.0000')
+            ->assertJsonPath('data.default_variant.quantity', '7.0000');
     });
 
     it('returns 404 when tenant A requests a tenant B product', function () {
@@ -860,6 +990,11 @@ describe('product taxes', function () {
         $this->getJson('/api/v1/products/'.$response->json('data.id'))
             ->assertOk()
             ->assertJsonPath('data.tax_ids', $taxIds);
+
+        $this->getJson('/api/v1/products')
+            ->assertOk()
+            ->assertJsonPath('data.0.tax_ids', $taxIds)
+            ->assertJsonCount(2, 'data.0.taxes');
     });
 
     it('returns 422 when a tax belongs to another tenant', function () {

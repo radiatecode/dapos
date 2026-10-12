@@ -74,6 +74,14 @@ class ProductVariant extends Model
     }
 
     /**
+     * @return HasMany<InventoryBalance, $this>
+     */
+    public function inventoryBalances(): HasMany
+    {
+        return $this->hasMany(InventoryBalance::class, 'product_variant_id');
+    }
+
+    /**
      * @return HasMany<VariantAttributeValue, $this>
      */
     public function attributeValues(): HasMany

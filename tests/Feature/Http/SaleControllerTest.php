@@ -1,12 +1,14 @@
 <?php
 
 use App\Enums\Permission;
+use DA\Inventory\Enums\SalePaymentStatus;
 use DA\Inventory\Enums\UnitType;
 use DA\Inventory\Models\Brand;
 use DA\Inventory\Models\Category;
 use DA\Inventory\Models\Customer;
 use DA\Inventory\Models\InventoryBalance;
 use DA\Inventory\Models\InventoryLayer;
+use DA\Inventory\Models\Sale;
 use DA\Inventory\Models\StockMovement;
 use DA\Inventory\Models\Store;
 use DA\Inventory\Models\Supplier;
@@ -116,6 +118,7 @@ describe('authentication and authorization', function () {
         $this->json($method, $uri, salePayload())->assertUnauthorized();
     })->with([
         ['GET', '/api/v1/sales'],
+        ['GET', '/api/v1/sales/summary'],
         ['POST', '/api/v1/sales'],
         ['GET', '/api/v1/sales/1'],
         ['POST', '/api/v1/sales/1/payments'],
@@ -125,6 +128,82 @@ describe('authentication and authorization', function () {
         actingAsTenantUser(permissions: [Permission::SalesView]);
 
         $this->postJson('/api/v1/sales', salePayload())->assertForbidden();
+    });
+
+    it('returns 403 when the user cannot view sales', function () {
+        actingAsTenantUser(permissions: [Permission::SalesCreate]);
+
+        $this->getJson('/api/v1/sales')->assertForbidden();
+        $this->getJson('/api/v1/sales/summary')->assertForbidden();
+    });
+});
+
+describe('summary', function () {
+    it('totals sales, paid, and due for the current tenant only', function () {
+        $user = actingAsTenantUser(permissions: [Permission::SalesView]);
+        Sale::factory()->create(['tenant_id' => $user->tenant_id, 'grand_total' => '20.0000', 'paid_amount' => '20.0000', 'due_amount' => '0.0000']);
+        Sale::factory()->create([
+            'tenant_id' => $user->tenant_id,
+            'grand_total' => '30.5000',
+            'paid_amount' => '10.0000',
+            'due_amount' => '20.5000',
+            'payment_status' => SalePaymentStatus::Partial,
+        ]);
+        Sale::withoutEvents(fn () => Sale::factory()->create(['grand_total' => '999.0000']));
+
+        $this->getJson('/api/v1/sales/summary')
+            ->assertOk()
+            ->assertJsonPath('data.total_sales', 2)
+            ->assertJsonPath('data.total_amount', '50.5000')
+            ->assertJsonPath('data.total_paid', '30.0000')
+            ->assertJsonPath('data.total_due', '20.5000')
+            ->assertJsonPath('data.paid_count', 1)
+            ->assertJsonPath('data.partial_count', 1)
+            ->assertJsonPath('data.unpaid_count', 0);
+    });
+
+    it('applies the list filters to the list and the summary', function () {
+        $user = actingAsTenantUser(permissions: [Permission::SalesView]);
+        $customer = Customer::factory()->create(['tenant_id' => $user->tenant_id]);
+        $store = Store::factory()->create(['tenant_id' => $user->tenant_id]);
+        $match = Sale::factory()->create([
+            'tenant_id' => $user->tenant_id,
+            'customer_id' => $customer->id,
+            'store_id' => $store->id,
+            'invoice_number' => 'INV-MATCH-0001',
+            'sale_date' => '2026-09-15',
+            'grand_total' => '42.0000',
+        ]);
+        Sale::factory()->create([
+            'tenant_id' => $user->tenant_id,
+            'invoice_number' => 'INV-OTHER-0001',
+            'sale_date' => '2026-08-01',
+        ]);
+        $query = http_build_query([
+            'customer_id' => $customer->id,
+            'store_id' => $store->id,
+            'search' => 'MATCH',
+            'date_from' => '2026-09-01',
+            'date_to' => '2026-09-30',
+        ]);
+
+        $this->getJson('/api/v1/sales?'.$query)
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $match->id);
+
+        $this->getJson('/api/v1/sales/summary?'.$query)
+            ->assertOk()
+            ->assertJsonPath('data.total_sales', 1)
+            ->assertJsonPath('data.total_amount', '42.0000');
+    });
+
+    it('rejects an end date before the start date', function () {
+        actingAsTenantUser(permissions: [Permission::SalesView]);
+
+        $this->getJson('/api/v1/sales/summary?date_from=2026-09-10&date_to=2026-09-01')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['date_to']);
     });
 });
 
