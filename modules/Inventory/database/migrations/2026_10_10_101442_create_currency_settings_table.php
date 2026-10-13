@@ -20,11 +20,9 @@ return new class extends Migration
             $table->string('decimal_separator');
             $table->string('thousands_separator');
             $table->string('symbol_position');
-            $table->boolean('show_decimals')->default(true)->after('symbol_position');
-            $table->boolean('add_space')->default(false)->after('show_decimals');
+            $table->boolean('show_decimals')->default(true);
+            $table->boolean('add_space')->default(false);
             $table->timestamps();
-
-            $table->foreign('currency_code')->references('code')->on('currencies')->restrictOnDelete();
         });
     }
 
