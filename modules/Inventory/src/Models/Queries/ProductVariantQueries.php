@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models\Queries;
 
+use DA\Inventory\DTO\Product\BarcodeLabelFilterDTO;
 use DA\Inventory\DTO\Report\MinStockReportFilterDTO;
 use DA\Inventory\Enums\MinStockReportSortColumn;
 use DA\Inventory\Enums\MinStockStatus;
@@ -74,6 +75,56 @@ class ProductVariantQueries extends BaseQueries
     public function takenBarcodes(array $barcodes, ?int $ignoreProductId = null): Collection
     {
         return $this->takenCodes('barcode', $barcodes, $ignoreProductId);
+    }
+
+    /**
+     * @return LengthAwarePaginator<int, object>
+     */
+    public function paginateVariantsForBarcodeLabels(BarcodeLabelFilterDTO $filters, int $perPage = 20): LengthAwarePaginator
+    {
+        $tenantId = auth()->user()->tenant_id;
+        $term = trim((string) $filters->search);
+
+        return DB::table('product_variants', 'pv')
+            ->join('products as p', 'p.id', '=', 'pv.product_id')
+            ->leftJoin('categories as c', 'c.id', '=', 'p.category_id')
+            ->where('pv.tenant_id', $tenantId)
+            ->where('p.tenant_id', $tenantId)
+            ->whereNull('pv.deleted_at')
+            ->whereNull('p.deleted_at')
+            ->where('pv.is_active', true)
+            ->where('p.is_active', true)
+            ->when($filters->categoryId !== null, function (Builder $query) use ($filters): void {
+                $query->where(function (Builder $inner) use ($filters): void {
+                    $inner->where('p.category_id', $filters->categoryId)
+                        ->orWhere('c.parent_id', $filters->categoryId);
+                });
+            })
+            ->when($term !== '', function (Builder $query) use ($term): void {
+                $like = '%'.addcslashes($term, '%_\\').'%';
+                $query->where(function (Builder $inner) use ($like): void {
+                    $inner->where('pv.sku', 'like', $like)
+                        ->orWhere('pv.barcode', 'like', $like)
+                        ->orWhere('p.name', 'like', $like)
+                        ->orWhere('pv.name', 'like', $like);
+                });
+            })
+            ->select([
+                'pv.id as product_variant_id',
+                'pv.product_id',
+                'p.name as product_name',
+                'pv.name as variant_name',
+                'pv.sku',
+                'pv.barcode',
+                'pv.barcode_type',
+                'pv.selling_price',
+                'pv.image as variant_image',
+                'p.image as product_image',
+                'c.name as category_name',
+            ])
+            ->orderBy('p.name')
+            ->orderBy('pv.id')
+            ->paginate($perPage);
     }
 
     public function skuExists(string $sku): bool

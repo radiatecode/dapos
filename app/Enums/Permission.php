@@ -11,6 +11,8 @@ enum Permission: string
     case ProductsUpdate = 'products.update';
     case ProductsDelete = 'products.delete';
 
+    case BarcodesPrint = 'barcodes.print';
+
     case CategoriesView = 'categories.view';
     case CategoriesCreate = 'categories.create';
     case CategoriesUpdate = 'categories.update';
@@ -102,6 +104,7 @@ enum Permission: string
             self::ProductsCreate => 'Create products',
             self::ProductsUpdate => 'Update products',
             self::ProductsDelete => 'Delete products',
+            self::BarcodesPrint => 'Print barcode labels',
             self::CategoriesView => 'View categories',
             self::CategoriesCreate => 'Create categories',
             self::CategoriesUpdate => 'Update categories',
@@ -175,6 +178,7 @@ enum Permission: string
         return match ($this) {
             self::DashboardView => 'Overview',
             self::ProductsView, self::ProductsCreate, self::ProductsUpdate, self::ProductsDelete,
+            self::BarcodesPrint,
             self::CategoriesView, self::CategoriesCreate, self::CategoriesUpdate, self::CategoriesDelete,
             self::BrandsView, self::BrandsCreate, self::BrandsUpdate, self::BrandsDelete,
             self::UnitsView, self::UnitsCreate, self::UnitsUpdate, self::UnitsDelete,

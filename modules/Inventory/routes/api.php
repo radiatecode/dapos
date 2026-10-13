@@ -3,6 +3,7 @@
 use App\Enums\Permission;
 use DA\Inventory\Http\Controllers\Api\V1\AttributeController;
 use DA\Inventory\Http\Controllers\Api\V1\AttributeValueController;
+use DA\Inventory\Http\Controllers\Api\V1\BarcodeLabelController;
 use DA\Inventory\Http\Controllers\Api\V1\BrandController;
 use DA\Inventory\Http\Controllers\Api\V1\CategoryController;
 use DA\Inventory\Http\Controllers\Api\V1\CurrencyController;
@@ -150,6 +151,10 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::put('products/{id}', [ProductController::class, 'update'])
         ->middleware('permission:products.update')
         ->name('products.update');
+
+    Route::get('barcode-labels/variants', [BarcodeLabelController::class, 'index'])
+        ->middleware('permission:'.Permission::BarcodesPrint->value)
+        ->name('barcode-labels.variants');
 
     Route::get('customers-dropdown', GetCustomersDropdown::class)
         ->middleware('permission:'.Permission::CustomersView->value)
