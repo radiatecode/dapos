@@ -5,8 +5,8 @@ namespace DA\Admin\Enums;
 enum TenantStatus: int
 {
     case Active = 1;
-    case Suspended = 0;
-    case Inactive = 2;
+    case Suspended = 2;
+    case Inactive = 0;
 
     public function label(): string
     {
