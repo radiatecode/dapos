@@ -7,6 +7,7 @@ use DA\Admin\Models\Tenant;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\Sanctum;
 
 describe('authentication and authorization', function () {
     it('returns 401 when no token is provided', function (string $method, string $uri) {
@@ -26,6 +27,42 @@ describe('authentication and authorization', function () {
         actingAsTenantUser(permissions: [Permission::RolesView]);
 
         $this->getJson('/api/v1/users')->assertForbidden();
+    });
+
+    it('returns 403 when an inactive super admin requests users', function () {
+        $tenant = Tenant::factory()->create();
+        $user = User::factory()->forTenant($tenant)->create([
+            'is_super_admin' => true,
+            'is_active' => false,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/users')->assertForbidden();
+    });
+
+    it('returns 403 when a super admin belongs to an inactive tenant', function () {
+        $tenant = Tenant::factory()->inactive()->create();
+        $user = User::factory()->forTenant($tenant)->create([
+            'is_super_admin' => true,
+            'is_active' => true,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/users')->assertForbidden();
+    });
+
+    it('returns users for an active super admin of an active tenant', function () {
+        $tenant = Tenant::factory()->create();
+        $user = User::factory()->forTenant($tenant)->create([
+            'is_super_admin' => true,
+            'is_active' => true,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/users')->assertOk();
     });
 });
 

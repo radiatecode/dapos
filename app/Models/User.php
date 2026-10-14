@@ -39,6 +39,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => UserRole::class,
+            'is_active' => 'boolean',
+            'is_super_admin' => 'boolean',
         ];
     }
 
@@ -50,5 +52,10 @@ class User extends Authenticatable
     public function isTenantUser(): bool
     {
         return $this->role === UserRole::TenantUser;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->is_active !== false;
     }
 }

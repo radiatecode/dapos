@@ -55,4 +55,11 @@ class TenantFactory extends Factory
             'status' => TenantStatus::Suspended,
         ]);
     }
+
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'status' => TenantStatus::Inactive,
+        ]);
+    }
 }

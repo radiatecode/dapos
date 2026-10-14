@@ -42,6 +42,26 @@ it('resolves tenant context from the authenticated tenant user', function () {
         ->assertJsonPath('id', $tenant->id);
 });
 
+it('returns 403 for an inactive tenant user', function () {
+    $tenant = Tenant::factory()->create();
+    $user = User::factory()->forTenant($tenant)->create([
+        'is_active' => false,
+    ]);
+
+    Sanctum::actingAs($user);
+
+    $this->getJson('/api/tenant-context-check')->assertForbidden();
+});
+
+it('returns 403 for a tenant user whose tenant is inactive', function () {
+    $tenant = Tenant::factory()->inactive()->create();
+    $user = User::factory()->forTenant($tenant)->create();
+
+    Sanctum::actingAs($user);
+
+    $this->getJson('/api/tenant-context-check')->assertForbidden();
+});
+
 it('returns 403 for a tenant user whose tenant is suspended', function () {
     $tenant = Tenant::factory()->suspended()->create();
     $user = User::factory()->forTenant($tenant)->create();

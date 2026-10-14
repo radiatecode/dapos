@@ -25,8 +25,16 @@ class LoginUser
             ]);
         }
 
+        if (! $user->isActive()) {
+            abort(403, 'This account is inactive.');
+        }
+
         if ($user->tenant->isSuspended()) {
             abort(403, 'This business account is suspended.');
+        }
+
+        if (! $user->tenant->isActive()) {
+            abort(403, 'This business account is inactive.');
         }
 
         $token = $user->createToken($dto->device_name)->plainTextToken;

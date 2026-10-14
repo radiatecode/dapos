@@ -52,7 +52,7 @@ class Tenant extends Model
      * @var array<string, mixed>
      */
     protected $attributes = [
-        'status' => TenantStatus::Active->value,
+        'status' => TenantStatus::Inactive->value,
         'timezone' => 'Asia/Dhaka',
         'currency' => 'BDT',
     ];
@@ -78,6 +78,16 @@ class Tenant extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * The tenant owner created by the provider. There is at most one.
+     *
+     * @return HasOne<User, $this>
+     */
+    public function superAdmin(): HasOne
+    {
+        return $this->hasOne(User::class)->where('is_super_admin', true);
     }
 
     /**
@@ -137,6 +147,16 @@ class Tenant extends Model
     public function isSuspended(): bool
     {
         return $this->status === TenantStatus::Suspended;
+    }
+
+    public function isInactive(): bool
+    {
+        return $this->status === TenantStatus::Inactive;
+    }
+
+    public function canSubscribe(): bool
+    {
+        return $this->isActive() || $this->isInactive();
     }
 
     public function notificationEmail(): ?string

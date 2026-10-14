@@ -46,6 +46,8 @@ class TenantController extends Controller
 
     public function show(Tenant $tenant): View
     {
+        $tenant->load('superAdmin');
+
         return view('admin::app.tenants.show', compact('tenant'));
     }
 
@@ -90,6 +92,21 @@ class TenantController extends Controller
 
     public function activate(Tenant $tenant, ChangeTenantStatus $changeStatus): RedirectResponse|JsonResponse
     {
+        if ($tenant->isInactive()) {
+            $message = 'Subscribe to a plan to activate this tenant.';
+
+            if (request()->ajax() || request()->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $message,
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            flash($message)->error()->important();
+
+            return back();
+        }
+
         $tenant = $changeStatus->handle($tenant, TenantStatus::Active);
 
         return $this->statusChangedResponse(

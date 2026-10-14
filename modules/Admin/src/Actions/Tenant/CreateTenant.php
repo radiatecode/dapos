@@ -3,6 +3,7 @@
 namespace DA\Admin\Actions\Tenant;
 
 use DA\Admin\DTO\TenantDTO;
+use DA\Admin\Enums\TenantStatus;
 use DA\Admin\Models\Tenant;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
@@ -36,7 +37,7 @@ class CreateTenant
         $tenant->billing_state = $tenantDTO->billing_state;
         $tenant->billing_postal_code = $tenantDTO->billing_postal_code;
         $tenant->billing_country = $tenantDTO->billing_country;
-        $tenant->status = $tenantDTO->status;
+        $tenant->status = TenantStatus::Inactive;
 
         if ($tenantDTO->logo instanceof UploadedFile) {
             $tenant->logo = $tenantDTO->logo->store('tenants/logos', 'public');

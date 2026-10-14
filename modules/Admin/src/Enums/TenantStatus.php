@@ -6,12 +6,14 @@ enum TenantStatus: int
 {
     case Active = 1;
     case Suspended = 0;
+    case Inactive = 2;
 
     public function label(): string
     {
         return match ($this) {
             self::Active => 'Active',
             self::Suspended => 'Suspended',
+            self::Inactive => 'Inactive',
         };
     }
 
@@ -20,6 +22,7 @@ enum TenantStatus: int
         return match ($this) {
             self::Active => 'success',
             self::Suspended => 'danger',
+            self::Inactive => 'muted',
         };
     }
 }

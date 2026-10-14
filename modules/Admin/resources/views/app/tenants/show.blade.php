@@ -99,6 +99,8 @@
                         'Billing country' => $tenant->billing_country,
                     ],
                 ])
+
+                @include('admin::app.tenants._super_admin')
             </div>
 
             <div class="col-lg-4">
@@ -127,7 +129,7 @@
                                     <span>Activate</span>
                                 </button>
                             </form>
-                        @else
+                        @elseif ($tenant->isActive())
                             <form method="POST" action="{{ route('admin.tenants.suspend', $tenant) }}">
                                 @csrf
                                 <button type="submit" class="btn admin-btn btn-warning tenant-action-btn">
@@ -135,6 +137,11 @@
                                     <span>Suspend</span>
                                 </button>
                             </form>
+                        @else
+                            <a href="{{ route('admin.subscriptions.create') }}" class="btn admin-btn btn-success tenant-action-btn">
+                                <i class="fas fa-layer-group"></i>
+                                <span>Subscribe a plan</span>
+                            </a>
                         @endif
 
                         <form method="POST" action="{{ route('admin.tenants.destroy', $tenant) }}"

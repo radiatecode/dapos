@@ -1,9 +1,11 @@
 <?php
 
+use App\Models\User;
 use DA\Admin\DTO\CreateSubscriptionDTO;
 use DA\Admin\Enums\SubscriptionEventType;
 use DA\Admin\Enums\SubscriptionItemType;
 use DA\Admin\Enums\SubscriptionStatus;
+use DA\Admin\Enums\TenantStatus;
 use DA\Admin\Exceptions\InvalidSubscriptionTransitionException;
 use DA\Admin\Models\Addon;
 use DA\Admin\Models\Plan;
@@ -28,10 +30,39 @@ it('rejects creating a subscription for an inactive tenant', function () {
     $plan = Plan::factory()->create();
 
     expect(fn () => app(SubscriptionService::class)->create(createSubscriptionDTO($tenant, $plan)))
-        ->toThrow(InvalidSubscriptionTransitionException::class, 'The selected tenant is not active.');
+        ->toThrow(InvalidSubscriptionTransitionException::class, 'The selected tenant is suspended.');
 
     $this->assertDatabaseCount('subscriptions', 0);
     $this->assertDatabaseCount('subscription_events', 0);
+});
+
+it('activates an inactive tenant and its super admin when a plan is subscribed', function () {
+    $tenant = Tenant::factory()->inactive()->create();
+    $plan = Plan::factory()->create();
+    $superAdmin = User::factory()->forTenant($tenant)->create([
+        'is_super_admin' => true,
+        'is_active' => false,
+    ]);
+    $staff = User::factory()->forTenant($tenant)->create([
+        'is_super_admin' => false,
+        'is_active' => false,
+    ]);
+
+    app(SubscriptionService::class)->create(createSubscriptionDTO($tenant, $plan, startTrial: false));
+
+    $this->assertDatabaseHas('tenants', [
+        'id' => $tenant->id,
+        'status' => TenantStatus::Active->value,
+    ]);
+    $this->assertDatabaseHas('users', [
+        'id' => $superAdmin->id,
+        'is_active' => 1,
+    ]);
+    $this->assertDatabaseHas('users', [
+        'id' => $staff->id,
+        'is_active' => 0,
+        'is_super_admin' => 0,
+    ]);
 });
 
 it('rejects creating a subscription on an inactive plan', function () {

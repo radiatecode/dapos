@@ -36,7 +36,7 @@ class TenantDTO extends Data
         public ?string $billing_country,
         public ?string $slug,
         public ?UploadedFile $logo,
-        public TenantStatus $status = TenantStatus::Active,
+        public TenantStatus $status = TenantStatus::Inactive,
     ) {
         //
     }

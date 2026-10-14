@@ -63,6 +63,39 @@ describe('login', function () {
             ->assertJsonValidationErrors(['email']);
     });
 
+    it('returns 403 when the super admin account is inactive', function () {
+        $tenant = Tenant::factory()->create();
+        User::factory()->forTenant($tenant)->create([
+            'email' => 'owner@shop.test',
+            'password' => 'password',
+            'is_super_admin' => true,
+            'is_active' => false,
+        ]);
+
+        $this->postJson('/api/v1/login', [
+            'email' => 'owner@shop.test',
+            'password' => 'password',
+        ])->assertForbidden();
+
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    });
+
+    it('returns 403 when the tenant is inactive', function () {
+        $tenant = Tenant::factory()->inactive()->create();
+        User::factory()->forTenant($tenant)->create([
+            'email' => 'owner@shop.test',
+            'password' => 'password',
+            'is_active' => true,
+        ]);
+
+        $this->postJson('/api/v1/login', [
+            'email' => 'owner@shop.test',
+            'password' => 'password',
+        ])->assertForbidden();
+
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    });
+
     it('returns 403 when the tenant is suspended', function () {
         $tenant = Tenant::factory()->suspended()->create();
         User::factory()->forTenant($tenant)->create([

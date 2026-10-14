@@ -3,7 +3,6 @@
 namespace DA\Admin\Http\Middleware;
 
 use Closure;
-use DA\Admin\Enums\TenantStatus;
 use DA\Admin\Services\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,9 +27,13 @@ class ResolveTenant
                 return $next($request);
             }
 
+            if (! $user->isActive()) {
+                abort(403, 'This account is inactive.');
+            }
+
             $tenant = $user->tenant;
 
-            if ($tenant === null || $tenant->status === TenantStatus::Suspended) {
+            if ($tenant === null || ! $tenant->isActive()) {
                 abort(403);
             }
 

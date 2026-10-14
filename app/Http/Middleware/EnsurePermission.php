@@ -17,13 +17,23 @@ class EnsurePermission
     {
         $user = $request->user();
 
+        if (! $user instanceof User || ! $user->isActive()) {
+            abort(403, 'This account is inactive.');
+        }
+
         if ($user->is_super_admin) {
+            $user->loadMissing('tenant');
+
+            if ($user->tenant === null || ! $user->tenant->isActive()) {
+                abort(403, 'This business account is not active.');
+            }
+
             return $next($request);
         }
 
         $ability = Permission::tryFrom($permission);
 
-        if (! $user instanceof User || $ability === null || ! $user->hasPermission($ability)) {
+        if ($ability === null || ! $user->hasPermission($ability)) {
             abort(403, 'You do not have permission to perform this action.');
         }
 

@@ -48,6 +48,7 @@ describe('create', function () {
         actingAsPlatformAdmin();
 
         $tenant = Tenant::factory()->create(['name' => 'Harbor Cafe']);
+        Tenant::factory()->inactive()->create(['name' => 'Pending Shop']);
         Tenant::factory()->suspended()->create(['name' => 'Closed Shop']);
         $plan = Plan::factory()->create(['name' => 'Starter', 'trial_days' => 14]);
 
@@ -59,6 +60,7 @@ describe('create', function () {
             ->assertSee('name="start_trial"', false)
             ->assertSee('name="grace_days"', false)
             ->assertSee('Harbor Cafe')
+            ->assertSee('Pending Shop')
             ->assertSee('Starter')
             ->assertSee((string) $tenant->id, false)
             ->assertSee((string) $plan->id, false)

@@ -32,7 +32,6 @@ class StoreTenantRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['nullable', 'string', 'max:255', 'alpha_dash', Rule::unique('tenants', 'slug')->whereNull('deleted_at')],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'status' => ['sometimes', 'required', Rule::enum(TenantStatus::class)],
             'timezone' => ['sometimes', 'required', 'timezone'],
             'currency' => ['sometimes', 'required', 'string', 'size:3', 'regex:/^[A-Z]{3}$/'],
             'address' => ['sometimes', 'array'],
@@ -113,8 +112,7 @@ class StoreTenantRequest extends FormRequest
             billing_country: $this->nullableStringFrom($data, 'billing.address.country'),
             slug: $this->nullableStringFrom($data, 'slug'),
             logo: $logo instanceof UploadedFile ? $logo : null,
-            status: TenantStatus::tryFrom((int) $this->input('status', TenantStatus::Active->value))
-                ?? TenantStatus::Active,
+            status: TenantStatus::Inactive,
         );
     }
 

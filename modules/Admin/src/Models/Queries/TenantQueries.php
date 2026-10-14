@@ -22,6 +22,24 @@ class TenantQueries extends BaseQueries
             ->get();
     }
 
+    /**
+     * Tenants that may be assigned a plan: already active, or waiting for a first subscription.
+     *
+     * @return Collection<int, Tenant>
+     */
+    public function subscribableOrderedByName(): Collection
+    {
+        return $this->eloquentBuilder()
+            ->whereIn('status', [
+                TenantStatus::Active->value,
+                TenantStatus::Inactive->value,
+            ])
+            ->whereNull('deleted_at')
+            ->orderBy('name')
+            ->orderBy('id')
+            ->get();
+    }
+
     public function datatable(): Builder
     {
         return $this->queryBuilder()

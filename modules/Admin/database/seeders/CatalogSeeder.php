@@ -81,16 +81,24 @@ class CatalogSeeder extends Seeder
     {
         return [
             [
-                'name' => 'Extra location',
-                'code' => 'extra-location',
+                'name' => 'Extra store',
+                'code' => 'extra-store',
                 'description' => 'Add one more store location.',
                 'billing_interval' => BillingInterval::Monthly,
                 'price' => '9.00',
                 'is_active' => true,
             ],
             [
-                'name' => 'Extra user seats',
-                'code' => 'extra-user-seats',
+                'name' => 'Extra user',
+                'code' => 'extra-user',
+                'description' => 'Add five additional user seats.',
+                'billing_interval' => BillingInterval::Monthly,
+                'price' => '15.00',
+                'is_active' => true,
+            ],
+            [
+                'name' => 'Extra product',
+                'code' => 'extra-product',
                 'description' => 'Add five additional user seats.',
                 'billing_interval' => BillingInterval::Monthly,
                 'price' => '15.00',

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use DA\Admin\Enums\TenantStatus;
 use DA\Admin\Models\Tenant;
 
@@ -80,7 +81,7 @@ describe('store', function () {
             'city' => 'Dhaka',
             'contact_person_email' => 'jane@acme.test',
             'billing_name' => 'Acme Billing',
-            'status' => TenantStatus::Active->value,
+            'status' => TenantStatus::Inactive->value,
         ]);
     });
 
@@ -222,6 +223,58 @@ describe('show', function () {
             ->assertSee(route('admin.tenants.destroy', $tenant), false);
     });
 
+    it('offers a super admin form and plan subscription while the tenant is inactive', function () {
+        actingAsPlatformAdmin();
+
+        $tenant = Tenant::factory()->inactive()->create(['name' => 'Pending Shop']);
+
+        $this->get(route('admin.tenants.show', $tenant))
+            ->assertOk()
+            ->assertSee('Pending Shop')
+            ->assertSee('Super admin')
+            ->assertSee('Create super admin')
+            ->assertSee('This account stays inactive until the tenant subscribes to a plan.')
+            ->assertSee(route('admin.tenants.super-admin.store', $tenant), false)
+            ->assertSee(route('admin.subscriptions.create'), false)
+            ->assertDontSee(route('admin.tenants.suspend', $tenant), false)
+            ->assertDontSee(route('admin.tenants.activate', $tenant), false);
+    });
+
+    it('shows the saved super admin instead of the create form', function () {
+        actingAsPlatformAdmin();
+
+        $tenant = Tenant::factory()->inactive()->create();
+        User::factory()->forTenant($tenant)->create([
+            'name' => 'Mina Ali',
+            'email' => 'mina@pending.test',
+            'is_super_admin' => true,
+            'is_active' => false,
+        ]);
+
+        $this->get(route('admin.tenants.show', $tenant))
+            ->assertOk()
+            ->assertSee('Mina Ali')
+            ->assertSee('mina@pending.test')
+            ->assertSee('Inactive')
+            ->assertDontSee('Create super admin')
+            ->assertDontSee('name="password"', false);
+    });
+
+    it('escapes the super admin name on the tenant page', function () {
+        actingAsPlatformAdmin();
+
+        $tenant = Tenant::factory()->create();
+        User::factory()->forTenant($tenant)->create([
+            'name' => '<script>alert("xss")</script>',
+            'is_super_admin' => true,
+        ]);
+
+        $this->get(route('admin.tenants.show', $tenant))
+            ->assertOk()
+            ->assertSee('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;', false)
+            ->assertDontSee('<script>alert("xss")</script>', false);
+    });
+
     it('shows the activate action only when the tenant is suspended', function () {
         actingAsPlatformAdmin();
 
@@ -276,6 +329,21 @@ describe('status', function () {
         $this->assertDatabaseHas('tenants', [
             'id' => $tenant->id,
             'status' => TenantStatus::Active->value,
+        ]);
+    });
+
+    it('does not activate an inactive tenant before a plan is subscribed', function () {
+        actingAsPlatformAdmin();
+
+        $tenant = Tenant::factory()->inactive()->create();
+
+        $this->from(route('admin.tenants.show', $tenant))
+            ->post(route('admin.tenants.activate', $tenant))
+            ->assertRedirect(route('admin.tenants.show', $tenant));
+
+        $this->assertDatabaseHas('tenants', [
+            'id' => $tenant->id,
+            'status' => TenantStatus::Inactive->value,
         ]);
     });
 });

@@ -3,8 +3,8 @@
 namespace App\Models\Concerns;
 
 use App\Models\Scopes\CurrentTenantScope;
+use App\Models\User;
 use DA\Admin\Models\Tenant;
-use DA\Admin\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -16,13 +16,13 @@ trait ScopedToCurrentTenant
     {
         if (auth()->check()) {
             static::creating(function (Model $model): void {
-                $model->setAttribute('tenant_id', auth()->user()->tenant_id);
+                $actor = auth()->user();
 
-                // $context = app(TenantContext::class);
+                if (! $actor instanceof User || $actor->tenant_id === null) {
+                    return;
+                }
 
-                // if ($context->has()) {
-                //     $model->setAttribute('tenant_id', $context->id());
-                // }
+                $model->setAttribute('tenant_id', $actor->tenant_id);
             });
 
             static::addGlobalScope(new CurrentTenantScope);

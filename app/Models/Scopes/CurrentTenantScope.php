@@ -2,7 +2,7 @@
 
 namespace App\Models\Scopes;
 
-use DA\Admin\Services\Tenancy\TenantContext;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
@@ -14,12 +14,13 @@ class CurrentTenantScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        // $tenantId = app(TenantContext::class)->id();
-        $tenantId = auth()->user()->tenant_id;
+        $actor = auth()->user();
 
-        if ($tenantId === null) {
+        if (! $actor instanceof User || $actor->tenant_id === null) {
             return;
         }
+
+        $tenantId = $actor->tenant_id;
 
         $builder->where($model->qualifyColumn('tenant_id'), $tenantId);
     }

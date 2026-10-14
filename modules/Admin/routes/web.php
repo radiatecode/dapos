@@ -13,6 +13,7 @@ use DA\Admin\Http\Controllers\ProfileController;
 use DA\Admin\Http\Controllers\SubscriptionController;
 use DA\Admin\Http\Controllers\SubscriptionEventController;
 use DA\Admin\Http\Controllers\TenantController;
+use DA\Admin\Http\Controllers\TenantSuperAdminController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -34,6 +35,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::post('tenants/{tenant}/suspend', [TenantController::class, 'suspend'])->name('tenants.suspend');
         Route::post('tenants/{tenant}/activate', [TenantController::class, 'activate'])->name('tenants.activate');
+        Route::post('tenants/{tenant}/super-admin', [TenantSuperAdminController::class, 'store'])->name('tenants.super-admin.store');
         Route::resource('tenants', TenantController::class);
 
         Route::patch('plans/{plan}/activate', [PlanController::class, 'activate'])->name('plans.activate');

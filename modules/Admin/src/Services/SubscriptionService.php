@@ -2,6 +2,7 @@
 
 namespace DA\Admin\Services;
 
+use DA\Admin\Actions\Tenant\ActivateTenantAccess;
 use DA\Admin\DTO\CreateSubscriptionDTO;
 use DA\Admin\Enums\BillingInterval;
 use DA\Admin\Enums\SubscriptionEventType;
@@ -20,14 +21,20 @@ use Illuminate\Support\Facades\Notification;
 
 class SubscriptionService
 {
+    public function __construct(private ActivateTenantAccess $activateTenantAccess) {}
+
     public function create(CreateSubscriptionDTO $dto): Subscription
     {
         return $this->transact(function () use ($dto): Subscription {
             $tenant = Tenant::query()->lockForUpdate()->findOrFail($dto->tenant_id);
             $plan = Plan::query()->findOrFail($dto->plan_id);
 
-            if (! $tenant->isActive()) {
-                throw new InvalidSubscriptionTransitionException('The selected tenant is not active.');
+            if ($tenant->isSuspended()) {
+                throw new InvalidSubscriptionTransitionException('The selected tenant is suspended.');
+            }
+
+            if (! $tenant->canSubscribe()) {
+                throw new InvalidSubscriptionTransitionException('The selected tenant cannot subscribe to a plan.');
             }
 
             if (! $plan->isActive()) {
@@ -108,6 +115,8 @@ class SubscriptionService
             } else {
                 $this->recordEvent($subscription, SubscriptionEventType::Activated, null, SubscriptionStatus::Active);
             }
+
+            $this->activateTenantAccess->handle($tenant);
 
             return $subscription->refresh();
         });

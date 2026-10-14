@@ -172,7 +172,7 @@ class SubscriptionController extends Controller
     private function formOptions(): array
     {
         return [
-            'tenants' => Tenant::queries()->activeOrderedByName(),
+            'tenants' => Tenant::queries()->subscribableOrderedByName(),
             'plans' => Plan::queries()->activeOrderedByName(),
             'addons' => Addon::queries()->activeOrderedByName(),
         ];
