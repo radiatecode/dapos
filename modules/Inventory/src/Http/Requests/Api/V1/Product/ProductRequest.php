@@ -15,6 +15,7 @@ use DA\Inventory\Services\VariantCodeGenerator;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -37,6 +38,9 @@ abstract class ProductRequest extends FormRequest
         $isSimple = $this->input('product_type') === ProductType::Simple->value;
         $isVariable = $this->input('product_type') === ProductType::Variable->value;
         $tracksInventory = $this->boolean('track_inventory');
+
+        // log the uploaded image file types
+        Log::info('uploaded image file types', ['fileTypes' => $this->file('image')?->getClientOriginalExtension()]);
 
         return [
             'category_id' => [
