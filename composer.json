@@ -17,6 +17,7 @@
         "laravel/telescope": "^5.25",
         "laravel/tinker": "^3.0",
         "maatwebsite/excel": "^4.0",
+        "opcodesio/log-viewer": "^3.24",
         "spatie/laravel-data": "^4.23",
         "yajra/laravel-datatables": "^13.0"
     },

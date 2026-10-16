@@ -38,16 +38,22 @@
 
 <!-- Parsley Plugin-->
 <script src="{{ asset('vendor/admin/js/plugins/parsley/parsley.min.js') }}" type="text/javascript"></script>
-<script src="{{ asset('vendor/admin/js/form.tabs.js') }}?v={{ filemtime(public_path('vendor/admin/js/form.tabs.js')) }}"></script>
+<script
+    src="{{ asset('vendor/admin/js/form.tabs.js') }}?v={{ filemtime(public_path('vendor/admin/js/form.tabs.js')) }}">
+</script>
 
 <!-- jquery selector js -->
 <script src="{{ asset('vendor/admin/js/jquery-selector-init.js') }}"></script>
 
 <!-- network request js -->
-<script src="{{ asset('vendor/admin/js/network.request.js') }}?v={{ filemtime(public_path('vendor/admin/js/network.request.js')) }}"></script>
+<script
+    src="{{ asset('vendor/admin/js/network.request.js') }}?v={{ filemtime(public_path('vendor/admin/js/network.request.js')) }}">
+</script>
 
 <!-- laravel validation message js -->
-<script src="{{ asset('vendor/admin/js/laravel.validation.message.js') }}?v={{ filemtime(public_path('vendor/admin/js/laravel.validation.message.js')) }}"></script>
+<script
+    src="{{ asset('vendor/admin/js/laravel.validation.message.js') }}?v={{ filemtime(public_path('vendor/admin/js/laravel.validation.message.js')) }}">
+</script>
 
 <script>
     window.CSRF_TOKEN = $('meta[name="csrf-token"]').attr('content');
@@ -143,7 +149,7 @@
     }
 
     function logout() {
-        httpRequest('alert').config({
+        networkRequest('alert').ajax({
             url: '{{ route('admin.logout') }}',
             type: 'post'
         }, function(response) {
