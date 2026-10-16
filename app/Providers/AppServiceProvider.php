@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Opcodes\LogViewer\Facades\LogViewer;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,6 +35,11 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->registerPermissionGates();
         $this->registerRateLimiters();
+
+        LogViewer::auth(function ($request) {
+            return $request->user('admin')
+                && $request->user('admin')->email === 'test@example.com';
+        });
     }
 
     private function registerPermissionGates(): void
