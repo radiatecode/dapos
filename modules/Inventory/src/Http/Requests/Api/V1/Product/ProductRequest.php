@@ -40,7 +40,9 @@ abstract class ProductRequest extends FormRequest
         $tracksInventory = $this->boolean('track_inventory');
 
         // log the uploaded image file types
-        Log::info('uploaded image file types', ['fileTypes' => $this->file('image')?->getClientOriginalExtension()]);
+        Log::info('uploaded image file types', [
+            'fileTypes' => $this->file('image')?->getClientOriginalExtension(),
+            'error' => $this->file('image')?->getError()]);
 
         return [
             'category_id' => [
