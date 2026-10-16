@@ -42,7 +42,8 @@ abstract class ProductRequest extends FormRequest
         // log the uploaded image file types
         Log::info('uploaded image file types', [
             'fileTypes' => $this->file('image')?->getClientOriginalExtension(),
-            'error' => $this->file('image')?->getError()]);
+            'error' => $this->file('image')?->getError(),
+            'bytes' => $this->file('image')?->getSize(), ]);
 
         return [
             'category_id' => [
@@ -83,7 +84,7 @@ abstract class ProductRequest extends FormRequest
                     ->ignore($this->existingProductId()),
             ],
             'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10000'],
             'product_type' => ['required', Rule::enum(ProductType::class)],
             'track_inventory' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
