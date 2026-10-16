@@ -40,10 +40,10 @@ abstract class ProductRequest extends FormRequest
         $tracksInventory = $this->boolean('track_inventory');
 
         // log the uploaded image file types
-        Log::info('uploaded image file types', [
-            'fileTypes' => $this->file('image')?->getClientOriginalExtension(),
-            'error' => $this->file('image')?->getError(),
-            'bytes' => $this->file('image')?->getSize(), ]);
+        // Log::info('uploaded image file types', [
+        //     'fileTypes' => $this->file('image')?->getClientOriginalExtension(),
+        //     'error' => $this->file('image')?->getError(),
+        //     'bytes' => $this->file('image')?->getSize(), ]);
 
         return [
             'category_id' => [
@@ -84,7 +84,7 @@ abstract class ProductRequest extends FormRequest
                     ->ignore($this->existingProductId()),
             ],
             'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10000'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5000'],
             'product_type' => ['required', Rule::enum(ProductType::class)],
             'track_inventory' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
