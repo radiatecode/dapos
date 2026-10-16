@@ -13,6 +13,12 @@ class DeleteCategory
         foreach ($ids as $id) {
             $category = Category::findOrFail($id);
 
+            if (! $category->authorizeAction($category, 'delete')) {
+                throw ValidationException::withMessages([
+                    'category' => 'You are not authorized to delete this category.',
+                ]);
+            }
+
             if (Category::queries()->hasChildren($category->id)) {
                 throw ValidationException::withMessages([
                     'category' => 'This category has child categories and cannot be deleted.',

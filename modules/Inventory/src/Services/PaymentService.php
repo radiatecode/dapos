@@ -22,7 +22,7 @@ class PaymentService
             $due += $payment->dueAmount;
 
             $lines[] = [
-                'payment_method_id' => $payment->paymentMethodId,
+                'payment_method_id' => $payment->paymentMethod,
                 'bill_amount' => $payment->orderAmount,
                 'received_amount' => $payment->receivedAmount,
                 'paid_amount' => $paid,
@@ -82,7 +82,7 @@ class PaymentService
             $paid = $paid + $applied;
 
             $lines[] = [
-                'payment_method_id' => $payment->paymentMethodId,
+                'payment_method_id' => $payment->paymentMethod,
                 'bill_amount' => $applied + $remaining,
                 'received_amount' => $received,
                 'paid_amount' => $applied,

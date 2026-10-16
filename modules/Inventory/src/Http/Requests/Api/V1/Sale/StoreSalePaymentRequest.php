@@ -3,10 +3,8 @@
 namespace DA\Inventory\Http\Requests\Api\V1\Sale;
 
 use DA\Inventory\DTO\Sale\SalePaymentDTO;
-use DA\Inventory\Services\Decimal;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreSalePaymentRequest extends FormRequest
 {
@@ -24,9 +22,11 @@ class StoreSalePaymentRequest extends FormRequest
             'payment_method_id' => [
                 'required',
                 'integer',
-                Rule::exists('payment_methods', 'id')->where(fn ($query) => $query->where('is_active', true)),
             ],
+            'order_amount' => ['required', 'numeric', 'min:0', 'decimal:0,4'],
             'received_amount' => ['required', 'numeric', 'gt:0', 'decimal:0,4'],
+            'due_amount' => ['sometimes', 'numeric', 'min:0', 'decimal:0,4'],
+            'returned_amount' => ['sometimes', 'numeric', 'min:0', 'decimal:0,4'],
             'reference_number' => ['nullable', 'string', 'max:100'],
         ];
     }
@@ -38,7 +38,6 @@ class StoreSalePaymentRequest extends FormRequest
     {
         return [
             'payment_method_id.required' => 'The payment method field is required.',
-            'payment_method_id.exists' => 'The selected payment method is invalid.',
             'received_amount.gt' => 'The received amount must be greater than zero.',
         ];
     }
@@ -59,9 +58,12 @@ class StoreSalePaymentRequest extends FormRequest
         $validated = $this->validated();
 
         return new SalePaymentDTO(
-            paymentMethodId: (int) $validated['payment_method_id'],
-            receivedAmount: Decimal::normalize($validated['received_amount']),
+            paymentMethod: (int) $validated['payment_method'],
+            receivedAmount: $validated['received_amount'],
             referenceNumber: $validated['reference_number'] ?? null,
+            orderAmount: $validated['order_amount'],
+            dueAmount: $validated['due_amount'] ?? 0,
+            returnedAmount: $validated['returned_amount'] ?? 0,
         );
     }
 }

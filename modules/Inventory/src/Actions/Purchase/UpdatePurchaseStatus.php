@@ -17,6 +17,12 @@ class UpdatePurchaseStatus
             $purchase = Purchase::queries()->findForTenant($id);
             $purchase = Purchase::query()->whereKey($purchase->id)->lockForUpdate()->firstOrFail();
 
+            if (! $purchase->authorizeAction($purchase, 'update')) {
+                throw ValidationException::withMessages([
+                    'purchase' => 'You are not authorized to update this purchase.',
+                ]);
+            }
+
             if ($purchase->status === PurchaseStatus::Received && $status !== PurchaseStatus::Received) {
                 throw ValidationException::withMessages([
                     'status' => 'A received purchase cannot change status.',

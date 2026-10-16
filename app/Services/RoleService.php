@@ -15,8 +15,8 @@ class RoleService
         return Role::queries()->paginateNewestFirst($perPage);
     }
 
-    public function show(Role $role): Role
+    public function show(int $id): Role
     {
-        return $role;
+        return Role::queries()->findById($id);
     }
 }

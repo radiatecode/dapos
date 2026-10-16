@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models\Queries;
 
+use Carbon\CarbonImmutable;
 use DA\Inventory\Enums\PurchasePaymentStatus;
 use DA\Inventory\Enums\PurchaseStatus;
 use DA\Inventory\Models\Purchase;
@@ -81,6 +82,39 @@ class PurchaseQueries extends BaseQueries
             'paid_count' => (int) ($row?->paid_count ?? 0),
             'unpaid_count' => (int) ($row?->unpaid_count ?? 0),
             'partial_count' => (int) ($row?->partial_count ?? 0),
+        ];
+    }
+
+    /**
+     * Only received purchases count, because pending and ordered purchases
+     * have not brought stock in yet.
+     *
+     * @return array{total_amount: string, today_amount: string, current_month_amount: string}
+     */
+    public function dashboardReceivedTotals(CarbonImmutable $today): array
+    {
+        $currentMonthStart = $today->startOfMonth();
+
+        $row = $this->forAuthenticatedTenant()
+            ->where('status', PurchaseStatus::Received)
+            ->selectRaw(
+                'COALESCE(SUM(grand_total), 0) as total_amount,
+                COALESCE(SUM(CASE WHEN order_date >= ? AND order_date < ? THEN grand_total ELSE 0 END), 0) as today_amount,
+                COALESCE(SUM(CASE WHEN order_date >= ? AND order_date < ? THEN grand_total ELSE 0 END), 0) as current_month_amount',
+                [
+                    $today->toDateString(),
+                    $today->addDay()->toDateString(),
+                    $currentMonthStart->toDateString(),
+                    $currentMonthStart->addMonth()->toDateString(),
+                ],
+            )
+            ->toBase()
+            ->first();
+
+        return [
+            'total_amount' => Decimal::normalize($row?->total_amount ?? 0),
+            'today_amount' => Decimal::normalize($row?->today_amount ?? 0),
+            'current_month_amount' => Decimal::normalize($row?->current_month_amount ?? 0),
         ];
     }
 

@@ -7,10 +7,14 @@ use App\Models\User;
 
 class AssignUserRoles
 {
-    public function handle(User $user, AssignRolesDTO $dto): User
+    public function handle(int $id, AssignRolesDTO $dto): User
     {
-        $user->roles()->sync($dto->role_ids);
+        $user = User::queries()->findById($id);
 
-        return $user->fresh(['roles']) ?? $user;
+        $user->role_id = $dto->role_id;
+
+        $user->save();
+
+        return $user;
     }
 }

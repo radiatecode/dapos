@@ -4,6 +4,7 @@ namespace DA\Inventory\Models;
 
 use App\Models\Concerns\ScopedToCurrentTenant;
 use App\Models\User;
+use DA\Inventory\Concerns\OwnershipActionAuthorize;
 use DA\Inventory\Database\Factories\StockTransferFactory;
 use DA\Inventory\Enums\StockTransferStatus;
 use DA\Inventory\Models\Queries\StockTransferQueries;
@@ -27,7 +28,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class StockTransfer extends Model
 {
     /** @use HasFactory<StockTransferFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Api\V1\User;
 
 use App\DTO\User\AssignRolesDTO;
-use App\Models\User;
 use DA\Admin\Services\Tenancy\TenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -13,9 +12,7 @@ class AssignRolesRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = $this->route('user');
-
-        return $user instanceof User && ($this->user()?->can('assignRoles', $user) ?? false);
+        return true;
     }
 
     /**
@@ -26,11 +23,7 @@ class AssignRolesRequest extends FormRequest
         $tenantId = app(TenantContext::class)->id();
 
         return [
-            'role_ids' => ['required', 'array'],
-            'role_ids.*' => [
-                'integer',
-                Rule::exists('roles', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)),
-            ],
+            'role_id' => ['required', 'integer', Rule::exists('roles', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId))],
         ];
     }
 
@@ -40,15 +33,15 @@ class AssignRolesRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'role_ids.required' => 'The role ids field is required.',
-            'role_ids.*.exists' => 'The selected role is invalid.',
+            'role_id.required' => 'The role id field is required.',
+            'role_id.exists' => 'The selected role is invalid.',
         ];
     }
 
     public function toDTO(): AssignRolesDTO
     {
         return new AssignRolesDTO(
-            role_ids: array_map('intval', $this->validated('role_ids')),
+            role_id: $this->validated('role_id'),
         );
     }
 }

@@ -25,7 +25,6 @@ class UnitFactory extends Factory
         return [
             'tenant_id' => Tenant::factory(),
             'name' => $name,
-            'short_name' => Str::upper(Str::substr($name, 0, 3)),
             'code' => Str::upper(fake()->unique()->lexify('??')),
             'unit_type' => UnitType::Quantity,
             'precision' => 0,

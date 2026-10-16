@@ -3,6 +3,7 @@
 namespace DA\Inventory\Models;
 
 use App\Models\Concerns\ScopedToCurrentTenant;
+use DA\Inventory\Concerns\OwnershipActionAuthorize;
 use DA\Inventory\Database\Factories\CategoryFactory;
 use DA\Inventory\Models\Queries\CategoryQueries;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -24,7 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

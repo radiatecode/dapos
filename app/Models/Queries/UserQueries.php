@@ -15,13 +15,20 @@ class UserQueries extends BaseQueries
             ->first();
     }
 
+    public function findWithRole(int $id): ?User
+    {
+        return $this->eloquentBuilder()
+            ->with('role')
+            ->findOrFail($id);
+    }
+
     /**
      * @return LengthAwarePaginator<int, User>
      */
     public function paginateNewestFirst(int $perPage = 15): LengthAwarePaginator
     {
         return $this->eloquentBuilder()
-            ->with('roles')
+            ->with('role')
             ->orderByDesc('id')
             ->paginate($perPage);
     }

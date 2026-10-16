@@ -4,6 +4,7 @@ namespace DA\Inventory\Models;
 
 use App\Models\Concerns\ScopedToCurrentTenant;
 use App\Models\User;
+use DA\Inventory\Concerns\OwnershipActionAuthorize;
 use DA\Inventory\Database\Factories\PurchaseReturnFactory;
 use DA\Inventory\Enums\PurchaseReturnRefundStatus;
 use DA\Inventory\Enums\PurchaseReturnStatus;
@@ -34,7 +35,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class PurchaseReturn extends Model
 {
     /** @use HasFactory<PurchaseReturnFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

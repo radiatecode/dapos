@@ -4,7 +4,6 @@ namespace App\Http\Requests\Api\V1\Role;
 
 use App\DTO\Role\RoleDTO;
 use App\Enums\Permission;
-use App\Models\Role;
 use DA\Admin\Services\Tenancy\TenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -15,7 +14,7 @@ class StoreRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('create', Role::class) ?? false;
+        return true;
     }
 
     /**

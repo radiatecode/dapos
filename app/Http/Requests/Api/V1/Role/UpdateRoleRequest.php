@@ -4,7 +4,6 @@ namespace App\Http\Requests\Api\V1\Role;
 
 use App\DTO\Role\RoleDTO;
 use App\Enums\Permission;
-use App\Models\Role;
 use DA\Admin\Services\Tenancy\TenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -15,9 +14,7 @@ class UpdateRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $role = $this->route('role');
-
-        return $role instanceof Role && ($this->user()?->can('update', $role) ?? false);
+        return true;
     }
 
     /**
@@ -26,7 +23,7 @@ class UpdateRoleRequest extends FormRequest
     public function rules(): array
     {
         $tenantId = app(TenantContext::class)->id();
-        $role = $this->route('role');
+        $id = $this->route('id');
 
         return [
             'name' => ['required', 'string', 'max:255'],
@@ -37,7 +34,7 @@ class UpdateRoleRequest extends FormRequest
                 'alpha_dash',
                 Rule::unique('roles', 'slug')
                     ->where(fn ($query) => $query->where('tenant_id', $tenantId))
-                    ->ignore($role instanceof Role ? $role->id : null),
+                    ->ignore($id),
             ],
             'permissions' => ['required', 'array'],
             'permissions.*' => [Rule::enum(Permission::class)],

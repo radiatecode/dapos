@@ -10,8 +10,8 @@ use App\Models\User;
 
 class UserPasswordController extends Controller
 {
-    public function update(UpdatePasswordRequest $request, User $user, UpdateUserPassword $update): UserResource
+    public function update(UpdatePasswordRequest $request, int $id, UpdateUserPassword $update): UserResource
     {
-        return UserResource::make($update->handle($user, $request->toDTO()));
+        return UserResource::make($update->handle($id, $request->toDTO()));
     }
 }

@@ -7,11 +7,13 @@ use App\Models\User;
 
 class UpdateUserPassword
 {
-    public function handle(User $user, UpdatePasswordDTO $dto): User
+    public function handle(int $id, UpdatePasswordDTO $dto): User
     {
+        $user = User::queries()->findById($id);
+
         $user->password = $dto->password;
         $user->save();
 
-        return $user->fresh(['roles']) ?? $user;
+        return $user;
     }
 }

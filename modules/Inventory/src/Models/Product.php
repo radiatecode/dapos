@@ -3,6 +3,7 @@
 namespace DA\Inventory\Models;
 
 use App\Models\Concerns\ScopedToCurrentTenant;
+use DA\Inventory\Concerns\OwnershipActionAuthorize;
 use DA\Inventory\Database\Factories\ProductFactory;
 use DA\Inventory\Enums\ItemTaxType;
 use DA\Inventory\Enums\ProductType;
@@ -37,7 +38,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
-    use HasFactory, ScopedToCurrentTenant, SoftDeletes;
+    use HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant, SoftDeletes;
 
     /**
      * @var array<string, mixed>

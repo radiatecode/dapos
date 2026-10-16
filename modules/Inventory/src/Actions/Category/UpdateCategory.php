@@ -5,11 +5,18 @@ namespace DA\Inventory\Actions\Category;
 use DA\Inventory\DTO\Category\CategoryDTO;
 use DA\Inventory\Models\Category;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class UpdateCategory
 {
     public function handle(Category $category, CategoryDTO $dto): Category
     {
+        if (! $category->authorizeAction($category, 'update')) {
+            throw ValidationException::withMessages([
+                'category' => 'You are not authorized to update this category.',
+            ]);
+        }
+
         $category->name = $dto->name;
         $category->slug = $dto->slug ?: Category::queries()->uniqueSlugFrom($dto->name, 'category', $category->id);
         $category->code = $dto->code;

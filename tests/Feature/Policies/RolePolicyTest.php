@@ -45,6 +45,26 @@ test('roles.delete grants delete', function () {
     expect((new RolePolicy)->delete($actor, $role))->toBeTrue();
 });
 
+test('a default role cannot be updated', function () {
+    $actor = roleActor(Permission::RolesUpdate);
+    $role = Role::factory()->create([
+        'tenant_id' => $actor->tenant_id,
+        'is_default' => true,
+    ]);
+
+    expect((new RolePolicy)->update($actor, $role))->toBeFalse();
+});
+
+test('a default role cannot be deleted', function () {
+    $actor = roleActor(Permission::RolesDelete);
+    $role = Role::factory()->create([
+        'tenant_id' => $actor->tenant_id,
+        'is_default' => true,
+    ]);
+
+    expect((new RolePolicy)->delete($actor, $role))->toBeFalse();
+});
+
 test('a user without the matching permission is denied', function (string $ability) {
     $actor = roleActor(null);
     $role = Role::factory()->create(['tenant_id' => $actor->tenant_id]);

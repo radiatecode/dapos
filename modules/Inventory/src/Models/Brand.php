@@ -3,6 +3,7 @@
 namespace DA\Inventory\Models;
 
 use App\Models\Concerns\ScopedToCurrentTenant;
+use DA\Inventory\Concerns\OwnershipActionAuthorize;
 use DA\Inventory\Database\Factories\BrandFactory;
 use DA\Inventory\Models\Queries\BrandQueries;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\Model;
 class Brand extends Model
 {
     /** @use HasFactory<BrandFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

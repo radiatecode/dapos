@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Api\V1\User;
 
 use App\DTO\User\UpdatePasswordDTO;
-use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -13,9 +12,7 @@ class UpdatePasswordRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = $this->route('user');
-
-        return $user instanceof User && ($this->user()?->can('updatePassword', $user) ?? false);
+        return true;
     }
 
     /**
@@ -23,11 +20,11 @@ class UpdatePasswordRequest extends FormRequest
      */
     public function rules(): array
     {
-        $user = $this->route('user');
+        $id = $this->route('id');
 
         return [
             'current_password' => [
-                Rule::requiredIf(fn (): bool => $this->user()?->is($user) ?? false),
+                Rule::requiredIf(fn (): bool => $this->user()?->id === $id),
                 'string',
                 'current_password',
             ],

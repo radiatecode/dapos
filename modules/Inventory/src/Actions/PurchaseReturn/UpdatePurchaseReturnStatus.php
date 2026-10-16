@@ -16,6 +16,12 @@ class UpdatePurchaseReturnStatus
         return DB::transaction(function () use ($id, $status): PurchaseReturn {
             $return = PurchaseReturn::queries()->lockForTenant($id);
 
+            if (! $return->authorizeAction($return, 'update')) {
+                throw ValidationException::withMessages([
+                    'purchase_return' => 'You are not authorized to update this purchase return.',
+                ]);
+            }
+
             if ($status === PurchaseReturnStatus::Approved) {
                 $this->apply->approve($return);
             } elseif ($status === PurchaseReturnStatus::Reject) {

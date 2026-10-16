@@ -27,7 +27,7 @@ class PaymentFactory extends Factory
                     ->tenant_id;
             },
             'customer_id' => null,
-            'payment_method_id' => 1,
+            'payment_method' => 1,
             'bill_amount' => '15.0000',
             'received_amount' => '15.0000',
             'paid_amount' => '15.0000',

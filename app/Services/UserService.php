@@ -15,8 +15,10 @@ class UserService
         return User::queries()->paginateNewestFirst($perPage);
     }
 
-    public function show(User $user): User
+    public function show(int $id): User
     {
-        return $user->loadMissing('roles');
+        $user = User::queries()->findWithRole($id);
+
+        return $user;
     }
 }

@@ -8,8 +8,10 @@ use Illuminate\Support\Facades\Storage;
 
 class UpdateUserPhoto
 {
-    public function handle(User $user, UploadedFile $photo): User
+    public function handle(int $id, UploadedFile $photo): User
     {
+        $user = User::queries()->findById($id);
+
         if (is_string($user->photo) && $user->photo !== '') {
             Storage::disk('public')->delete($user->photo);
         }
@@ -17,6 +19,6 @@ class UpdateUserPhoto
         $user->photo = $photo->store('users/photos', 'public');
         $user->save();
 
-        return $user->fresh(['roles']) ?? $user;
+        return $user;
     }
 }

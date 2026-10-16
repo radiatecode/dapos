@@ -10,6 +10,7 @@ use DA\Inventory\Http\Controllers\Api\V1\CurrencyController;
 use DA\Inventory\Http\Controllers\Api\V1\CurrencySettingController;
 use DA\Inventory\Http\Controllers\Api\V1\CurrentStockValueReportController;
 use DA\Inventory\Http\Controllers\Api\V1\CustomerController;
+use DA\Inventory\Http\Controllers\Api\V1\DashboardController;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetAttributesDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetAttributeValuesDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetBrandsDropdown;
@@ -41,6 +42,7 @@ use DA\Inventory\Http\Controllers\Api\V1\UnitController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(function (): void {
+
     Route::get('categories-dropdown', GetCategoriesDropdown::class)
         ->middleware('permission:'.Permission::CategoriesView->value)
         ->name('categories.dropdown');
@@ -48,13 +50,13 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
         ->name('categories.index');
     Route::post('categories', [CategoryController::class, 'store'])
         ->name('categories.store');
+    Route::post('categories/delete', [CategoryController::class, 'destroy'])
+        ->middleware('permission:'.Permission::CategoriesDelete->value)
+        ->name('categories.destroy');
     Route::get('categories/{category}', [CategoryController::class, 'show'])
         ->name('categories.show');
     Route::post('categories/{category}', [CategoryController::class, 'update'])
         ->name('categories.update');
-    Route::post('categories/delete', [CategoryController::class, 'destroy'])
-        ->middleware('permission:'.Permission::CategoriesDelete->value)
-        ->name('categories.destroy');
 
     Route::get('brands-dropdown', GetBrandsDropdown::class)
         ->middleware('permission:brands.view')
@@ -276,9 +278,17 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
         ->middleware('permission:'.Permission::SalesView->value)
         ->name('sales.show');
 
+    Route::prefix('dashboard')
+        ->name('dashboard.')
+        ->middleware('permission:'.Permission::DashboardView->value)
+        ->group(function (): void {
+            Route::get('summary', [DashboardController::class, 'summary'])->name('summary');
+            Route::get('sales-trend', [DashboardController::class, 'salesTrend'])->name('sales-trend');
+        });
+
     Route::prefix('reports/sales')
         ->name('reports.sales.')
-        ->middleware('permission:'.Permission::ReportsView->value)
+        ->middleware('permission:'.Permission::SalesReportsView->value)
         ->group(function (): void {
             Route::get('/', [SalesReportController::class, 'index'])->name('index');
             Route::get('summary', [SalesReportController::class, 'summary'])->name('summary');
@@ -288,7 +298,7 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
 
     Route::prefix('reports/top-sales')
         ->name('reports.top-sales.')
-        ->middleware('permission:'.Permission::ReportsView->value)
+        ->middleware('permission:'.Permission::TopSalesReportsView->value)
         ->group(function (): void {
             Route::get('/', [TopSalesReportController::class, 'index'])->name('index');
             Route::get('summary', [TopSalesReportController::class, 'summary'])->name('summary');
@@ -298,7 +308,7 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
 
     Route::prefix('reports/sales-invoices')
         ->name('reports.sales-invoices.')
-        ->middleware('permission:'.Permission::ReportsView->value)
+        ->middleware('permission:'.Permission::SalesInvoicesReportsView->value)
         ->group(function (): void {
             Route::get('export/pdf', [SalesInvoiceReportController::class, 'exportPdf'])->name('export.pdf');
             Route::get('export/excel', [SalesInvoiceReportController::class, 'exportExcel'])->name('export.excel');
@@ -306,7 +316,7 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
 
     Route::prefix('reports/profit')
         ->name('reports.profit.')
-        ->middleware('permission:'.Permission::ReportsView->value)
+        ->middleware('permission:'.Permission::ProfitReportsView->value)
         ->group(function (): void {
             Route::get('/', [ProfitReportController::class, 'index'])->name('index');
             Route::get('summary', [ProfitReportController::class, 'summary'])->name('summary');
@@ -316,7 +326,7 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
 
     Route::prefix('reports/min-stock')
         ->name('reports.min-stock.')
-        ->middleware('permission:'.Permission::ReportsView->value)
+        ->middleware('permission:'.Permission::MinStockReportsView->value)
         ->group(function (): void {
             Route::get('/', [MinStockReportController::class, 'index'])->name('index');
             Route::get('summary', [MinStockReportController::class, 'summary'])->name('summary');
@@ -326,7 +336,7 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
 
     Route::prefix('reports/current-stock-value')
         ->name('reports.current-stock-value.')
-        ->middleware('permission:'.Permission::ReportsView->value)
+        ->middleware('permission:'.Permission::CurrentStockValueReportsView->value)
         ->group(function (): void {
             Route::get('/', [CurrentStockValueReportController::class, 'index'])->name('index');
             Route::get('summary', [CurrentStockValueReportController::class, 'summary'])->name('summary');

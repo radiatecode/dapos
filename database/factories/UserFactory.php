@@ -83,7 +83,8 @@ class UserFactory extends Factory
                 'permissions' => $keys,
             ]);
 
-            $user->roles()->attach($role->id);
+            $user->role_id = $role->id;
+            $user->save();
         });
     }
 }

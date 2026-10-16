@@ -49,7 +49,7 @@ class TaxQueries extends BaseQueries
     {
         return $this->eloquentBuilder()
             ->whereIn('id', $ids)
-            ->select('id', 'tax_name')
+            ->select('id', 'tax_name', 'created_by')
             ->get();
     }
 }

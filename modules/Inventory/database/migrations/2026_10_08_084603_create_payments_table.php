@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('tenant_id')->constrained()->restrictOnDelete();
             $table->foreignId('sale_id')->constrained()->restrictOnDelete();
             $table->foreignId('customer_id')->nullable()->constrained()->restrictOnDelete();
-            $table->integer('payment_method_id')->nullable();
+            $table->integer('payment_method')->nullable();
             $table->decimal('bill_amount', 15, 4);
             $table->decimal('received_amount', 15, 4);
             $table->decimal('paid_amount', 15, 4);

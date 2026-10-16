@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\UserRole;
 use App\Models\Concerns\HasPermissions;
 use App\Models\Concerns\ScopedToCurrentTenant;
 use App\Models\Queries\UserQueries;
@@ -38,20 +37,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'role' => UserRole::class,
             'is_active' => 'boolean',
             'is_super_admin' => 'boolean',
         ];
-    }
-
-    public function isPlatformAdmin(): bool
-    {
-        return $this->role === UserRole::PlatformAdmin;
-    }
-
-    public function isTenantUser(): bool
-    {
-        return $this->role === UserRole::TenantUser;
     }
 
     public function isActive(): bool

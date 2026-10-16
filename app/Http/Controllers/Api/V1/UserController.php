@@ -21,7 +21,7 @@ class UserController extends Controller
     public function index(Request $request, UserService $users): AnonymousResourceCollection
     {
         return UserResource::collection(
-            $users->paginate($request->integer('per_page', 15)),
+            $users->paginate($request->integer('per_page', $request->integer('limit', 15))),
         );
     }
 
@@ -34,19 +34,23 @@ class UserController extends Controller
             ->setStatusCode(201);
     }
 
-    public function show(User $user, UserService $users): UserResource
+    public function show(int $id, UserService $users): UserResource
     {
-        return UserResource::make($users->show($user));
+        return UserResource::make($users->show($id));
     }
 
-    public function update(UpdateUserRequest $request, User $user, UpdateUser $update): UserResource
+    public function update(UpdateUserRequest $request, int $id, UpdateUser $update): UserResource
     {
-        return UserResource::make($update->handle($user, $request->toDTO()));
+        return UserResource::make($update->handle($id, $request->toDTO()));
     }
 
-    public function destroy(User $user, DeleteUser $delete): Response
+    public function destroy(int $id, DeleteUser $delete): Response
     {
-        $this->authorize('delete', $user);
+        $user = User::queries()->findById($id);
+
+        if ($user->is_super_admin) {
+            throw new \Exception('Super admin cannot be deleted');
+        }
 
         $delete->handle($user);
 

@@ -17,6 +17,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::middleware(['auth:sanctum'])->group(function (): void {
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
         Route::get('me', [AuthController::class, 'me'])->name('me');
+        Route::put('my/info/update', [AuthController::class, 'updateInfo'])->name('self.update');
+        Route::put('my/password/update', [AuthController::class, 'updatePassword'])->name('self.password.update');
 
         Route::get('permissions', [PermissionController::class, 'index'])
             ->middleware('permission:roles.view')
@@ -28,22 +30,22 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('users', [UserController::class, 'store'])
             ->middleware('permission:users.create')
             ->name('users.store');
-        Route::get('users/{user}', [UserController::class, 'show'])
+        Route::get('users/{id}', [UserController::class, 'show'])
             ->middleware('permission:users.view')
             ->name('users.show');
-        Route::put('users/{user}', [UserController::class, 'update'])
+        Route::put('users/{id}', [UserController::class, 'update'])
             ->middleware('permission:users.update')
             ->name('users.update');
-        Route::delete('users/{user}', [UserController::class, 'destroy'])
+        Route::delete('users/{id}', [UserController::class, 'destroy'])
             ->middleware('permission:users.delete')
             ->name('users.destroy');
-        Route::put('users/{user}/password', [UserPasswordController::class, 'update'])
+        Route::put('users/{id}/password', [UserPasswordController::class, 'update'])
             ->middleware('permission:users.update')
             ->name('users.password.update');
-        Route::post('users/{user}/photo', [UserPhotoController::class, 'update'])
+        Route::post('users/{id}/photo', [UserPhotoController::class, 'update'])
             ->middleware('permission:users.update')
             ->name('users.photo.update');
-        Route::put('users/{user}/roles', [AssignedUserRoleController::class, 'update'])
+        Route::put('users/{id}/role', [AssignedUserRoleController::class, 'update'])
             ->middleware('permission:users.update')
             ->name('users.roles.update');
 
@@ -53,13 +55,13 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('roles', [RoleController::class, 'store'])
             ->middleware('permission:roles.create')
             ->name('roles.store');
-        Route::get('roles/{role}', [RoleController::class, 'show'])
+        Route::get('roles/{id}', [RoleController::class, 'show'])
             ->middleware('permission:roles.view')
             ->name('roles.show');
-        Route::put('roles/{role}', [RoleController::class, 'update'])
+        Route::put('roles/{id}', [RoleController::class, 'update'])
             ->middleware('permission:roles.update')
             ->name('roles.update');
-        Route::delete('roles/{role}', [RoleController::class, 'destroy'])
+        Route::delete('roles/{id}', [RoleController::class, 'destroy'])
             ->middleware('permission:roles.delete')
             ->name('roles.destroy');
     });

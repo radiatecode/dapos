@@ -13,6 +13,6 @@ class CreateUserDTO extends Data
         public string $name,
         public string $email,
         public string $password,
-        public array $role_ids = [],
+        public ?int $role_id = null,
     ) {}
 }

@@ -10,6 +10,7 @@ use DA\Inventory\Http\Resources\Api\V1\TaxResource;
 use DA\Inventory\Models\Tax;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 class TaxController extends Controller
@@ -54,6 +55,12 @@ class TaxController extends Controller
         $taxes = Tax::queries()->getDataByIds($request->input('ids', []));
 
         foreach ($taxes as $tax) {
+            if (! $tax->authorizeAction($tax, 'delete')) {
+                throw ValidationException::withMessages([
+                    'tax' => 'You are not authorized to delete this tax.',
+                ]);
+            }
+
             $tax->delete();
         }
 

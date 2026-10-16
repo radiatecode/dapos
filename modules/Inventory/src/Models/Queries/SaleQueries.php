@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models\Queries;
 
+use Carbon\CarbonImmutable;
 use DA\Inventory\Enums\SalePaymentStatus;
 use DA\Inventory\Enums\SaleStatus;
 use DA\Inventory\Models\Sale;
@@ -78,6 +79,77 @@ class SaleQueries extends BaseQueries
             'unpaid_count' => (int) ($row?->unpaid_count ?? 0),
             'partial_count' => (int) ($row?->partial_count ?? 0),
         ];
+    }
+
+    /**
+     * One pass over the tenant's completed sales. Date buckets use half-open
+     * ranges so the (tenant_id, status, sale_date) index serves the scan.
+     *
+     * @return array{
+     *     total_amount: string,
+     *     total_paid: string,
+     *     total_due: string,
+     *     today_amount: string,
+     *     current_month_amount: string,
+     *     previous_month_amount: string
+     * }
+     */
+    public function dashboardTotals(CarbonImmutable $today): array
+    {
+        $currentMonthStart = $today->startOfMonth();
+
+        $row = $this->forAuthenticatedTenant()
+            ->where('status', SaleStatus::Completed)
+            ->selectRaw(
+                'COALESCE(SUM(grand_total), 0) as total_amount,
+                COALESCE(SUM(paid_amount), 0) as total_paid,
+                COALESCE(SUM(due_amount), 0) as total_due,
+                COALESCE(SUM(CASE WHEN sale_date >= ? AND sale_date < ? THEN grand_total ELSE 0 END), 0) as today_amount,
+                COALESCE(SUM(CASE WHEN sale_date >= ? AND sale_date < ? THEN grand_total ELSE 0 END), 0) as current_month_amount,
+                COALESCE(SUM(CASE WHEN sale_date >= ? AND sale_date < ? THEN grand_total ELSE 0 END), 0) as previous_month_amount',
+                [
+                    $today->toDateString(),
+                    $today->addDay()->toDateString(),
+                    $currentMonthStart->toDateString(),
+                    $currentMonthStart->addMonth()->toDateString(),
+                    $currentMonthStart->subMonth()->toDateString(),
+                    $currentMonthStart->toDateString(),
+                ],
+            )
+            ->toBase()
+            ->first();
+
+        return [
+            'total_amount' => Decimal::normalize($row?->total_amount ?? 0),
+            'total_paid' => Decimal::normalize($row?->total_paid ?? 0),
+            'total_due' => Decimal::normalize($row?->total_due ?? 0),
+            'today_amount' => Decimal::normalize($row?->today_amount ?? 0),
+            'current_month_amount' => Decimal::normalize($row?->current_month_amount ?? 0),
+            'previous_month_amount' => Decimal::normalize($row?->previous_month_amount ?? 0),
+        ];
+    }
+
+    /**
+     * Days without a completed sale are not returned.
+     *
+     * @return Collection<int, object{sale_date: string, invoice_count: int, sales_amount: string, paid_amount: string, due_amount: string}>
+     */
+    public function dailyTotalsBetween(CarbonImmutable $dateFrom, CarbonImmutable $dateTo): Collection
+    {
+        return $this->forAuthenticatedTenant()
+            ->where('status', SaleStatus::Completed)
+            ->where('sale_date', '>=', $dateFrom->toDateString())
+            ->where('sale_date', '<', $dateTo->addDay()->toDateString())
+            ->select('sale_date')
+            ->selectRaw(
+                'COUNT(*) as invoice_count,
+                COALESCE(SUM(grand_total), 0) as sales_amount,
+                COALESCE(SUM(paid_amount), 0) as paid_amount,
+                COALESCE(SUM(due_amount), 0) as due_amount',
+            )
+            ->groupBy('sale_date')
+            ->toBase()
+            ->get();
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace DA\Inventory\Models;
 
 use App\Models\Concerns\ScopedToCurrentTenant;
+use DA\Inventory\Concerns\OwnershipActionAuthorize;
 use DA\Inventory\Database\Factories\AttributeFactory;
 use DA\Inventory\Enums\AttributeInputType;
 use DA\Inventory\Models\Queries\AttributeQueries;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Attribute extends Model
 {
     /** @use HasFactory<AttributeFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

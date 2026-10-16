@@ -19,6 +19,12 @@ class UpdateStockTransfer
         return DB::transaction(function () use ($id, $dto): StockTransfer {
             $transfer = StockTransfer::queries()->lockForTenant($id);
 
+            if (! $transfer->authorizeAction($transfer, 'update')) {
+                throw ValidationException::withMessages([
+                    'stock_transfer' => 'You are not authorized to update this stock transfer.',
+                ]);
+            }
+
             if (! in_array($transfer->status, [StockTransferStatus::Draft, StockTransferStatus::Pending], true)) {
                 throw ValidationException::withMessages([
                     'status' => 'Only a draft or pending transfer can be updated.',

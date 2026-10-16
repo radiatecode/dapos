@@ -4,6 +4,7 @@ namespace DA\Inventory\Models;
 
 use App\Concerns\BelongsToOwner;
 use App\Models\Concerns\ScopedToCurrentTenant;
+use DA\Inventory\Concerns\OwnershipActionAuthorize;
 use DA\Inventory\Database\Factories\CustomerFactory;
 use DA\Inventory\Models\Queries\CustomerQueries;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -21,7 +22,7 @@ use Illuminate\Database\Eloquent\Model;
 class Customer extends Model
 {
     /** @use HasFactory<CustomerFactory> */
-    use BelongsToOwner, HasFactory, ScopedToCurrentTenant;
+    use BelongsToOwner, HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant;
 
     public static function queries(): CustomerQueries
     {

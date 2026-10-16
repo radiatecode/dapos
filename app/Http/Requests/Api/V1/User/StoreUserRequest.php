@@ -3,8 +3,6 @@
 namespace App\Http\Requests\Api\V1\User;
 
 use App\DTO\User\CreateUserDTO;
-use App\Models\User;
-use DA\Admin\Services\Tenancy\TenantContext;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -14,7 +12,7 @@ class StoreUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('create', User::class) ?? false;
+        return true;
     }
 
     /**
@@ -22,16 +20,15 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $tenantId = app(TenantContext::class)->id();
+        $tenantId = auth()->user()->tenant_id;
 
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'string', Password::default(), 'confirmed'],
-            'role_ids' => ['sometimes', 'array'],
-            'role_ids.*' => [
-                'integer',
-                Rule::exists('roles', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)),
+            'role_id' => ['sometimes', 'integer',
+                Rule::exists('roles', 'id')
+                    ->where(fn ($query) => $query->where('tenant_id', $tenantId)),
             ],
         ];
     }
@@ -48,7 +45,7 @@ class StoreUserRequest extends FormRequest
             'email.unique' => 'The email has already been taken.',
             'password.required' => 'The password field is required.',
             'password.confirmed' => 'The password confirmation does not match.',
-            'role_ids.*.exists' => 'The selected role is invalid.',
+            'role_id.exists' => 'The selected role is invalid.',
         ];
     }
 
@@ -60,7 +57,7 @@ class StoreUserRequest extends FormRequest
             name: $data['name'],
             email: $data['email'],
             password: $data['password'],
-            role_ids: array_map('intval', $data['role_ids'] ?? []),
+            role_id: $data['role_id'] ?? null,
         );
     }
 }

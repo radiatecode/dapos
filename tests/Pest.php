@@ -40,7 +40,7 @@ function actingAsTenantUser(?Tenant $tenant = null, ?array $permissions = null):
 
     Sanctum::actingAs($user);
 
-    return $user->fresh(['roles']) ?? $user;
+    return $user->fresh(['role']) ?? $user;
 }
 
 /**

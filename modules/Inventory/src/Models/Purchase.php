@@ -4,6 +4,7 @@ namespace DA\Inventory\Models;
 
 use App\Models\Concerns\ScopedToCurrentTenant;
 use App\Models\User;
+use DA\Inventory\Concerns\OwnershipActionAuthorize;
 use DA\Inventory\Database\Factories\PurchaseFactory;
 use DA\Inventory\Enums\PurchasePaymentStatus;
 use DA\Inventory\Enums\PurchaseStatus;
@@ -32,7 +33,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Purchase extends Model
 {
     /** @use HasFactory<PurchaseFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

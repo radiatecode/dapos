@@ -127,7 +127,7 @@ abstract class SaleRequest extends FormRequest
             ),
             payments: array_map(
                 fn (array $payment): SalePaymentDTO => new SalePaymentDTO(
-                    paymentMethodId: (int) $payment['payment_method_id'],
+                    paymentMethod: (int) $payment['payment_method_id'],
                     receivedAmount: $payment['received_amount'],
                     referenceNumber: $payment['reference_number'] ?? null,
                     orderAmount: $payment['order_amount'],

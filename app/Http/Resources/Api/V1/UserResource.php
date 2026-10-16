@@ -27,7 +27,8 @@ class UserResource extends JsonResource
             'photo_url' => is_string($this->photo) && $this->photo !== ''
                 ? Storage::disk('public')->url($this->photo)
                 : null,
-            'roles' => RoleResource::collection($this->whenLoaded('roles')),
+            'role' => RoleResource::make($this->whenLoaded('role')),
+            'tenant' => TenantResource::make($this->whenLoaded('tenant')),
             'permissions' => $this->when(
                 $this->relationLoaded('roles'),
                 fn (): array => $this->permissionKeys()->all(),

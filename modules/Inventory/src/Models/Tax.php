@@ -4,6 +4,7 @@ namespace DA\Inventory\Models;
 
 use App\Concerns\BelongsToOwner;
 use App\Models\Concerns\ScopedToCurrentTenant;
+use DA\Inventory\Concerns\OwnershipActionAuthorize;
 use DA\Inventory\Database\Factories\TaxFactory;
 use DA\Inventory\Models\Queries\TaxQueries;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 class Tax extends Model
 {
     /** @use HasFactory<TaxFactory> */
-    use BelongsToOwner, HasFactory, ScopedToCurrentTenant;
+    use BelongsToOwner, HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant;
 
     protected $fillable = [
         'tax_name',

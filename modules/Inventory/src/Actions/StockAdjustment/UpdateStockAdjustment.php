@@ -20,6 +20,12 @@ class UpdateStockAdjustment
         return DB::transaction(function () use ($id, $dto): StockAdjustment {
             $adjustment = StockAdjustment::queries()->lockForTenant($id);
 
+            if (! $adjustment->authorizeAction($adjustment, 'update')) {
+                throw ValidationException::withMessages([
+                    'stock_adjustment' => 'You are not authorized to update this stock adjustment.',
+                ]);
+            }
+
             if ($adjustment->status !== StockAdjustmentStatus::Draft) {
                 throw ValidationException::withMessages([
                     'status' => 'Only a draft adjustment can be updated.',

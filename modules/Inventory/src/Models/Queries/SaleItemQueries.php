@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models\Queries;
 
+use Carbon\CarbonImmutable;
 use DA\Inventory\DTO\Report\ProfitReportFilterDTO;
 use DA\Inventory\DTO\Report\SalesReportFilterDTO;
 use DA\Inventory\DTO\Report\TopSalesReportFilterDTO;
@@ -197,6 +198,43 @@ class SaleItemQueries extends BaseQueries
             'cogs' => Decimal::normalize($row?->cogs ?? 0),
             'gross_profit' => Decimal::normalize($row?->gross_profit ?? 0),
             'gross_margin' => Decimal::normalize($row?->gross_margin ?? 0),
+        ];
+    }
+
+    /**
+     * Uses the same gross profit formula as the profit report, over the
+     * previous and current calendar months in a single windowed scan.
+     *
+     * @return array{current_month: string, previous_month: string}
+     */
+    public function grossProfitForCurrentAndPreviousMonth(CarbonImmutable $today): array
+    {
+        $tenantId = auth()->user()->tenant_id;
+        $currentMonthStart = $today->startOfMonth();
+
+        $lines = DB::table('sale_items', 'si')
+            ->join('sales as s', 's.id', '=', 'si.sale_id')
+            ->where('s.tenant_id', $tenantId)
+            ->where('si.tenant_id', $tenantId)
+            ->where('s.status', SaleStatus::Completed->value)
+            ->where('s.sale_date', '>=', $currentMonthStart->subMonth()->toDateString())
+            ->where('s.sale_date', '<', $currentMonthStart->addMonth()->toDateString())
+            ->select(['si.total', 'si.tax_amount', 'si.cogs', 's.grand_total', 's.sale_date'])
+            ->selectRaw('SUM(si.total) OVER (PARTITION BY si.sale_id) as sale_lines_total');
+
+        $profits = DB::query()
+            ->fromSub($lines, 'lines')
+            ->selectRaw(
+                'CASE WHEN lines.sale_date >= ? THEN ? ELSE ? END as period',
+                [$currentMonthStart->toDateString(), 'current_month', 'previous_month'],
+            )
+            ->selectRaw(self::GROSS_PROFIT_EXPRESSION.' as gross_profit')
+            ->groupBy('period')
+            ->pluck('gross_profit', 'period');
+
+        return [
+            'current_month' => Decimal::normalize($profits->get('current_month', 0)),
+            'previous_month' => Decimal::normalize($profits->get('previous_month', 0)),
         ];
     }
 

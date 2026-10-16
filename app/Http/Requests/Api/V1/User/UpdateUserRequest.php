@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Api\V1\User;
 
 use App\DTO\User\UpdateUserDTO;
-use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -12,9 +11,7 @@ class UpdateUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $user = $this->route('user');
-
-        return $user instanceof User && ($this->user()?->can('update', $user) ?? false);
+        return true;
     }
 
     /**
@@ -22,7 +19,7 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $user = $this->route('user');
+        $id = auth()->user()->id;
 
         return [
             'name' => ['required', 'string', 'max:255'],
@@ -31,7 +28,7 @@ class UpdateUserRequest extends FormRequest
                 'string',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->ignore($user instanceof User ? $user->id : null),
+                Rule::unique('users', 'email')->ignore($id),
             ],
         ];
     }

@@ -24,7 +24,7 @@ class UserPolicy
 
     public function update(User $actor, User $user): bool
     {
-        return $actor->hasPermission(Permission::UsersUpdate);
+        return $actor->is($user) || $actor->hasPermission(Permission::UsersUpdate);
     }
 
     public function delete(User $actor, User $user): bool
@@ -34,7 +34,7 @@ class UserPolicy
 
     public function updatePassword(User $actor, User $user): bool
     {
-        return $actor->hasPermission(Permission::UsersUpdate);
+        return $actor->is($user) || $actor->hasPermission(Permission::UsersUpdate);
     }
 
     public function updatePhoto(User $actor, User $user): bool

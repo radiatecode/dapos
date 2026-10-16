@@ -16,6 +16,12 @@ class DeleteStore
         foreach ($ids as $id) {
             $store = Store::queries()->findForTenant((int) $id);
 
+            if (! $store->authorizeAction($store, 'delete')) {
+                throw ValidationException::withMessages([
+                    'store' => 'You are not authorized to delete this store.',
+                ]);
+            }
+
             try {
                 $store->delete();
             } catch (QueryException $exception) {

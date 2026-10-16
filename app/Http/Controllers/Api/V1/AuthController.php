@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Auth\LoginUser;
 use App\Actions\Auth\LogoutUser;
+use App\Actions\User\UpdateMyInfo;
+use App\Actions\User\UpdateMyPassword;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
+use App\Http\Requests\Api\V1\User\UpdatePasswordRequest;
+use App\Http\Requests\Api\V1\User\UpdateUserRequest;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -37,6 +41,16 @@ class AuthController extends Controller
         ]);
     }
 
+    public function updateInfo(UpdateUserRequest $request, UpdateMyInfo $update): UserResource
+    {
+        return UserResource::make($update->handle($request->toDTO()));
+    }
+
+    public function updatePassword(UpdatePasswordRequest $request, UpdateMyPassword $update): UserResource
+    {
+        return UserResource::make($update->handle($request->toDTO()));
+    }
+
     public function logout(Request $request, LogoutUser $logout): Response
     {
         $user = $request->user();
@@ -53,6 +67,6 @@ class AuthController extends Controller
         $user = $request->user();
         assert($user instanceof User);
 
-        return UserResource::make($user->loadMissing(['roles', 'tenant']));
+        return UserResource::make($user->loadMissing(['role', 'tenant']));
     }
 }

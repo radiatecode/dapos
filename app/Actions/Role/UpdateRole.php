@@ -8,14 +8,16 @@ use Illuminate\Support\Str;
 
 class UpdateRole
 {
-    public function handle(Role $role, RoleDTO $dto): Role
+    public function handle(int $id, RoleDTO $dto): Role
     {
+        $role = Role::queries()->findById($id);
+
         $role->name = $dto->name;
         $role->slug = $dto->slug ?: $this->uniqueSlug($dto->name, $role->id);
         $role->permissions = $dto->permissions;
         $role->save();
 
-        return $role->refresh();
+        return $role;
     }
 
     private function uniqueSlug(string $name, int $ignoreId): string

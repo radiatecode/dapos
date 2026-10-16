@@ -25,11 +25,11 @@ class RolePolicy
 
     public function update(User $actor, Role $role): bool
     {
-        return $actor->hasPermission(Permission::RolesUpdate);
+        return ! $role->is_default && $actor->hasPermission(Permission::RolesUpdate);
     }
 
     public function delete(User $actor, Role $role): bool
     {
-        return $actor->hasPermission(Permission::RolesDelete);
+        return ! $role->is_default && $actor->hasPermission(Permission::RolesDelete);
     }
 }

@@ -10,8 +10,8 @@ use App\Models\User;
 
 class AssignedUserRoleController extends Controller
 {
-    public function update(AssignRolesRequest $request, User $user, AssignUserRoles $assign): UserResource
+    public function update(AssignRolesRequest $request, int $id, AssignUserRoles $assign): UserResource
     {
-        return UserResource::make($assign->handle($user, $request->toDTO()));
+        return UserResource::make($assign->handle($id, $request->toDTO()));
     }
 }

@@ -76,7 +76,12 @@ enum Permission: string
     case CashRegisterView = 'cash-register.view';
     case CashRegisterManage = 'cash-register.manage';
 
-    case ReportsView = 'reports.view';
+    case SalesReportsView = 'sales.reports.view';
+    case TopSalesReportsView = 'top-sales.reports.view';
+    case SalesInvoicesReportsView = 'sales-invoices.reports.view';
+    case ProfitReportsView = 'profit.reports.view';
+    case MinStockReportsView = 'min-stock.reports.view';
+    case CurrentStockValueReportsView = 'current-stock-value.reports.view';
 
     case SettingsView = 'settings.view';
     case SettingsUpdate = 'settings.update';
@@ -95,6 +100,9 @@ enum Permission: string
     case TaxesCreate = 'taxes.create';
     case TaxesUpdate = 'taxes.update';
     case TaxesDelete = 'taxes.delete';
+
+    case OnlyCreatorUpdate = 'only-creator.update';
+    case OnlyCreatorDelete = 'only-creator.delete';
 
     public function label(): string
     {
@@ -155,7 +163,12 @@ enum Permission: string
             self::ReturnsDelete => 'Delete returns',
             self::CashRegisterView => 'View cash register',
             self::CashRegisterManage => 'Manage cash register',
-            self::ReportsView => 'View reports',
+            self::SalesReportsView => 'View sales reports',
+            self::TopSalesReportsView => 'View top sales reports',
+            self::SalesInvoicesReportsView => 'View sales invoices reports',
+            self::ProfitReportsView => 'View profit reports',
+            self::MinStockReportsView => 'View min stock reports',
+            self::CurrentStockValueReportsView => 'View current stock value reports',
             self::SettingsView => 'View settings',
             self::SettingsUpdate => 'Update settings',
             self::UsersView => 'View users',
@@ -170,6 +183,8 @@ enum Permission: string
             self::TaxesCreate => 'Create taxes',
             self::TaxesUpdate => 'Update taxes',
             self::TaxesDelete => 'Delete taxes',
+            self::OnlyCreatorUpdate => 'Only creator can update',
+            self::OnlyCreatorDelete => 'Only creator can delete',
         };
     }
 
@@ -192,11 +207,68 @@ enum Permission: string
             self::SalesView, self::SalesCreate, self::SalesUpdate, self::SalesDelete,
             self::ReturnsView, self::ReturnsCreate, self::ReturnsUpdate, self::ReturnsDelete,
             self::CashRegisterView, self::CashRegisterManage => 'Sales',
-            self::ReportsView => 'Reports',
+            self::SalesReportsView, self::TopSalesReportsView, self::SalesInvoicesReportsView, self::ProfitReportsView, self::MinStockReportsView, self::CurrentStockValueReportsView => 'Reports',
             self::SettingsView, self::SettingsUpdate => 'Settings',
             self::UsersView, self::UsersCreate, self::UsersUpdate, self::UsersDelete,
             self::RolesView, self::RolesCreate, self::RolesUpdate, self::RolesDelete => 'Access',
             self::TaxesView, self::TaxesCreate, self::TaxesUpdate, self::TaxesDelete => 'Taxes',
+            self::OnlyCreatorUpdate, self::OnlyCreatorDelete => 'Ownership',
         };
+    }
+
+    public static function all(): array
+    {
+        return array_map(fn (Permission $permission) => $permission->value, self::cases());
+    }
+
+    public static function manager(): array
+    {
+        return [
+            self::DashboardView,
+            self::ProductsView,
+            self::ProductsCreate,
+            self::ProductsUpdate,
+            self::BarcodesPrint,
+            self::CategoriesView, self::CategoriesCreate, self::CategoriesUpdate,
+            self::BrandsView, self::BrandsCreate, self::BrandsUpdate,
+            self::UnitsView, self::UnitsCreate, self::UnitsUpdate,
+            self::AttributesView, self::AttributesCreate, self::AttributesUpdate,
+            self::CustomersView, self::CustomersCreate, self::CustomersUpdate,
+            self::SuppliersView, self::SuppliersCreate, self::SuppliersUpdate,
+            self::LocationsView, self::LocationsCreate, self::LocationsUpdate,
+            self::StoresView, self::StoresCreate, self::StoresUpdate,
+            self::PurchasingView, self::PurchasingCreate, self::PurchasingUpdate,
+            self::InventoryView, self::InventoryCreate,
+            self::SalesView, self::SalesCreate,
+            self::ReturnsView, self::ReturnsCreate,
+            self::SalesReportsView, self::TopSalesReportsView, self::SalesInvoicesReportsView, self::ProfitReportsView, self::MinStockReportsView, self::CurrentStockValueReportsView,
+            self::SettingsView,
+            self::TaxesView, self::TaxesCreate,
+        ];
+    }
+
+    public static function staff(): array
+    {
+        return [
+            self::CategoriesView, self::CategoriesCreate, self::CategoriesUpdate,
+            self::BrandsView, self::BrandsCreate, self::BrandsUpdate,
+            self::UnitsView, self::UnitsCreate, self::UnitsUpdate,
+            self::AttributesView, self::AttributesCreate, self::AttributesUpdate,
+            self::CustomersView, self::CustomersCreate, self::CustomersUpdate,
+            self::SuppliersView, self::SuppliersCreate, self::SuppliersUpdate,
+            self::ProductsView, self::ProductsCreate, self::ProductsUpdate, self::BarcodesPrint,
+            self::LocationsView, self::LocationsCreate, self::LocationsUpdate,
+            self::StoresView, self::StoresCreate, self::StoresUpdate,
+            self::PurchasingView, self::PurchasingCreate, self::PurchasingUpdate,
+            self::OnlyCreatorUpdate,
+        ];
+    }
+
+    public static function cashier(): array
+    {
+        return [
+            self::SalesView, self::SalesCreate, self::SalesUpdate,
+            self::OnlyCreatorUpdate,
+        ];
     }
 }

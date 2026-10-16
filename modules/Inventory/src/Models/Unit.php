@@ -3,6 +3,7 @@
 namespace DA\Inventory\Models;
 
 use App\Models\Concerns\ScopedToCurrentTenant;
+use DA\Inventory\Concerns\OwnershipActionAuthorize;
 use DA\Inventory\Database\Factories\UnitFactory;
 use DA\Inventory\Enums\UnitType;
 use DA\Inventory\Models\Queries\UnitQueries;
@@ -21,7 +22,7 @@ use Illuminate\Database\Eloquent\Model;
 class Unit extends Model
 {
     /** @use HasFactory<UnitFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

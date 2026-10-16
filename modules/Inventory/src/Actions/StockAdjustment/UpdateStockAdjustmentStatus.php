@@ -16,6 +16,12 @@ class UpdateStockAdjustmentStatus
         return DB::transaction(function () use ($id, $status): StockAdjustment {
             $adjustment = StockAdjustment::queries()->lockForTenant($id);
 
+            if (! $adjustment->authorizeAction($adjustment, 'update')) {
+                throw ValidationException::withMessages([
+                    'stock_adjustment' => 'You are not authorized to update this stock adjustment.',
+                ]);
+            }
+
             if ($status === StockAdjustmentStatus::Completed) {
                 $this->apply->complete($adjustment);
             } elseif ($status === StockAdjustmentStatus::Cancelled) {

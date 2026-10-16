@@ -16,6 +16,12 @@ class UpdateStockTransferStatus
         return DB::transaction(function () use ($id, $status): StockTransfer {
             $transfer = StockTransfer::queries()->lockForTenant($id);
 
+            if (! $transfer->authorizeAction($transfer, 'update')) {
+                throw ValidationException::withMessages([
+                    'stock_transfer' => 'You are not authorized to update this stock transfer.',
+                ]);
+            }
+
             if ($status === StockTransferStatus::Completed) {
                 $this->apply->complete($transfer);
             } elseif ($status === StockTransferStatus::Cancelled) {

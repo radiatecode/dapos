@@ -4,6 +4,7 @@ namespace DA\Inventory\Models;
 
 use App\Models\Concerns\ScopedToCurrentTenant;
 use App\Models\User;
+use DA\Inventory\Concerns\OwnershipActionAuthorize;
 use DA\Inventory\Database\Factories\StockAdjustmentFactory;
 use DA\Inventory\Enums\StockAdjustmentStatus;
 use DA\Inventory\Enums\StockAdjustmentType;
@@ -31,7 +32,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class StockAdjustment extends Model
 {
     /** @use HasFactory<StockAdjustmentFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

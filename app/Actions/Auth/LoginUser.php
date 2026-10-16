@@ -39,6 +39,6 @@ class LoginUser
 
         $token = $user->createToken($dto->device_name)->plainTextToken;
 
-        return new LoginResult($user->load('roles'), $token);
+        return new LoginResult($user->load('role'), $token);
     }
 }

@@ -10,6 +10,6 @@ class AssignRolesDTO extends Data
      * @param  list<int>  $role_ids
      */
     public function __construct(
-        public array $role_ids,
+        public int $role_id,
     ) {}
 }

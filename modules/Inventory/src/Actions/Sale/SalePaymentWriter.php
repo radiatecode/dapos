@@ -11,7 +11,7 @@ class SalePaymentWriter
 {
     /**
      * @param  list<array{
-     *     payment_method_id: int,
+     *     payment_method: int,
      *     bill_amount: string,
      *     received_amount: string,
      *     paid_amount: string,

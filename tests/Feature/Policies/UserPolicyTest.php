@@ -48,6 +48,16 @@ test('users.delete grants delete for another user', function () {
     expect((new UserPolicy)->delete($actor, $user))->toBeTrue();
 });
 
+test('a user can update and change the password of their own account', function () {
+    $actor = userWithPermission(null);
+    $policy = new UserPolicy;
+
+    expect($policy->update($actor, $actor))->toBeTrue()
+        ->and($policy->updatePassword($actor, $actor))->toBeTrue()
+        ->and($policy->updatePhoto($actor, $actor))->toBeFalse()
+        ->and($policy->assignRoles($actor, $actor))->toBeFalse();
+});
+
 test('users.delete does not grant delete for the actor', function () {
     $actor = userWithPermission(Permission::UsersDelete);
 

@@ -20,7 +20,7 @@ describe('authentication and authorization', function () {
         ['DELETE', '/api/v1/users/1'],
         ['PUT', '/api/v1/users/1/password'],
         ['POST', '/api/v1/users/1/photo'],
-        ['PUT', '/api/v1/users/1/roles'],
+        ['PUT', '/api/v1/users/1/role'],
     ]);
 
     it('returns 403 when the user lacks the required permission', function () {
@@ -87,6 +87,19 @@ describe('index and show', function () {
         expect(collect($response->json('data'))->pluck('id'))->toContain($actor->id);
     });
 
+    it('includes the assigned role and honors the data table limit', function () {
+        $tenant = Tenant::factory()->create();
+        User::factory()->forTenant($tenant)->count(2)->create();
+        $actor = actingAsTenantUser($tenant, [Permission::UsersView]);
+
+        $this->getJson('/api/v1/users?limit=1')
+            ->assertOk()
+            ->assertJsonPath('meta.per_page', 1)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $actor->id)
+            ->assertJsonPath('data.0.role.id', $actor->role_id);
+    });
+
     it('returns 404 when tenant A requests a tenant B user', function () {
         $tenantA = Tenant::factory()->create();
         $tenantB = Tenant::factory()->create();
@@ -107,12 +120,12 @@ describe('store', function () {
         ]);
 
         $this->postJson('/api/v1/users', tenantUserPayload([
-            'role_ids' => [$role->id],
+            'role_id' => $role->id,
         ]))
             ->assertCreated()
             ->assertJsonPath('data.name', 'Cashier One')
             ->assertJsonPath('data.email', 'cashier@shop.test')
-            ->assertJsonPath('data.roles.0.id', $role->id);
+            ->assertJsonPath('data.role.id', $role->id);
 
         $this->assertDatabaseHas('users', [
             'email' => 'cashier@shop.test',
@@ -145,10 +158,10 @@ describe('store', function () {
         $foreignRole = Role::factory()->create();
 
         $this->postJson('/api/v1/users', tenantUserPayload([
-            'role_ids' => [$foreignRole->id],
+            'role_id' => $foreignRole->id,
         ]))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['role_ids.0']);
+            ->assertJsonValidationErrors(['role_id']);
     });
 });
 
@@ -184,6 +197,41 @@ describe('update and destroy', function () {
         $this->deleteJson('/api/v1/users/'.$user->id)->assertNoContent();
 
         $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    });
+
+    it('lets a user update their own profile without the users.update permission', function () {
+        $user = actingAsTenantUser(permissions: [Permission::SalesView]);
+
+        $this->putJson('/api/v1/users/'.$user->id, [
+            'name' => 'Renamed Owner',
+            'email' => 'renamed@shop.test',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Renamed Owner')
+            ->assertJsonPath('data.email', 'renamed@shop.test');
+    });
+
+    it('forbids a user without users.update from updating someone else', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::SalesView]);
+        $other = User::factory()->forTenant($tenant)->create();
+
+        $this->putJson('/api/v1/users/'.$other->id, [
+            'name' => 'Hijack',
+            'email' => 'hijack@shop.test',
+        ])->assertForbidden();
+    });
+
+    it('lets a user change their own password without the users.update permission', function () {
+        $user = actingAsTenantUser(permissions: [Permission::SalesView]);
+
+        $this->putJson('/api/v1/users/'.$user->id.'/password', [
+            'current_password' => 'password',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+        ])->assertOk();
+
+        expect(Hash::check('new-password', $user->fresh()->password))->toBeTrue();
     });
 
     it('returns 403 when deleting the authenticated user', function () {
@@ -251,15 +299,15 @@ describe('password photo and roles', function () {
             'permissions' => [Permission::SalesView->value],
         ]);
 
-        $this->putJson('/api/v1/users/'.$user->id.'/roles', [
-            'role_ids' => [$role->id],
+        $this->putJson('/api/v1/users/'.$user->id.'/role', [
+            'role_id' => $role->id,
         ])
             ->assertOk()
-            ->assertJsonPath('data.roles.0.id', $role->id)
+            ->assertJsonPath('data.role.id', $role->id)
             ->assertJsonPath('data.permissions.0', Permission::SalesView->value);
 
-        $this->assertDatabaseHas('user_roles', [
-            'user_id' => $user->id,
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
             'role_id' => $role->id,
         ]);
     });

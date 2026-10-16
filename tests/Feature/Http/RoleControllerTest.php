@@ -38,6 +38,17 @@ describe('index and show', function () {
             ->assertJsonMissing(['name' => 'Other tenant']);
     });
 
+    it('accepts the limit query used by the data table', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::RolesView]);
+        Role::factory()->count(2)->create(['tenant_id' => $tenant->id]);
+
+        $this->getJson('/api/v1/roles?limit=1')
+            ->assertOk()
+            ->assertJsonPath('meta.per_page', 1)
+            ->assertJsonCount(1, 'data');
+    });
+
     it('returns 404 when tenant A requests a tenant B role', function () {
         $tenantA = Tenant::factory()->create();
         actingAsTenantUser($tenantA, [Permission::RolesView]);
@@ -139,6 +150,24 @@ describe('update and destroy', function () {
         ]);
     });
 
+    it('refuses to update a default role', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::RolesUpdate]);
+        $role = Role::factory()->create([
+            'tenant_id' => $tenant->id,
+            'is_default' => true,
+            'name' => 'Admin',
+        ]);
+
+        $this->putJson('/api/v1/roles/'.$role->id, rolePayload())
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('roles', [
+            'id' => $role->id,
+            'name' => 'Admin',
+        ]);
+    });
+
     it('deletes the role', function () {
         $tenant = Tenant::factory()->create();
         actingAsTenantUser($tenant, [Permission::RolesDelete]);
@@ -147,5 +176,18 @@ describe('update and destroy', function () {
         $this->deleteJson('/api/v1/roles/'.$role->id)->assertNoContent();
 
         $this->assertDatabaseMissing('roles', ['id' => $role->id]);
+    });
+
+    it('refuses to delete a default role', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::RolesDelete]);
+        $role = Role::factory()->create([
+            'tenant_id' => $tenant->id,
+            'is_default' => true,
+        ]);
+
+        $this->deleteJson('/api/v1/roles/'.$role->id)->assertForbidden();
+
+        $this->assertDatabaseHas('roles', ['id' => $role->id]);
     });
 });

@@ -19,6 +19,12 @@ class DeletePurchase
                 $purchase = Purchase::queries()->findForTenant((int) $id);
                 $purchase = Purchase::query()->whereKey($purchase->id)->lockForUpdate()->firstOrFail();
 
+                if (! $purchase->authorizeAction($purchase, 'delete')) {
+                    throw ValidationException::withMessages([
+                        'purchase' => 'You are not authorized to delete this purchase.',
+                    ]);
+                }
+
                 if ($purchase->status === PurchaseStatus::Received) {
                     throw ValidationException::withMessages([
                         'ids' => 'A received purchase cannot be deleted.',

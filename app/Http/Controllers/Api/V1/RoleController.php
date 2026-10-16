@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Role\CreateRole;
-use App\Actions\Role\DeleteRole;
 use App\Actions\Role\UpdateRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Role\StoreRoleRequest;
@@ -21,7 +20,7 @@ class RoleController extends Controller
     public function index(Request $request, RoleService $roles): AnonymousResourceCollection
     {
         return RoleResource::collection(
-            $roles->paginate($request->integer('per_page', 15)),
+            $roles->paginate($request->integer('per_page', $request->integer('limit', 15))),
         );
     }
 
@@ -34,22 +33,24 @@ class RoleController extends Controller
             ->setStatusCode(201);
     }
 
-    public function show(Role $role, RoleService $roles): RoleResource
+    public function show(int $id, RoleService $roles): RoleResource
     {
-        return RoleResource::make($roles->show($role));
+        return RoleResource::make($roles->show($id));
     }
 
-    public function update(UpdateRoleRequest $request, Role $role, UpdateRole $update): RoleResource
+    public function update(UpdateRoleRequest $request, int $id, UpdateRole $update): RoleResource
     {
-        return RoleResource::make($update->handle($role, $request->toDTO()));
+        return RoleResource::make($update->handle($id, $request->toDTO()));
     }
 
-    public function destroy(Role $role, DeleteRole $delete): Response
+    public function destroy(int $id): JsonResponse
     {
-        $this->authorize('delete', $role);
+        $role = Role::queries()->findById($id);
 
-        $delete->handle($role);
+        $role->delete();
 
-        return response()->noContent();
+        return response()->json([
+            'message' => 'Role deleted successfully',
+        ], Response::HTTP_OK);
     }
 }
