@@ -12,12 +12,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
+    'tenant_id',
     'name',
-    'short_name',
     'code',
     'unit_type',
     'precision',
     'is_active',
+    'is_default',
 ])]
 class Unit extends Model
 {

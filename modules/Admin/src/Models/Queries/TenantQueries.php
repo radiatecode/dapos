@@ -43,9 +43,10 @@ class TenantQueries extends BaseQueries
     public function datatable(): Builder
     {
         return $this->queryBuilder()
+            ->leftJoin('subscriptions', 'tenants.id', '=', 'subscriptions.tenant_id')
             ->whereNull('deleted_at')
             ->select(
-                'id',
+                'tenants.id',
                 'name',
                 'slug',
                 'country',
@@ -54,9 +55,10 @@ class TenantQueries extends BaseQueries
                 'contact_person_name',
                 'contact_person_email',
                 'contact_person_phone',
-                'status',
-                'created_at',
-                'updated_at',
+                'tenants.status',
+                'subscriptions.id as subscription_id',
+                'tenants.created_at',
+                'tenants.updated_at',
             )
             ->orderBy('id', 'desc');
     }

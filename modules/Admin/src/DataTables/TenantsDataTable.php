@@ -21,6 +21,7 @@ class TenantsDataTable extends DataTable
 
                 $actions .= "<a href='".route('admin.tenants.show', $row->id)."' class='btn btn-sm admin-table-btn admin-table-btn-view me-1'><i class='fas fa-eye'></i> Details</a>";
                 $actions .= "<a href='".route('admin.tenants.edit', $row->id)."' class='btn btn-sm admin-table-btn admin-table-btn-edit me-1'><i class='fas fa-edit'></i> Edit</a>";
+
                 $actions .= "<button type='button' class='btn btn-sm admin-table-btn admin-table-btn-delete deletable' data-delete-url='".route(
                     'admin.tenants.destroy',
                     $row->id

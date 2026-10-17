@@ -46,7 +46,7 @@ class TenantController extends Controller
 
     public function show(Tenant $tenant): View
     {
-        $tenant->load('superAdmin');
+        $tenant->load('superAdmin', 'subscription:id,tenant_id,status');
 
         return view('admin::app.tenants.show', compact('tenant'));
     }

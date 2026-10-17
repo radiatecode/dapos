@@ -20,7 +20,7 @@
             <div class="tenant-hero__body">
                 <div class="tenant-avatar" aria-hidden="true">
                     @if ($tenant->logo)
-                        <img src="{{ asset('storage/'.$tenant->logo) }}" alt="{{ $tenant->name }} logo">
+                        <img src="{{ asset('storage/' . $tenant->logo) }}" alt="{{ $tenant->name }} logo">
                     @else
                         <span>{{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($tenant->name, 0, 1)) }}</span>
                     @endif
@@ -116,10 +116,19 @@
                             </span>
                         </div>
 
-                        <a href="{{ route('admin.tenants.edit', $tenant) }}" class="btn admin-btn btn-primary tenant-action-btn">
+                        <a href="{{ route('admin.tenants.edit', $tenant) }}"
+                            class="btn admin-btn btn-primary tenant-action-btn">
                             <i class="fas fa-edit"></i>
                             <span>Edit</span>
                         </a>
+
+                        @if ($tenant->subscription)
+                            <a href="{{ route('admin.create.tenants.default.data', $tenant) }}"
+                                class="btn admin-btn btn-secondary tenant-action-btn">
+                                <i class="fas fa-cog"></i>
+                                <span>Default Data</span>
+                            </a>
+                        @endif
 
                         @if ($tenant->isSuspended())
                             <form method="POST" action="{{ route('admin.tenants.activate', $tenant) }}">
@@ -138,15 +147,15 @@
                                 </button>
                             </form>
                         @else
-                            <a href="{{ route('admin.subscriptions.create') }}" class="btn admin-btn btn-success tenant-action-btn">
+                            <a href="{{ route('admin.subscriptions.create') }}"
+                                class="btn admin-btn btn-success tenant-action-btn">
                                 <i class="fas fa-layer-group"></i>
                                 <span>Subscribe a plan</span>
                             </a>
                         @endif
 
                         <form method="POST" action="{{ route('admin.tenants.destroy', $tenant) }}"
-                            class="tenant-actions__danger"
-                            onsubmit="return confirm('Delete this tenant?');">
+                            class="tenant-actions__danger" onsubmit="return confirm('Delete this tenant?');">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn admin-btn btn-danger tenant-action-btn">
