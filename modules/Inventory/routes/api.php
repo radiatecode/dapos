@@ -23,10 +23,13 @@ use DA\Inventory\Http\Controllers\Api\V1\Dropdown\GetUnitsDropdown;
 use DA\Inventory\Http\Controllers\Api\V1\InventoryController;
 use DA\Inventory\Http\Controllers\Api\V1\InventoryLayerController;
 use DA\Inventory\Http\Controllers\Api\V1\MinStockReportController;
+use DA\Inventory\Http\Controllers\Api\V1\ProductBatchController;
 use DA\Inventory\Http\Controllers\Api\V1\ProductController;
 use DA\Inventory\Http\Controllers\Api\V1\ProfitReportController;
 use DA\Inventory\Http\Controllers\Api\V1\PurchaseController;
 use DA\Inventory\Http\Controllers\Api\V1\PurchaseReturnController;
+use DA\Inventory\Http\Controllers\Api\V1\QuickSaleController;
+use DA\Inventory\Http\Controllers\Api\V1\QuickSalesReportController;
 use DA\Inventory\Http\Controllers\Api\V1\SaleController;
 use DA\Inventory\Http\Controllers\Api\V1\SalesInvoiceReportController;
 use DA\Inventory\Http\Controllers\Api\V1\SalesReportController;
@@ -133,6 +136,16 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::put('attributes-values/{valueId}', [AttributeValueController::class, 'update'])
         ->middleware('permission:attributes.update')
         ->name('attributes.values.update');
+
+    Route::get('products/batch/sample', [ProductBatchController::class, 'sample'])
+        ->middleware('permission:products.create')
+        ->name('products.batch.sample');
+    Route::post('products/batch/verify', [ProductBatchController::class, 'verify'])
+        ->middleware('permission:products.create')
+        ->name('products.batch.verify');
+    Route::post('products/batch', [ProductBatchController::class, 'store'])
+        ->middleware('permission:products.create')
+        ->name('products.batch.store');
 
     Route::get('products/summary', [ProductController::class, 'summary'])
         ->middleware('permission:products.view')
@@ -278,12 +291,27 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
         ->middleware('permission:'.Permission::SalesView->value)
         ->name('sales.show');
 
+    Route::get('quick-sales', [QuickSaleController::class, 'index'])
+        ->middleware('permission:'.Permission::QuickSalesView->value)
+        ->name('quick-sales.index');
+    Route::get('quick-sales/summary', [QuickSaleController::class, 'summary'])
+        ->middleware('permission:'.Permission::QuickSalesView->value)
+        ->name('quick-sales.summary');
+    Route::post('quick-sales', [QuickSaleController::class, 'store'])
+        ->middleware('permission:'.Permission::QuickSalesCreate->value)
+        ->name('quick-sales.store');
+    Route::get('quick-sales/{id}', [QuickSaleController::class, 'show'])
+        ->whereNumber('id')
+        ->middleware('permission:'.Permission::QuickSalesView->value)
+        ->name('quick-sales.show');
+
     Route::prefix('dashboard')
         ->name('dashboard.')
         ->middleware('permission:'.Permission::DashboardView->value)
         ->group(function (): void {
             Route::get('summary', [DashboardController::class, 'summary'])->name('summary');
             Route::get('sales-trend', [DashboardController::class, 'salesTrend'])->name('sales-trend');
+            Route::get('quick-sales-today', [DashboardController::class, 'quickSalesToday'])->name('quick-sales-today');
         });
 
     Route::prefix('reports/sales')
@@ -312,6 +340,16 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
         ->group(function (): void {
             Route::get('export/pdf', [SalesInvoiceReportController::class, 'exportPdf'])->name('export.pdf');
             Route::get('export/excel', [SalesInvoiceReportController::class, 'exportExcel'])->name('export.excel');
+        });
+
+    Route::prefix('reports/quick-sales')
+        ->name('reports.quick-sales.')
+        ->middleware('permission:'.Permission::QuickSalesReportsView->value)
+        ->group(function (): void {
+            Route::get('/', [QuickSalesReportController::class, 'index'])->name('index');
+            Route::get('summary', [QuickSalesReportController::class, 'summary'])->name('summary');
+            Route::get('export/pdf', [QuickSalesReportController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('export/excel', [QuickSalesReportController::class, 'exportExcel'])->name('export.excel');
         });
 
     Route::prefix('reports/profit')

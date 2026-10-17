@@ -68,6 +68,9 @@ enum Permission: string
     case SalesUpdate = 'sales.update';
     case SalesDelete = 'sales.delete';
 
+    case QuickSalesView = 'quick-sales.view';
+    case QuickSalesCreate = 'quick-sales.create';
+
     case ReturnsView = 'returns.view';
     case ReturnsCreate = 'returns.create';
     case ReturnsUpdate = 'returns.update';
@@ -82,6 +85,7 @@ enum Permission: string
     case ProfitReportsView = 'profit.reports.view';
     case MinStockReportsView = 'min-stock.reports.view';
     case CurrentStockValueReportsView = 'current-stock-value.reports.view';
+    case QuickSalesReportsView = 'quick-sales.reports.view';
 
     case SettingsView = 'settings.view';
     case SettingsUpdate = 'settings.update';
@@ -157,6 +161,8 @@ enum Permission: string
             self::SalesCreate => 'Create sales',
             self::SalesUpdate => 'Update sales',
             self::SalesDelete => 'Delete sales',
+            self::QuickSalesView => 'View quick sales',
+            self::QuickSalesCreate => 'Create quick sales',
             self::ReturnsView => 'View returns',
             self::ReturnsCreate => 'Create returns',
             self::ReturnsUpdate => 'Update returns',
@@ -169,6 +175,7 @@ enum Permission: string
             self::ProfitReportsView => 'View profit reports',
             self::MinStockReportsView => 'View min stock reports',
             self::CurrentStockValueReportsView => 'View current stock value reports',
+            self::QuickSalesReportsView => 'View quick sales reports',
             self::SettingsView => 'View settings',
             self::SettingsUpdate => 'Update settings',
             self::UsersView => 'View users',
@@ -205,9 +212,11 @@ enum Permission: string
             self::PurchasingView, self::PurchasingCreate, self::PurchasingUpdate, self::PurchasingDelete,
             self::InventoryView, self::InventoryCreate, self::InventoryUpdate, self::InventoryDelete => 'Inventory',
             self::SalesView, self::SalesCreate, self::SalesUpdate, self::SalesDelete,
+            self::QuickSalesView, self::QuickSalesCreate,
             self::ReturnsView, self::ReturnsCreate, self::ReturnsUpdate, self::ReturnsDelete,
             self::CashRegisterView, self::CashRegisterManage => 'Sales',
-            self::SalesReportsView, self::TopSalesReportsView, self::SalesInvoicesReportsView, self::ProfitReportsView, self::MinStockReportsView, self::CurrentStockValueReportsView => 'Reports',
+            self::SalesReportsView, self::TopSalesReportsView, self::SalesInvoicesReportsView, self::ProfitReportsView, self::MinStockReportsView, self::CurrentStockValueReportsView,
+            self::QuickSalesReportsView => 'Reports',
             self::SettingsView, self::SettingsUpdate => 'Settings',
             self::UsersView, self::UsersCreate, self::UsersUpdate, self::UsersDelete,
             self::RolesView, self::RolesCreate, self::RolesUpdate, self::RolesDelete => 'Access',
@@ -240,8 +249,10 @@ enum Permission: string
             self::PurchasingView, self::PurchasingCreate, self::PurchasingUpdate,
             self::InventoryView, self::InventoryCreate,
             self::SalesView, self::SalesCreate,
+            self::QuickSalesView, self::QuickSalesCreate,
             self::ReturnsView, self::ReturnsCreate,
             self::SalesReportsView, self::TopSalesReportsView, self::SalesInvoicesReportsView, self::ProfitReportsView, self::MinStockReportsView, self::CurrentStockValueReportsView,
+            self::QuickSalesReportsView,
             self::SettingsView,
             self::TaxesView, self::TaxesCreate,
         ];
@@ -268,6 +279,7 @@ enum Permission: string
     {
         return [
             self::SalesView, self::SalesCreate, self::SalesUpdate,
+            self::QuickSalesView, self::QuickSalesCreate,
             self::OnlyCreatorUpdate,
         ];
     }

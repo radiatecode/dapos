@@ -30,11 +30,11 @@ class TenantResource extends JsonResource
             'country' => $this->country,
             'timezone' => $this->timezone,
             'currency' => $this->currency,
-            'address_line_1' => $this->address_line_1,
-            'address_line_2' => $this->address_line_2,
+            'address' => $this->address_line_1.', '.$this->address_line_2,
             'city' => $this->city,
             'state' => $this->state,
             'postal_code' => $this->postal_code,
+            'phone' => $this->contact_person_phone,
         ];
     }
 }

@@ -37,6 +37,31 @@ class BaseQueries
             ->exists();
     }
 
+    /**
+     * @return array<string, list<int>>
+     */
+    public function idsGroupedByLowerName(): array
+    {
+        $grouped = [];
+
+        $records = $this->eloquentBuilder()
+            ->where('tenant_id', auth()->user()->tenant_id)
+            ->orderBy('id')
+            ->get(['id', 'name']);
+
+        foreach ($records as $record) {
+            $key = Str::lower(trim((string) $record->name));
+
+            if ($key === '') {
+                continue;
+            }
+
+            $grouped[$key][] = (int) $record->id;
+        }
+
+        return $grouped;
+    }
+
     public function uniqueSlugFrom(string $name, string $fallback, ?int $ignoreId = null): string
     {
         $base = Str::slug($name) ?: $fallback;
