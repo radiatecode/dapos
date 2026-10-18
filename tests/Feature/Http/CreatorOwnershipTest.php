@@ -6,6 +6,7 @@ use App\Models\User;
 use DA\Admin\Models\Tenant;
 use DA\Inventory\Actions\Category\UpdateCategory;
 use DA\Inventory\Actions\Product\UpdateProduct;
+use DA\Inventory\Actions\Purchase\RecordPurchasePayment;
 use DA\Inventory\Actions\Purchase\UpdatePurchase;
 use DA\Inventory\Actions\PurchaseReturn\UpdatePurchaseReturn;
 use DA\Inventory\Actions\StockAdjustment\UpdateStockAdjustment;
@@ -13,12 +14,12 @@ use DA\Inventory\Actions\StockTransfer\UpdateStockTransfer;
 use DA\Inventory\DTO\Category\CategoryDTO;
 use DA\Inventory\DTO\Product\ProductDTO;
 use DA\Inventory\DTO\Purchase\PurchaseDTO;
+use DA\Inventory\DTO\Purchase\PurchasePaymentDTO;
 use DA\Inventory\DTO\PurchaseReturn\PurchaseReturnDTO;
 use DA\Inventory\DTO\StockAdjustment\StockAdjustmentDTO;
 use DA\Inventory\DTO\StockTransfer\StockTransferDTO;
 use DA\Inventory\Enums\ItemTaxType;
 use DA\Inventory\Enums\ProductType;
-use DA\Inventory\Enums\PurchasePaymentStatus;
 use DA\Inventory\Enums\PurchaseReturnStatus;
 use DA\Inventory\Enums\PurchaseStatus;
 use DA\Inventory\Enums\StockAdjustmentStatus;
@@ -409,12 +410,10 @@ describe('creator ownership', function () {
                 storeId: $purchase->store_id,
                 poNumber: $purchase->po_number,
                 orderDate: $purchase->order_date->toDateString(),
-                currency: 'BDT',
                 discountAmount: '0',
                 taxAmount: '0',
-                shippingAmount: '0',
+                paidAmount: '0',
                 status: PurchaseStatus::Pending,
-                paymentStatus: PurchasePaymentStatus::Unpaid,
                 notes: 'changed',
                 items: [],
             )),
@@ -423,6 +422,29 @@ describe('creator ownership', function () {
         );
 
         expect($purchase->fresh()->notes)->toBe('keep');
+    });
+
+    it('rejects a purchase payment from a non-creator', function () {
+        [$tenant, $creator] = actorBlockedFromOthersRecords(Permission::PurchasingUpdate, Permission::OnlyCreatorUpdate);
+        $purchase = Purchase::factory()->create([
+            'tenant_id' => $tenant->id,
+            'created_by' => $creator->id,
+            'grand_total' => '10.0000',
+            'paid_amount' => '0.0000',
+            'due_amount' => '10.0000',
+        ]);
+
+        expectNonCreatorRejected(
+            fn () => app(RecordPurchasePayment::class)->handle($purchase->id, new PurchasePaymentDTO(
+                amount: '1.0000',
+                referenceNumber: null,
+                note: null,
+            )),
+            'purchase',
+            'You are not authorized to update this purchase.',
+        );
+
+        expect($purchase->fresh()->paid_amount)->toBe('0.0000');
     });
 
     it('rejects a purchase return update from a non-creator', function () {

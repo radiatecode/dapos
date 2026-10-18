@@ -78,7 +78,8 @@ class ProductQueries extends BaseQueries
             ->when($isActive !== null, fn (Builder $query) => $query->where('is_active', $isActive))
             ->when($searchTerm !== '', function (Builder $query) use ($searchTerm): void {
                 $query->where(function (Builder $inner) use ($searchTerm): void {
-                    $inner->whereIn('id', ProductVariant::queries()->productIdsWithCodeStartingWith($searchTerm));
+                    $inner->where('name', 'like', '%'.$this->containsPattern($searchTerm).'%')
+                        ->orWhereIn('id', ProductVariant::queries()->productIdsWithCodeStartingWith($searchTerm));
                 });
             });
     }

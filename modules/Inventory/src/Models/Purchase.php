@@ -20,12 +20,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'store_id',
     'po_number',
     'order_date',
-    'currency',
     'subtotal',
     'discount_amount',
     'tax_amount',
-    'shipping_amount',
     'grand_total',
+    'paid_amount',
+    'due_amount',
     'status',
     'payment_status',
     'notes',
@@ -41,7 +41,8 @@ class Purchase extends Model
     protected $attributes = [
         'discount_amount' => 0,
         'tax_amount' => 0,
-        'shipping_amount' => 0,
+        'paid_amount' => 0,
+        'due_amount' => 0,
         'status' => 'Pending',
         'payment_status' => 'Unpaid',
     ];
@@ -61,8 +62,9 @@ class Purchase extends Model
             'subtotal' => 'decimal:4',
             'discount_amount' => 'decimal:4',
             'tax_amount' => 'decimal:4',
-            'shipping_amount' => 'decimal:4',
             'grand_total' => 'decimal:4',
+            'paid_amount' => 'decimal:4',
+            'due_amount' => 'decimal:4',
             'status' => PurchaseStatus::class,
             'payment_status' => PurchasePaymentStatus::class,
         ];
@@ -90,6 +92,14 @@ class Purchase extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseOrderItem::class, 'purchase_order_id');
+    }
+
+    /**
+     * @return HasMany<PurchasePayment, $this>
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(PurchasePayment::class)->orderBy('paid_at')->orderBy('id');
     }
 
     /**

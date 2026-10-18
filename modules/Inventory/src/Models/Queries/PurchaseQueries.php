@@ -35,7 +35,6 @@ class PurchaseQueries extends BaseQueries
      * @return array{
      *     total_purchases: int,
      *     total_amount: string,
-     *     currency: string|null,
      *     received_count: int,
      *     pending_count: int,
      *     ordered_count: int,
@@ -50,8 +49,6 @@ class PurchaseQueries extends BaseQueries
             ->selectRaw(
                 'COUNT(*) as total_purchases,
                 COALESCE(SUM(grand_total), 0) as total_amount,
-                MIN(currency) as currency_min,
-                MAX(currency) as currency_max,
                 COALESCE(SUM(status = ?), 0) as received_count,
                 COALESCE(SUM(status = ?), 0) as pending_count,
                 COALESCE(SUM(status = ?), 0) as ordered_count,
@@ -69,13 +66,9 @@ class PurchaseQueries extends BaseQueries
             )
             ->first();
 
-        $currencyMin = $row?->currency_min;
-        $currencyMax = $row?->currency_max;
-
         return [
             'total_purchases' => (int) ($row?->total_purchases ?? 0),
             'total_amount' => Decimal::normalize($row?->total_amount ?? 0),
-            'currency' => $currencyMin !== null && $currencyMin === $currencyMax ? $currencyMin : null,
             'received_count' => (int) ($row?->received_count ?? 0),
             'pending_count' => (int) ($row?->pending_count ?? 0),
             'ordered_count' => (int) ($row?->ordered_count ?? 0),
@@ -126,8 +119,19 @@ class PurchaseQueries extends BaseQueries
     public function findForDetail(int $id): Purchase
     {
         return $this->forAuthenticatedTenant()
-            ->with(['supplier', 'store', 'creator', 'items.variant.product'])
+            ->with(['supplier', 'store', 'creator', 'items.variant.product', 'payments.recorder'])
             ->findOrFail($id);
+    }
+
+    public function lockForTenant(int $id): Purchase
+    {
+        /** @var Purchase $purchase */
+        $purchase = $this->forAuthenticatedTenant()
+            ->whereKey($id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        return $purchase;
     }
 
     public function poNumberExists(string $poNumber, ?int $ignoreId = null): bool

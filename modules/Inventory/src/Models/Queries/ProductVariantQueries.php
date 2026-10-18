@@ -146,8 +146,8 @@ class ProductVariantQueries extends BaseQueries
         return DB::table('product_variants')
             ->select('product_id')
             ->where('tenant_id', auth()->user()->tenant_id)
-            ->where(function ($query) use ($prefix, $term): void {
-                $query->where('barcode', $term)
+            ->where(function ($query) use ($prefix): void {
+                $query->where('barcode', 'like', $prefix)
                     ->orWhere('sku', 'like', $prefix);
             });
     }

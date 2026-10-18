@@ -72,7 +72,6 @@ function receivePurchase(int $supplierId, int $storeId, int $variantId, string $
         'store_id' => $storeId,
         'discount_amount' => '0',
         'tax_amount' => '0',
-        'shipping_amount' => '0',
         'items' => [[
             'product_variant_id' => $variantId,
             'quantity' => $quantity,

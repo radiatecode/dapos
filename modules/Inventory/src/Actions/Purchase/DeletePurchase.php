@@ -31,6 +31,7 @@ class DeletePurchase
                     ]);
                 }
 
+                $purchase->payments()->reorder()->delete();
                 $purchase->delete();
             }
         });

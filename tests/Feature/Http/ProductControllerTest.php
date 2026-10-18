@@ -78,6 +78,18 @@ describe('index and show', function () {
             ->assertJsonMissing(['name' => 'Other tenant']);
     });
 
+    it('searches products by name', function () {
+        $tenant = Tenant::factory()->create();
+        actingAsTenantUser($tenant, [Permission::ProductsView]);
+        $cola = Product::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Cola 500ml']);
+        Product::factory()->create(['tenant_id' => $tenant->id, 'name' => 'Orange juice']);
+
+        $this->getJson('/api/v1/products?search=Cola')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $cola->id);
+    });
+
     it('filters products by name', function () {
         $tenant = Tenant::factory()->create();
         actingAsTenantUser($tenant, [Permission::ProductsView]);

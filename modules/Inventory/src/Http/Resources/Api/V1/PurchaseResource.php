@@ -3,6 +3,8 @@
 namespace DA\Inventory\Http\Resources\Api\V1;
 
 use DA\Inventory\Models\Purchase;
+use DA\Inventory\Models\PurchasePayment;
+use DA\Inventory\Services\Decimal;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -22,12 +24,12 @@ class PurchaseResource extends JsonResource
             'store_id' => $this->store_id,
             'po_number' => $this->po_number,
             'order_date' => $this->order_date?->toDateString(),
-            'currency' => $this->currency,
             'subtotal' => $this->subtotal,
             'discount_amount' => $this->discount_amount,
             'tax_amount' => $this->tax_amount,
-            'shipping_amount' => $this->shipping_amount,
             'grand_total' => $this->grand_total,
+            'paid_amount' => $this->paid_amount,
+            'due_amount' => $this->due_amount,
             'status' => $this->status?->value,
             'payment_status' => $this->payment_status?->value,
             'notes' => $this->notes,
@@ -42,6 +44,27 @@ class PurchaseResource extends JsonResource
             'supplier' => SupplierResource::make($this->whenLoaded('supplier')),
             'store' => StoreResource::make($this->whenLoaded('store')),
             'items' => PurchaseOrderItemResource::collection($this->whenLoaded('items')),
+            'payments' => $this->whenLoaded('payments', function () {
+                $running = '0.0000';
+
+                return $this->payments->map(function (PurchasePayment $payment) use (&$running): array {
+                    $running = Decimal::add($running, $payment->amount);
+
+                    return [
+                        'id' => $payment->id,
+                        'amount' => $payment->amount,
+                        'reference_number' => $payment->reference_number,
+                        'note' => $payment->note,
+                        'paid_at' => $payment->paid_at,
+                        'balance_due' => Decimal::sub($this->grand_total, $running),
+                        'recorded_by' => $payment->recorded_by,
+                        'recorder' => $payment->relationLoaded('recorder') && $payment->recorder !== null ? [
+                            'id' => $payment->recorder->id,
+                            'name' => $payment->recorder->name,
+                        ] : null,
+                    ];
+                })->values();
+            }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

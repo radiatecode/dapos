@@ -22,7 +22,6 @@ class ListPurchaseReturnLines
      *         po_number: string|null,
      *         store_id: int,
      *         supplier_id: int,
-     *         currency: string|null,
      *         supplier: array{id: int, name: string}|null,
      *         store: array{id: int, name: string}|null
      *     },
@@ -74,7 +73,6 @@ class ListPurchaseReturnLines
                 'po_number' => $purchase->po_number,
                 'store_id' => $purchase->store_id,
                 'supplier_id' => $purchase->supplier_id,
-                'currency' => $purchase->currency,
                 'supplier' => $purchase->supplier === null ? null : [
                     'id' => $purchase->supplier->id,
                     'name' => $purchase->supplier->name,

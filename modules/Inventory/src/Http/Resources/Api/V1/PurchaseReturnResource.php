@@ -49,7 +49,6 @@ class PurchaseReturnResource extends JsonResource
                 'id' => $this->purchase->id,
                 'po_number' => $this->purchase->po_number,
                 'status' => $this->purchase->status?->value,
-                'currency' => $this->purchase->currency,
             ]),
             'items' => PurchaseReturnItemResource::collection($this->whenLoaded('items')),
             'created_at' => $this->created_at,

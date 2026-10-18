@@ -3,12 +3,16 @@
 namespace DA\Inventory\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use Barryvdh\Snappy\Facades\SnappyPdf;
 use DA\Inventory\Actions\Purchase\CreatePurchase;
 use DA\Inventory\Actions\Purchase\DeletePurchase;
+use DA\Inventory\Actions\Purchase\PreparePurchaseOrderPdf;
+use DA\Inventory\Actions\Purchase\RecordPurchasePayment;
 use DA\Inventory\Actions\Purchase\UpdatePurchase;
 use DA\Inventory\Actions\Purchase\UpdatePurchaseStatus;
 use DA\Inventory\Enums\PurchasePaymentStatus;
 use DA\Inventory\Enums\PurchaseStatus;
+use DA\Inventory\Http\Requests\Api\V1\Purchase\StorePurchasePaymentRequest;
 use DA\Inventory\Http\Requests\Api\V1\Purchase\StorePurchaseRequest;
 use DA\Inventory\Http\Requests\Api\V1\Purchase\UpdatePurchaseRequest;
 use DA\Inventory\Http\Requests\Api\V1\Purchase\UpdatePurchaseStatusRequest;
@@ -74,6 +78,30 @@ class PurchaseController extends Controller
     public function show(int $id): PurchaseResource
     {
         return PurchaseResource::make(Purchase::queries()->findForDetail($id));
+    }
+
+    public function storePayment(StorePurchasePaymentRequest $request, int $id, RecordPurchasePayment $record): JsonResponse
+    {
+        $purchase = $record->handle($id, $request->toDTO());
+
+        return PurchaseResource::make($purchase)
+            ->response()
+            ->setStatusCode(201);
+    }
+
+    public function pdf(int $id, PreparePurchaseOrderPdf $prepare): Response
+    {
+        $document = $prepare->handle($id);
+
+        return SnappyPdf::loadView('inventory::purchases.order', ['document' => $document])
+            ->setPaper('a4', 'portrait')
+            ->setOption('margin-top', 12)
+            ->setOption('margin-right', 10)
+            ->setOption('margin-bottom', 12)
+            ->setOption('margin-left', 10)
+            ->setOption('footer-right', 'Page [page] of [toPage]')
+            ->setOption('footer-font-size', 8)
+            ->download($document->fileName());
     }
 
     public function update(UpdatePurchaseRequest $request, int $id, UpdatePurchase $update): PurchaseResource

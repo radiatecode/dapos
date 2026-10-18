@@ -80,7 +80,6 @@ if (! function_exists('receivePurchase')) {
             'store_id' => $storeId,
             'discount_amount' => '0',
             'tax_amount' => '0',
-            'shipping_amount' => '0',
             'items' => [[
                 'product_variant_id' => $variantId,
                 'quantity' => $quantity,
@@ -922,7 +921,6 @@ describe('summary and returnable lines', function () {
             'store_id' => $catalog['store_id'],
             'discount_amount' => '0',
             'tax_amount' => '0',
-            'shipping_amount' => '0',
             'items' => [[
                 'product_variant_id' => $catalog['variant_id'],
                 'quantity' => '20',

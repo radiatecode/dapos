@@ -243,6 +243,12 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::put('purchases/{id}/status', [PurchaseController::class, 'updateStatus'])
         ->middleware('permission:purchasing.update')
         ->name('purchases.status');
+    Route::post('purchases/{id}/payments', [PurchaseController::class, 'storePayment'])
+        ->middleware('permission:purchasing.update')
+        ->name('purchases.payments.store');
+    Route::get('purchases/{id}/pdf', [PurchaseController::class, 'pdf'])
+        ->middleware('permission:purchasing.view')
+        ->name('purchases.pdf');
     Route::get('purchases/{id}', [PurchaseController::class, 'show'])
         ->middleware('permission:purchasing.view')
         ->name('purchases.show');

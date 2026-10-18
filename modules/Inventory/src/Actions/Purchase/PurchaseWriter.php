@@ -5,6 +5,7 @@ namespace DA\Inventory\Actions\Purchase;
 use DA\Inventory\DTO\Purchase\PurchaseDTO;
 use DA\Inventory\Models\Purchase;
 use DA\Inventory\Models\PurchaseOrderItem;
+use DA\Inventory\Services\Decimal;
 use DA\Inventory\Services\PurchaseTotals;
 
 class PurchaseWriter
@@ -17,6 +18,17 @@ class PurchaseWriter
     public function fill(Purchase $purchase, PurchaseDTO $dto, bool $creating): array
     {
         $totals = $this->totals->calculate($dto);
+
+        if (! $creating) {
+            $settled = $this->totals->settle(
+                $totals['grand_total'],
+                Decimal::normalize($purchase->payments()->sum('amount')),
+            );
+            $totals['paid_amount'] = $settled['paid_amount'];
+            $totals['due_amount'] = $settled['due_amount'];
+            $totals['payment_status'] = $settled['payment_status'];
+        }
+
         $userId = auth()->id();
 
         $purchase->tenant_id = auth()->user()->tenant_id;
@@ -26,14 +38,14 @@ class PurchaseWriter
             ? $dto->poNumber
             : Purchase::queries()->nextPoNumber();
         $purchase->order_date = $dto->orderDate;
-        $purchase->currency = $dto->currency;
         $purchase->subtotal = $totals['subtotal'];
         $purchase->discount_amount = $dto->discountAmount;
         $purchase->tax_amount = $dto->taxAmount;
-        $purchase->shipping_amount = $dto->shippingAmount;
         $purchase->grand_total = $totals['grand_total'];
+        $purchase->paid_amount = $totals['paid_amount'];
+        $purchase->due_amount = $totals['due_amount'];
         $purchase->status = $dto->status;
-        $purchase->payment_status = $dto->paymentStatus;
+        $purchase->payment_status = $totals['payment_status'];
         $purchase->notes = $dto->notes;
         $purchase->updated_by = $userId;
 

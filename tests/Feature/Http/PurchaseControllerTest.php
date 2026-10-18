@@ -1,12 +1,14 @@
 <?php
 
 use App\Enums\Permission;
+use Barryvdh\Snappy\Facades\SnappyPdf;
 use DA\Admin\Models\Tenant;
 use DA\Inventory\Enums\PurchasePaymentStatus;
 use DA\Inventory\Models\Product;
 use DA\Inventory\Models\ProductVariant;
 use DA\Inventory\Models\Purchase;
 use DA\Inventory\Models\PurchaseOrderItem;
+use DA\Inventory\Models\PurchasePayment;
 use DA\Inventory\Models\Store;
 use DA\Inventory\Models\Supplier;
 
@@ -18,6 +20,8 @@ describe('authentication and authorization', function () {
         ['GET', '/api/v1/purchases/summary'],
         ['POST', '/api/v1/purchases'],
         ['GET', '/api/v1/purchases/1'],
+        ['GET', '/api/v1/purchases/1/pdf'],
+        ['POST', '/api/v1/purchases/1/payments'],
         ['PUT', '/api/v1/purchases/1'],
         ['PUT', '/api/v1/purchases/1/status'],
         ['POST', '/api/v1/purchases/delete'],
@@ -28,6 +32,8 @@ describe('authentication and authorization', function () {
 
         $this->getJson('/api/v1/purchases')->assertForbidden();
         $this->getJson('/api/v1/purchases/summary')->assertForbidden();
+        $this->get('/api/v1/purchases/1/pdf')->assertForbidden();
+        $this->postJson('/api/v1/purchases/1/payments', ['amount' => '1'])->assertForbidden();
     });
 
     it('returns 403 when marking a purchase received without update permission', function () {
@@ -96,13 +102,11 @@ describe('index and show', function () {
         Purchase::factory()->create([
             'tenant_id' => $tenant->id,
             'grand_total' => '10.0000',
-            'currency' => 'BDT',
             'payment_status' => PurchasePaymentStatus::Unpaid,
         ]);
         Purchase::factory()->received()->create([
             'tenant_id' => $tenant->id,
             'grand_total' => '25.5000',
-            'currency' => 'BDT',
             'payment_status' => PurchasePaymentStatus::Paid,
         ]);
         Purchase::withoutEvents(fn () => Purchase::factory()->create(['grand_total' => '99.0000']));
@@ -111,7 +115,6 @@ describe('index and show', function () {
             ->assertOk()
             ->assertJsonPath('data.total_purchases', 2)
             ->assertJsonPath('data.total_amount', '35.5000')
-            ->assertJsonPath('data.currency', 'BDT')
             ->assertJsonPath('data.received_count', 1)
             ->assertJsonPath('data.pending_count', 1)
             ->assertJsonPath('data.ordered_count', 0)
@@ -163,6 +166,85 @@ describe('index and show', function () {
         $foreign = Purchase::withoutEvents(fn () => Purchase::factory()->create());
 
         $this->getJson('/api/v1/purchases/'.$foreign->id)->assertNotFound();
+        $this->get('/api/v1/purchases/'.$foreign->id.'/pdf')->assertNotFound();
+    });
+
+    it('downloads the purchase order as an a4 portrait pdf', function () {
+        SnappyPdf::fake();
+
+        $tenant = Tenant::factory()->create(['name' => 'North Mill Co']);
+        $user = actingAsTenantUser($tenant, [Permission::PurchasingView]);
+        $supplier = Supplier::factory()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'River Goods',
+        ]);
+        $store = Store::factory()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Main Store',
+        ]);
+        $product = Product::factory()->create([
+            'tenant_id' => $tenant->id,
+            'name' => "Cola <script>alert('x')</script>",
+        ]);
+        $variant = ProductVariant::factory()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'sku' => 'COLA-1',
+            'name' => '500ml',
+        ]);
+        $purchase = Purchase::factory()->create([
+            'tenant_id' => $tenant->id,
+            'supplier_id' => $supplier->id,
+            'store_id' => $store->id,
+            'po_number' => 'PO-1001',
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+            'grand_total' => '18.5000',
+            'paid_amount' => '5.0000',
+            'due_amount' => '13.5000',
+            'payment_status' => PurchasePaymentStatus::Partial,
+            'notes' => 'Deliver before noon',
+        ]);
+        PurchaseOrderItem::factory()->create([
+            'purchase_order_id' => $purchase->id,
+            'product_variant_id' => $variant->id,
+            'quantity' => '2.0000',
+            'unit_cost' => '10.0000',
+            'total' => '18.5000',
+        ]);
+        PurchasePayment::factory()->create([
+            'tenant_id' => $tenant->id,
+            'purchase_id' => $purchase->id,
+            'amount' => '5.0000',
+            'reference_number' => 'TRX-9',
+            'recorded_by' => $user->id,
+            'paid_at' => '2026-10-01 09:00:00',
+        ]);
+        Purchase::withoutEvents(fn () => Purchase::factory()->create(['po_number' => 'PO-FOREIGN']));
+
+        $this->get('/api/v1/purchases/'.$purchase->id.'/pdf')
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertHeader('content-disposition', 'attachment; filename="purchase-order-PO-1001.pdf"');
+
+        SnappyPdf::assertViewIs('inventory::purchases.order');
+        SnappyPdf::assertSeeText('North Mill Co');
+        SnappyPdf::assertSeeText('PO-1001');
+        SnappyPdf::assertSeeText('River Goods');
+        SnappyPdf::assertSeeText('Main Store');
+        SnappyPdf::assertSeeText('COLA-1');
+        SnappyPdf::assertSeeText('18.50');
+        SnappyPdf::assertSeeText('Deliver before noon');
+        SnappyPdf::assertSeeText('Payment history');
+        SnappyPdf::assertSeeText('TRX-9');
+        SnappyPdf::assertSee('&lt;script&gt;alert(&#039;x&#039;)&lt;/script&gt;');
+        SnappyPdf::assertDontSee("<script>alert('x')</script>");
+        SnappyPdf::assertDontSeeText('PO-FOREIGN');
+
+        $options = SnappyPdf::getFacadeRoot()->snappy()->getOptions();
+
+        expect($options['page-size'])->toBe('a4')
+            ->and($options['orientation'])->toBe('portrait');
     });
 });
 
@@ -189,12 +271,12 @@ describe('store', function () {
             ->assertCreated()
             ->assertJsonPath('data.po_number', 'PO-'.now()->format('Ymd').'-0001')
             ->assertJsonPath('data.order_date', '2026-09-26')
-            ->assertJsonPath('data.currency', 'BDT')
             ->assertJsonPath('data.subtotal', '20.0000')
             ->assertJsonPath('data.discount_amount', '2.0000')
             ->assertJsonPath('data.tax_amount', '1.0000')
-            ->assertJsonPath('data.shipping_amount', '3.0000')
-            ->assertJsonPath('data.grand_total', '21.5000')
+            ->assertJsonPath('data.grand_total', '18.5000')
+            ->assertJsonPath('data.paid_amount', '0.0000')
+            ->assertJsonPath('data.due_amount', '18.5000')
             ->assertJsonPath('data.status', 'Pending')
             ->assertJsonPath('data.payment_status', 'Unpaid')
             ->assertJsonPath('data.notes', 'Weekly restock')
@@ -206,13 +288,17 @@ describe('store', function () {
             ->assertJsonPath('data.store.name', $catalog['store']->name)
             ->assertJsonPath('data.items.0.sku', $catalog['variant']->sku)
             ->assertJsonPath('data.items.0.variant.product.name', $catalog['variant']->product->name)
-            ->assertJsonPath('data.items.0.total', '19.5000');
+            ->assertJsonPath('data.items.0.total', '19.5000')
+            ->assertJsonCount(0, 'data.payments');
 
         $this->assertDatabaseHas('purchases', [
             'tenant_id' => $tenant->id,
             'po_number' => 'PO-'.now()->format('Ymd').'-0001',
             'created_by' => $user->id,
-            'grand_total' => '21.5000',
+            'grand_total' => '18.5000',
+            'paid_amount' => '0.0000',
+            'due_amount' => '18.5000',
+            'payment_status' => 'Unpaid',
             'status' => 'Pending',
         ]);
     });
@@ -226,7 +312,6 @@ describe('store', function () {
             'store_id' => $catalog['store']->id,
             'discount_amount' => '0',
             'tax_amount' => '0',
-            'shipping_amount' => '0',
             'items' => [[
                 'product_variant_id' => $catalog['variant']->id,
                 'quantity' => '1',
@@ -244,7 +329,7 @@ describe('store', function () {
             ->assertJsonPath('data.items.0.total', '105.0000');
     });
 
-    it('stores an explicit po number, ordered status, and payment status', function () {
+    it('stores an explicit po number and ordered status', function () {
         actingAsTenantUser(permissions: [Permission::PurchasingCreate]);
         $catalog = purchaseCatalog();
 
@@ -258,16 +343,65 @@ describe('store', function () {
             ]],
             'po_number' => 'PO-CUSTOM',
             'status' => 'Ordered',
-            'payment_status' => 'Partial',
             'discount_amount' => '0',
             'tax_amount' => '0',
-            'shipping_amount' => '0',
+            'paid_amount' => '2',
+            'payment_status' => 'Paid',
         ]))
             ->assertCreated()
             ->assertJsonPath('data.po_number', 'PO-CUSTOM')
             ->assertJsonPath('data.status', 'Ordered')
+            ->assertJsonPath('data.grand_total', '5.0000')
+            ->assertJsonPath('data.paid_amount', '2.0000')
+            ->assertJsonPath('data.due_amount', '3.0000')
             ->assertJsonPath('data.payment_status', 'Partial')
-            ->assertJsonPath('data.grand_total', '5.0000');
+            ->assertJsonCount(1, 'data.payments')
+            ->assertJsonPath('data.payments.0.amount', '2.0000')
+            ->assertJsonPath('data.payments.0.balance_due', '3.0000');
+    });
+
+    it('derives paid when the paid amount equals the grand total', function () {
+        actingAsTenantUser(permissions: [Permission::PurchasingCreate]);
+        $catalog = purchaseCatalog();
+
+        $this->postJson('/api/v1/purchases', purchasePayload([
+            'supplier_id' => $catalog['supplier']->id,
+            'store_id' => $catalog['store']->id,
+            'discount_amount' => '0',
+            'tax_amount' => '0',
+            'paid_amount' => '5',
+            'payment_status' => 'Unpaid',
+            'items' => [[
+                'product_variant_id' => $catalog['variant']->id,
+                'quantity' => '1',
+                'unit_cost' => '5',
+            ]],
+        ]))
+            ->assertCreated()
+            ->assertJsonPath('data.grand_total', '5.0000')
+            ->assertJsonPath('data.paid_amount', '5.0000')
+            ->assertJsonPath('data.due_amount', '0.0000')
+            ->assertJsonPath('data.payment_status', 'Paid');
+    });
+
+    it('returns 422 when the paid amount exceeds the grand total', function () {
+        actingAsTenantUser(permissions: [Permission::PurchasingCreate]);
+        $catalog = purchaseCatalog();
+
+        $this->postJson('/api/v1/purchases', purchasePayload([
+            'supplier_id' => $catalog['supplier']->id,
+            'store_id' => $catalog['store']->id,
+            'discount_amount' => '0',
+            'tax_amount' => '0',
+            'paid_amount' => '6',
+            'items' => [[
+                'product_variant_id' => $catalog['variant']->id,
+                'quantity' => '1',
+                'unit_cost' => '5',
+            ]],
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['paid_amount' => 'The paid amount cannot exceed the grand total.']);
     });
 
     it('returns 422 when items are missing', function () {
@@ -323,6 +457,30 @@ describe('store', function () {
             ->assertJsonValidationErrors(['po_number' => 'The PO number has already been taken.']);
     });
 
+    it('returns 422 when the same item is added on more than one line', function () {
+        actingAsTenantUser(permissions: [Permission::PurchasingCreate]);
+        $catalog = purchaseCatalog();
+
+        $this->postJson('/api/v1/purchases', purchasePayload([
+            'supplier_id' => $catalog['supplier']->id,
+            'store_id' => $catalog['store']->id,
+            'items' => [
+                [
+                    'product_variant_id' => $catalog['variant']->id,
+                    'quantity' => '1',
+                    'unit_cost' => '10',
+                ],
+                [
+                    'product_variant_id' => $catalog['variant']->id,
+                    'quantity' => '2',
+                    'unit_cost' => '10',
+                ],
+            ],
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['items.1.product_variant_id' => 'This item is already added in the line.']);
+    });
+
     it('returns 422 when a line discount exceeds the line amount', function () {
         actingAsTenantUser(permissions: [Permission::PurchasingCreate]);
         $catalog = purchaseCatalog();
@@ -350,7 +508,6 @@ describe('store', function () {
             'store_id' => $catalog['store']->id,
             'discount_amount' => '100',
             'tax_amount' => '0',
-            'shipping_amount' => '0',
             'items' => [[
                 'product_variant_id' => $catalog['variant']->id,
                 'quantity' => '1',
@@ -375,7 +532,6 @@ describe('update', function () {
             'po_number' => 'PO-EDIT',
             'discount_amount' => '0',
             'tax_amount' => '0',
-            'shipping_amount' => '0',
             'items' => [
                 [
                     'product_variant_id' => $catalog['variant']->id,
@@ -398,8 +554,6 @@ describe('update', function () {
             'po_number' => 'PO-EDIT',
             'discount_amount' => '1',
             'tax_amount' => '0',
-            'shipping_amount' => '0.5',
-            'payment_status' => 'Paid',
             'items' => [[
                 'id' => $keptId,
                 'product_variant_id' => $second->id,
@@ -409,8 +563,10 @@ describe('update', function () {
         ]))
             ->assertOk()
             ->assertJsonPath('data.subtotal', '18.0000')
-            ->assertJsonPath('data.grand_total', '17.5000')
-            ->assertJsonPath('data.payment_status', 'Paid')
+            ->assertJsonPath('data.grand_total', '17.0000')
+            ->assertJsonPath('data.paid_amount', '0.0000')
+            ->assertJsonPath('data.due_amount', '17.0000')
+            ->assertJsonPath('data.payment_status', 'Unpaid')
             ->assertJsonPath('data.updated_by', $user->id)
             ->assertJsonPath('data.created_by', $user->id)
             ->assertJsonCount(1, 'data.items')
@@ -419,6 +575,45 @@ describe('update', function () {
 
         $this->assertDatabaseMissing('purchase_order_items', [
             'id' => $created->json('data.items.0.id'),
+        ]);
+    });
+
+    it('rejects an update that drops the grand total below the amount already paid', function () {
+        actingAsTenantUser(permissions: [Permission::PurchasingCreate, Permission::PurchasingUpdate]);
+        $catalog = purchaseCatalog();
+
+        $created = $this->postJson('/api/v1/purchases', purchasePayload([
+            'supplier_id' => $catalog['supplier']->id,
+            'store_id' => $catalog['store']->id,
+            'discount_amount' => '0',
+            'tax_amount' => '0',
+            'paid_amount' => '5',
+            'items' => [[
+                'product_variant_id' => $catalog['variant']->id,
+                'quantity' => '1',
+                'unit_cost' => '5',
+            ]],
+        ]))->assertCreated();
+
+        $this->putJson('/api/v1/purchases/'.$created->json('data.id'), purchasePayload([
+            'supplier_id' => $catalog['supplier']->id,
+            'store_id' => $catalog['store']->id,
+            'discount_amount' => '0',
+            'tax_amount' => '0',
+            'items' => [[
+                'id' => $created->json('data.items.0.id'),
+                'product_variant_id' => $catalog['variant']->id,
+                'quantity' => '1',
+                'unit_cost' => '4',
+            ]],
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['paid_amount' => 'The paid amount cannot exceed the grand total.']);
+
+        $this->assertDatabaseHas('purchases', [
+            'id' => $created->json('data.id'),
+            'grand_total' => '5.0000',
+            'paid_amount' => '5.0000',
         ]);
     });
 
@@ -449,7 +644,6 @@ describe('received and pending status', function () {
             'store_id' => $catalog['store']->id,
             'discount_amount' => '0',
             'tax_amount' => '0',
-            'shipping_amount' => '0',
             'items' => [[
                 'product_variant_id' => $catalog['variant']->id,
                 'quantity' => '1',
@@ -495,14 +689,137 @@ describe('received and pending status', function () {
     });
 });
 
+describe('payments', function () {
+    it('records a later payment against the remaining due', function () {
+        $user = actingAsTenantUser(permissions: [Permission::PurchasingCreate, Permission::PurchasingUpdate]);
+        $catalog = purchaseCatalog();
+
+        $purchaseId = $this->postJson('/api/v1/purchases', purchasePayload([
+            'supplier_id' => $catalog['supplier']->id,
+            'store_id' => $catalog['store']->id,
+            'discount_amount' => '0',
+            'tax_amount' => '0',
+            'paid_amount' => '400',
+            'items' => [[
+                'product_variant_id' => $catalog['variant']->id,
+                'quantity' => '1',
+                'unit_cost' => '2000',
+            ]],
+        ]))->assertCreated()->json('data.id');
+
+        $this->postJson('/api/v1/purchases/'.$purchaseId.'/payments', [
+            'amount' => '600',
+            'reference_number' => ' TRX-600 ',
+            'note' => 'Second installment',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.paid_amount', '1000.0000')
+            ->assertJsonPath('data.due_amount', '1000.0000')
+            ->assertJsonPath('data.payment_status', 'Partial')
+            ->assertJsonCount(2, 'data.payments')
+            ->assertJsonPath('data.payments.0.amount', '400.0000')
+            ->assertJsonPath('data.payments.0.balance_due', '1600.0000')
+            ->assertJsonPath('data.payments.1.amount', '600.0000')
+            ->assertJsonPath('data.payments.1.balance_due', '1000.0000')
+            ->assertJsonPath('data.payments.1.reference_number', 'TRX-600')
+            ->assertJsonPath('data.payments.1.note', 'Second installment')
+            ->assertJsonPath('data.payments.1.recorded_by', $user->id)
+            ->assertJsonPath('data.payments.1.recorder.name', $user->name);
+
+        $this->assertDatabaseHas('purchase_payments', [
+            'purchase_id' => $purchaseId,
+            'amount' => '600.0000',
+            'reference_number' => 'TRX-600',
+            'recorded_by' => $user->id,
+        ]);
+    });
+
+    it('rejects an amount above the balance due', function () {
+        actingAsTenantUser(permissions: [Permission::PurchasingCreate, Permission::PurchasingUpdate]);
+        $catalog = purchaseCatalog();
+
+        $purchaseId = $this->postJson('/api/v1/purchases', purchasePayload([
+            'supplier_id' => $catalog['supplier']->id,
+            'store_id' => $catalog['store']->id,
+            'discount_amount' => '0',
+            'tax_amount' => '0',
+            'paid_amount' => '400',
+            'items' => [[
+                'product_variant_id' => $catalog['variant']->id,
+                'quantity' => '1',
+                'unit_cost' => '2000',
+            ]],
+        ]))->assertCreated()->json('data.id');
+
+        $this->postJson('/api/v1/purchases/'.$purchaseId.'/payments', ['amount' => '1700'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['amount' => 'The amount cannot exceed the balance due.']);
+
+        $this->assertDatabaseHas('purchases', [
+            'id' => $purchaseId,
+            'paid_amount' => '400.0000',
+            'due_amount' => '1600.0000',
+        ]);
+    });
+
+    it('rejects a payment when the purchase is already paid', function () {
+        actingAsTenantUser(permissions: [Permission::PurchasingCreate, Permission::PurchasingUpdate]);
+        $catalog = purchaseCatalog();
+
+        $purchaseId = $this->postJson('/api/v1/purchases', purchasePayload([
+            'supplier_id' => $catalog['supplier']->id,
+            'store_id' => $catalog['store']->id,
+            'discount_amount' => '0',
+            'tax_amount' => '0',
+            'paid_amount' => '5',
+            'items' => [[
+                'product_variant_id' => $catalog['variant']->id,
+                'quantity' => '1',
+                'unit_cost' => '5',
+            ]],
+        ]))->assertCreated()->json('data.id');
+
+        $this->postJson('/api/v1/purchases/'.$purchaseId.'/payments', ['amount' => '1'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['amount' => 'This purchase has no balance due.']);
+    });
+
+    it('rejects an empty or zero payment amount', function (array $payload, string $message) {
+        actingAsTenantUser(permissions: [Permission::PurchasingUpdate]);
+
+        $this->postJson('/api/v1/purchases/1/payments', $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['amount' => $message]);
+    })->with([
+        [[], 'The amount field is required.'],
+        [['amount' => '0'], 'The amount must be greater than zero.'],
+    ]);
+
+    it('returns 404 when paying another tenant purchase', function () {
+        actingAsTenantUser(permissions: [Permission::PurchasingUpdate]);
+        $foreign = Purchase::withoutEvents(fn () => Purchase::factory()->create([
+            'grand_total' => '10.0000',
+            'due_amount' => '10.0000',
+        ]));
+
+        $this->postJson('/api/v1/purchases/'.$foreign->id.'/payments', ['amount' => '1'])
+            ->assertNotFound();
+    });
+});
+
 describe('destroy', function () {
     it('deletes purchases and their items for the current tenant', function () {
         $tenant = Tenant::factory()->create();
-        actingAsTenantUser($tenant, [Permission::PurchasingDelete]);
+        $user = actingAsTenantUser($tenant, [Permission::PurchasingDelete]);
         $purchase = Purchase::factory()->create(['tenant_id' => $tenant->id]);
         $item = PurchaseOrderItem::factory()->create([
             'purchase_order_id' => $purchase->id,
             'product_variant_id' => ProductVariant::factory()->create(['tenant_id' => $tenant->id])->id,
+        ]);
+        $payment = PurchasePayment::factory()->create([
+            'tenant_id' => $tenant->id,
+            'purchase_id' => $purchase->id,
+            'recorded_by' => $user->id,
         ]);
 
         $this->postJson('/api/v1/purchases/delete', [
@@ -514,6 +831,7 @@ describe('destroy', function () {
 
         $this->assertDatabaseMissing('purchases', ['id' => $purchase->id]);
         $this->assertDatabaseMissing('purchase_order_items', ['id' => $item->id]);
+        $this->assertDatabaseMissing('purchase_payments', ['id' => $payment->id]);
     });
 
     it('returns 400 when the delete action is invalid', function () {

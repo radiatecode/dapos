@@ -2,7 +2,6 @@
 
 namespace DA\Inventory\DTO\Purchase;
 
-use DA\Inventory\Enums\PurchasePaymentStatus;
 use DA\Inventory\Enums\PurchaseStatus;
 use Spatie\LaravelData\Data;
 
@@ -16,12 +15,10 @@ class PurchaseDTO extends Data
         public int $storeId,
         public ?string $poNumber,
         public string $orderDate,
-        public string $currency,
         public string $discountAmount,
         public string $taxAmount,
-        public string $shippingAmount,
+        public string $paidAmount,
         public PurchaseStatus $status,
-        public PurchasePaymentStatus $paymentStatus,
         public ?string $notes,
         public array $items,
     ) {}
