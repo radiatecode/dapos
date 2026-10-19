@@ -274,6 +274,9 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
     Route::put('purchase-returns/{id}/status', [PurchaseReturnController::class, 'updateStatus'])
         ->middleware('permission:purchasing.update')
         ->name('purchase-returns.status');
+    Route::get('purchase-returns/{id}/pdf', [PurchaseReturnController::class, 'pdf'])
+        ->middleware('permission:purchasing.view')
+        ->name('purchase-returns.pdf');
     Route::get('purchase-returns/{id}', [PurchaseReturnController::class, 'show'])
         ->middleware('permission:purchasing.view')
         ->name('purchase-returns.show');

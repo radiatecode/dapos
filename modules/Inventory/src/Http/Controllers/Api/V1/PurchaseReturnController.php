@@ -3,9 +3,11 @@
 namespace DA\Inventory\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use Barryvdh\Snappy\Facades\SnappyPdf;
 use DA\Inventory\Actions\PurchaseReturn\CreatePurchaseReturn;
 use DA\Inventory\Actions\PurchaseReturn\DeletePurchaseReturn;
 use DA\Inventory\Actions\PurchaseReturn\ListPurchaseReturnLines;
+use DA\Inventory\Actions\PurchaseReturn\PreparePurchaseReturnPdf;
 use DA\Inventory\Actions\PurchaseReturn\UpdatePurchaseReturn;
 use DA\Inventory\Actions\PurchaseReturn\UpdatePurchaseReturnStatus;
 use DA\Inventory\Enums\PurchaseReturnRefundStatus;
@@ -88,6 +90,21 @@ class PurchaseReturnController extends Controller
     public function show(int $id): PurchaseReturnResource
     {
         return PurchaseReturnResource::make(PurchaseReturn::queries()->findForDetail($id));
+    }
+
+    public function pdf(int $id, PreparePurchaseReturnPdf $prepare): Response
+    {
+        $document = $prepare->handle($id);
+
+        return SnappyPdf::loadView('inventory::purchase-returns.return', ['document' => $document])
+            ->setPaper('a4', 'portrait')
+            ->setOption('margin-top', 12)
+            ->setOption('margin-right', 10)
+            ->setOption('margin-bottom', 12)
+            ->setOption('margin-left', 10)
+            ->setOption('footer-right', 'Page [page] of [toPage]')
+            ->setOption('footer-font-size', 8)
+            ->download($document->fileName());
     }
 
     public function update(UpdatePurchaseReturnRequest $request, int $id, UpdatePurchaseReturn $update): PurchaseReturnResource

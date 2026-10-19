@@ -2,6 +2,7 @@
 
 use App\Enums\Permission;
 use App\Models\User;
+use Barryvdh\Snappy\Facades\SnappyPdf;
 use DA\Admin\Models\Tenant;
 use DA\Inventory\Enums\PurchaseReturnRefundStatus;
 use DA\Inventory\Enums\UnitType;
@@ -9,11 +10,13 @@ use DA\Inventory\Models\Brand;
 use DA\Inventory\Models\Category;
 use DA\Inventory\Models\InventoryBalance;
 use DA\Inventory\Models\InventoryLayer;
+use DA\Inventory\Models\Product;
 use DA\Inventory\Models\ProductVariant;
 use DA\Inventory\Models\Purchase;
 use DA\Inventory\Models\PurchaseOrderItem;
 use DA\Inventory\Models\PurchaseReturn;
 use DA\Inventory\Models\PurchaseReturnAllocation;
+use DA\Inventory\Models\PurchaseReturnItem;
 use DA\Inventory\Models\StockMovement;
 use DA\Inventory\Models\Store;
 use DA\Inventory\Models\Supplier;
@@ -189,6 +192,7 @@ describe('authentication and authorization', function () {
         ['GET', '/api/v1/purchase-returns/purchases/1/lines'],
         ['POST', '/api/v1/purchase-returns'],
         ['GET', '/api/v1/purchase-returns/1'],
+        ['GET', '/api/v1/purchase-returns/1/pdf'],
         ['PUT', '/api/v1/purchase-returns/1'],
         ['PUT', '/api/v1/purchase-returns/1/status'],
         ['POST', '/api/v1/purchase-returns/delete'],
@@ -202,6 +206,7 @@ describe('authentication and authorization', function () {
         $this->getJson('/api/v1/purchase-returns/purchases/1/lines')->assertForbidden();
         $this->postJson('/api/v1/purchase-returns', purchaseReturnPayload())->assertForbidden();
         $this->getJson('/api/v1/purchase-returns/1')->assertForbidden();
+        $this->get('/api/v1/purchase-returns/1/pdf')->assertForbidden();
         $this->putJson('/api/v1/purchase-returns/1', purchaseReturnPayload())->assertForbidden();
         $this->putJson('/api/v1/purchase-returns/1/status', ['status' => 'Approved'])->assertForbidden();
         $this->postJson('/api/v1/purchase-returns/delete', ['action' => 'delete', 'ids' => [1]])->assertForbidden();
@@ -266,6 +271,83 @@ describe('index and show', function () {
         $foreign = PurchaseReturn::withoutEvents(fn () => PurchaseReturn::factory()->create());
 
         $this->getJson('/api/v1/purchase-returns/'.$foreign->id)->assertNotFound();
+        $this->get('/api/v1/purchase-returns/'.$foreign->id.'/pdf')->assertNotFound();
+    });
+
+    it('downloads the purchase return as an a4 portrait pdf', function () {
+        SnappyPdf::fake();
+
+        $tenant = Tenant::factory()->create(['name' => 'North Mill Co']);
+        $user = actingAsTenantUser($tenant, [Permission::PurchasingView]);
+        $supplier = Supplier::factory()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'River Goods',
+        ]);
+        $store = Store::factory()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Main Store',
+        ]);
+        $product = Product::factory()->create([
+            'tenant_id' => $tenant->id,
+            'name' => "Cola <script>alert('x')</script>",
+        ]);
+        $variant = ProductVariant::factory()->create([
+            'tenant_id' => $tenant->id,
+            'product_id' => $product->id,
+            'sku' => 'COLA-1',
+            'name' => '500ml',
+        ]);
+        $return = PurchaseReturn::factory()->create([
+            'tenant_id' => $tenant->id,
+            'supplier_id' => $supplier->id,
+            'store_id' => $store->id,
+            'return_number' => 'PR-1001',
+            'po_number' => 'PO-1001',
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
+            'subtotal' => '20.0000',
+            'discount_amount' => '2.0000',
+            'tax_amount' => '0.5000',
+            'grand_total' => '18.5000',
+            'reason' => 'Damaged goods',
+            'notes' => 'Return before noon',
+        ]);
+        PurchaseReturnItem::factory()->create([
+            'purchase_return_id' => $return->id,
+            'product_variant_id' => $variant->id,
+            'quantity' => '2.0000',
+            'unit_cost' => '10.0000',
+            'discount_amount' => '2.0000',
+            'tax_amount' => '0.5000',
+            'total_amount' => '18.5000',
+        ]);
+        PurchaseReturn::withoutEvents(fn () => PurchaseReturn::factory()->create([
+            'return_number' => 'PR-FOREIGN',
+        ]));
+
+        $this->get('/api/v1/purchase-returns/'.$return->id.'/pdf')
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertHeader('content-disposition', 'attachment; filename="purchase-return-PR-1001.pdf"');
+
+        SnappyPdf::assertViewIs('inventory::purchase-returns.return');
+        SnappyPdf::assertSeeText('North Mill Co');
+        SnappyPdf::assertSeeText('PR-1001');
+        SnappyPdf::assertSeeText('PO-1001');
+        SnappyPdf::assertSeeText('River Goods');
+        SnappyPdf::assertSeeText('Main Store');
+        SnappyPdf::assertSeeText('COLA-1');
+        SnappyPdf::assertSeeText('18.50');
+        SnappyPdf::assertSeeText('Damaged goods');
+        SnappyPdf::assertSeeText('Return before noon');
+        SnappyPdf::assertSee('&lt;script&gt;alert(&#039;x&#039;)&lt;/script&gt;');
+        SnappyPdf::assertDontSee("<script>alert('x')</script>");
+        SnappyPdf::assertDontSeeText('PR-FOREIGN');
+
+        $options = SnappyPdf::getFacadeRoot()->snappy()->getOptions();
+
+        expect($options['page-size'])->toBe('a4')
+            ->and($options['orientation'])->toBe('portrait');
     });
 });
 
