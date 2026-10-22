@@ -5,12 +5,12 @@
     $status = $subscription->status;
     $canManage = auth('admin')->user()?->hasAdminPermission(\DA\Admin\Enums\AdminPermission::SubscriptionsManage);
     $canCreateInvoice = auth('admin')->user()?->hasAdminPermission(\DA\Admin\Enums\AdminPermission::InvoicesCreate);
-    $planChanges = $subscription->events->filter(fn ($event) => $event->event_type?->isPlanChange());
+    $planChanges = $subscription->events->filter(fn($event) => $event->event_type?->isPlanChange());
 @endphp
 
 @extends('admin::app.layouts.app')
 
-@section('title', 'Subscription '.$subscription->id)
+@section('title', 'Subscription ' . $subscription->id)
 
 @section('page_heading')
     Subscription details
@@ -119,7 +119,7 @@
                                                 @if ($item->isPlan())
                                                     {{ $subscription->plan?->name }}
                                                 @else
-                                                    {{ $addons[$item->reference_id]->name ?? '#'.$item->reference_id }}
+                                                    {{ $addons[$item->reference_id]->name ?? '#' . $item->reference_id }}
                                                 @endif
                                             </td>
                                             <td>{{ $item->quantity }}</td>
@@ -134,12 +134,67 @@
 
                 <div class="card admin-surface-card tenant-section mb-3">
                     <div class="card-header admin-surface-card__header tenant-section__header">
+                        <span class="tenant-section__icon"><i class="fas fa-star"></i></span>
+                        <h3 class="card-title mb-0">Features</h3>
+                    </div>
+                    <div class="card-body">
+                        @if ($subscription->features)
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Feature</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($subscription->features as $feature)
+                                        <tr>
+                                            <td>{{ \DA\Admin\Enums\Features::tryFrom((string) $feature)?->label() ?? $feature }}
+                                            </td>
+                                            <td>--</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @endif
+                        @if ($subscription->limit_features)
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th colspan="2">Limit Features</th>
+                                    </tr>
+                                    <tr>
+                                        <th>Feature</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($subscription->limit_features as $feature)
+                                        <tr>
+                                            <td>{{ \DA\Admin\Enums\Features::tryFrom((string) $feature['feature'])?->label() ?? $feature['feature'] }}
+                                            </td>
+                                            <td>
+                                                {{ $feature['value'] }}
+                                                @if ($feature['is_unlimited'])
+                                                    <span class="text-muted">Unlimited</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="card admin-surface-card tenant-section mb-3">
+                    <div class="card-header admin-surface-card__header tenant-section__header">
                         <span class="tenant-section__icon"><i class="fas fa-puzzle-piece"></i></span>
                         <h3 class="card-title mb-0">Add-ons</h3>
                     </div>
                     <div class="card-body">
                         @php
-                            $assignedAddons = $subscription->items->filter(fn ($item) => $item->isAddon());
+                            $assignedAddons = $subscription->items->filter(fn($item) => $item->isAddon());
                         @endphp
 
                         @if ($assignedAddons->isEmpty())
@@ -160,7 +215,8 @@
                                     <tbody>
                                         @foreach ($assignedAddons as $item)
                                             <tr>
-                                                <td>{{ $addons[$item->reference_id]->name ?? '#'.$item->reference_id }}</td>
+                                                <td>{{ $addons[$item->reference_id]->name ?? '#' . $item->reference_id }}
+                                                </td>
                                                 <td>
                                                     @if ($canManage && $subscription->isCurrent())
                                                         <form method="POST"
@@ -168,12 +224,12 @@
                                                             class="d-flex align-items-center" style="gap: .5rem;">
                                                             @csrf
                                                             @method('PATCH')
-                                                            <input type="number" name="quantity" min="1" max="100"
-                                                                class="form-control admin-input"
-                                                                value="{{ $item->quantity }}" required
-                                                                style="width: 5rem;"
+                                                            <input type="number" name="quantity" min="1"
+                                                                max="100" class="form-control admin-input"
+                                                                value="{{ $item->quantity }}" required style="width: 5rem;"
                                                                 aria-label="Quantity for {{ $addons[$item->reference_id]->name ?? 'add-on' }}">
-                                                            <button type="submit" class="btn btn-sm admin-table-btn admin-table-btn-edit">
+                                                            <button type="submit"
+                                                                class="btn btn-sm admin-table-btn admin-table-btn-edit">
                                                                 Update
                                                             </button>
                                                         </form>
@@ -188,7 +244,8 @@
                                                             action="{{ route('admin.subscriptions.addons.destroy', [$subscription, $item->reference_id]) }}">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <button type="submit" class="btn btn-sm admin-table-btn admin-table-btn-edit">
+                                                            <button type="submit"
+                                                                class="btn btn-sm admin-table-btn admin-table-btn-edit">
                                                                 Remove
                                                             </button>
                                                         </form>
@@ -206,19 +263,21 @@
                                 @csrf
                                 <label class="mb-1" for="addon_id">Add add-on</label>
                                 <div class="d-flex flex-wrap align-items-end" style="gap: .75rem;">
-                                    <select name="addon_id" id="addon_id" class="form-control admin-input" required style="max-width: 20rem;">
+                                    <select name="addon_id" id="addon_id" class="form-control admin-input" required
+                                        style="max-width: 20rem;">
                                         <option value="">Select an add-on</option>
                                         @foreach ($availableAddons as $availableAddon)
                                             <option value="{{ $availableAddon->id }}">
-                                                {{ $availableAddon->name }} — {{ $availableAddon->currency?->code }} {{ $availableAddon->price }}
+                                                {{ $availableAddon->name }} — {{ $availableAddon->currency?->code }}
+                                                {{ $availableAddon->price }}
                                             </option>
                                         @endforeach
                                     </select>
                                     <div>
                                         <label class="mb-1" for="addon_quantity">Quantity</label>
-                                        <input type="number" name="quantity" id="addon_quantity" min="1" max="100"
-                                            class="form-control admin-input" value="{{ old('quantity', 1) }}" required
-                                            style="width: 6rem;">
+                                        <input type="number" name="quantity" id="addon_quantity" min="1"
+                                            max="100" class="form-control admin-input"
+                                            value="{{ old('quantity', 1) }}" required style="width: 6rem;">
                                     </div>
                                     <button type="submit" class="btn admin-btn btn-primary">
                                         <i class="fas fa-plus"></i>
@@ -352,6 +411,14 @@
                         <h3 class="card-title">Actions</h3>
                     </div>
                     <div class="card-body">
+                        @if ($canManage)
+                            <a href="{{ route('admin.subscriptions.features.edit', $subscription) }}"
+                                class="btn admin-btn btn-primary tenant-action-btn">
+                                <i class="fas fa-star"></i>
+                                <span>Update features</span>
+                            </a>
+                        @endif
+
                         <div class="tenant-actions__status">
                             <span>Current status</span>
                             <span class="tenant-status tenant-status--{{ $status?->color() ?? 'muted' }}">
@@ -374,7 +441,8 @@
                         @endif
 
                         @if ($canManage && $subscription->isCurrent())
-                            <form method="POST" action="{{ route('admin.subscriptions.grace-days', $subscription) }}" class="mb-3">
+                            <form method="POST" action="{{ route('admin.subscriptions.grace-days', $subscription) }}"
+                                class="mb-3">
                                 @csrf
                                 @method('PATCH')
                                 <label class="mb-1" for="grace_days">Grace days</label>
@@ -390,7 +458,8 @@
                         @endif
 
                         @if ($canManage && in_array($status, [SubscriptionStatus::Active, SubscriptionStatus::Trialing], true))
-                            <form method="POST" action="{{ route('admin.subscriptions.change-plan', $subscription) }}" class="mb-2">
+                            <form method="POST" action="{{ route('admin.subscriptions.change-plan', $subscription) }}"
+                                class="mb-2">
                                 @csrf
                                 <label class="mb-1" for="plan_id">Change plan</label>
                                 <select name="plan_id" id="plan_id" class="form-control admin-input mb-2" required>
@@ -408,7 +477,11 @@
                             </form>
                         @endif
 
-                        @if ($canManage && $subscription->isCurrent() && $status !== SubscriptionStatus::Trialing && ($subscription->plan?->trial_days ?? 0) > 0)
+                        @if (
+                            $canManage &&
+                                $subscription->isCurrent() &&
+                                $status !== SubscriptionStatus::Trialing &&
+                                ($subscription->plan?->trial_days ?? 0) > 0)
                             <form method="POST" action="{{ route('admin.subscriptions.start-trial', $subscription) }}">
                                 @csrf
                                 @method('PATCH')
@@ -441,7 +514,12 @@
                             </form>
                         @endif
 
-                        @if ($canManage && in_array($status, [SubscriptionStatus::Active, SubscriptionStatus::Trialing, SubscriptionStatus::PastDue], true))
+                        @if (
+                            $canManage &&
+                                in_array(
+                                    $status,
+                                    [SubscriptionStatus::Active, SubscriptionStatus::Trialing, SubscriptionStatus::PastDue],
+                                    true))
                             <form method="POST" action="{{ route('admin.subscriptions.pause', $subscription) }}">
                                 @csrf
                                 @method('PATCH')
@@ -482,7 +560,8 @@
                                 <div class="custom-control custom-checkbox admin-check mb-2">
                                     <input class="custom-control-input" type="checkbox" id="cancel_at_period_end"
                                         name="cancel_at_period_end" value="1" checked>
-                                    <label class="custom-control-label" for="cancel_at_period_end">Cancel at period end</label>
+                                    <label class="custom-control-label" for="cancel_at_period_end">Cancel at period
+                                        end</label>
                                 </div>
                                 <button type="submit" class="btn admin-btn btn-danger tenant-action-btn">
                                     <i class="fas fa-ban"></i>
@@ -491,7 +570,7 @@
                             </form>
                         @endif
 
-                        @if ($canManage && ! $subscription->isEnded())
+                        @if ($canManage && !$subscription->isEnded())
                             <form method="POST" action="{{ route('admin.subscriptions.expire', $subscription) }}">
                                 @csrf
                                 @method('PATCH')

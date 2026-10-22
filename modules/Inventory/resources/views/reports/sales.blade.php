@@ -5,33 +5,124 @@
 @endphp
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Sales Report</title>
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 11px; color: #212529; margin: 0; }
-        h1 { font-size: 18px; margin: 0 0 2px; }
-        h2 { font-size: 14px; margin: 0 0 10px; color: #495057; font-weight: normal; }
-        .meta { width: 100%; margin-bottom: 12px; border-collapse: collapse; }
-        .meta td { padding: 2px 8px 2px 0; vertical-align: top; }
-        .meta .label { color: #6c757d; width: 90px; }
-        table.summary { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-        table.summary td { width: 25%; border: 1px solid #dee2e6; padding: 8px 10px; vertical-align: top; }
-        table.summary .label { color: #6c757d; font-size: 10px; }
-        table.summary .value { font-size: 16px; font-weight: bold; margin: 2px 0; }
-        table.summary .note { color: #6c757d; font-size: 10px; }
-        table.report { width: 100%; border-collapse: collapse; }
-        table.report thead { display: table-header-group; }
-        table.report tr { page-break-inside: avoid; }
-        table.report th, table.report td { border: 1px solid #dee2e6; padding: 5px 6px; }
-        table.report th { background: #e9ecef; text-align: left; }
-        table.report tfoot td { font-weight: bold; background: #f8f9fa; }
-        .text-end { text-align: right; }
-        .muted { color: #6c757d; }
-        .empty { text-align: center; padding: 16px; color: #6c757d; }
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "DejaVu Sans", Arial, sans-serif;
+            font-size: 11px;
+            color: #212529;
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0 0 2px;
+        }
+
+        h2 {
+            font-size: 14px;
+            margin: 0 0 10px;
+            color: #495057;
+            font-weight: normal;
+        }
+
+        .meta {
+            width: 100%;
+            margin-bottom: 12px;
+            border-collapse: collapse;
+        }
+
+        .meta td {
+            padding: 2px 8px 2px 0;
+            vertical-align: top;
+        }
+
+        .meta .label {
+            color: #6c757d;
+            width: 90px;
+        }
+
+        table.summary {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+        }
+
+        table.summary td {
+            width: 25%;
+            border: 1px solid #dee2e6;
+            padding: 8px 10px;
+            vertical-align: top;
+        }
+
+        table.summary .label {
+            color: #6c757d;
+            font-size: 10px;
+        }
+
+        table.summary .value {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 2px 0;
+        }
+
+        table.summary .note {
+            color: #6c757d;
+            font-size: 10px;
+        }
+
+        table.report {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table.report thead {
+            display: table-header-group;
+        }
+
+        table.report tr {
+            page-break-inside: avoid;
+        }
+
+        table.report th,
+        table.report td {
+            border: 1px solid #dee2e6;
+            padding: 5px 6px;
+        }
+
+        table.report th {
+            background: #e9ecef;
+            text-align: left;
+        }
+
+        table.report tfoot td {
+            font-weight: bold;
+            background: #f8f9fa;
+        }
+
+        .text-end {
+            text-align: right;
+        }
+
+        .muted {
+            color: #6c757d;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 16px;
+            color: #6c757d;
+        }
     </style>
 </head>
+
 <body>
     <h1>{{ $report->businessName }}</h1>
     <h2>Sales Report</h2>
@@ -69,7 +160,8 @@
             <td>
                 <div class="label">Paid amount</div>
                 <div class="value">{{ $numbers->amount($totals['paid_amount']) }}</div>
-                <div class="note">{{ $report->collectedPercent() }} collected &middot; {{ $numbers->amount($totals['due_amount']) }} due</div>
+                <div class="note">{{ $report->collectedPercent() }} collected &middot;
+                    {{ $numbers->amount($totals['due_amount']) }} due</div>
             </td>
         </tr>
     </table>
@@ -120,4 +212,5 @@
         </tfoot>
     </table>
 </body>
+
 </html>

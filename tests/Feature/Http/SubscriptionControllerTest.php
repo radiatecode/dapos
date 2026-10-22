@@ -1,12 +1,14 @@
 <?php
 
 use DA\Admin\Enums\AdminPermission;
+use DA\Admin\Enums\Features;
 use DA\Admin\Enums\SubscriptionEventType;
 use DA\Admin\Enums\SubscriptionItemType;
 use DA\Admin\Enums\SubscriptionStatus;
 use DA\Admin\Models\Addon;
 use DA\Admin\Models\Plan;
 use DA\Admin\Models\Subscription;
+use DA\Admin\Models\SubscriptionFeature;
 use DA\Admin\Models\Tenant;
 
 describe('index', function () {
@@ -212,11 +214,17 @@ describe('show', function () {
             'tenant_id' => $tenant->id,
             'plan_id' => $plan->id,
         ]);
+        SubscriptionFeature::factory()->enabled()->create([
+            'subscription_id' => $subscription->id,
+            'feature' => Features::POS->value,
+        ]);
 
         $this->get(route('admin.subscriptions.show', $subscription))
             ->assertOk()
             ->assertSee('Harbor Cafe')
             ->assertSee('Starter')
+            ->assertSee('POS')
+            ->assertSee('Yes')
             ->assertSee('Active')
             ->assertSee('Subscription history')
             ->assertSee('Plan change history')
@@ -226,7 +234,9 @@ describe('show', function () {
             ->assertSee('Extra location')
             ->assertSee('name="quantity"', false)
             ->assertSee(route('admin.subscriptions.addons.store', $subscription), false)
-            ->assertSee(route('admin.subscriptions.pause', $subscription), false);
+            ->assertSee(route('admin.subscriptions.pause', $subscription), false)
+            ->assertSee(route('admin.subscriptions.features.edit', $subscription), false)
+            ->assertSee('Update features');
     });
 
     it('escapes tenant names on the details page', function () {
@@ -241,6 +251,131 @@ describe('show', function () {
             ->assertOk()
             ->assertSee('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;', false)
             ->assertDontSee('<script>alert("xss")</script>', false);
+    });
+});
+
+describe('features', function () {
+    it('redirects guests from the feature editor to login', function () {
+        $subscription = Subscription::factory()->create();
+
+        $this->get(route('admin.subscriptions.features.edit', $subscription))
+            ->assertRedirect(route('admin.login'));
+    });
+
+    it('forbids an admin who cannot manage subscriptions from editing features', function () {
+        actingAsPlatformAdmin([AdminPermission::SubscriptionsView]);
+
+        $subscription = Subscription::factory()->create();
+
+        $this->get(route('admin.subscriptions.features.edit', $subscription))->assertForbidden();
+        $this->put(route('admin.subscriptions.features.update', $subscription))->assertForbidden();
+    });
+
+    it('renders the features already stored on the subscription', function () {
+        actingAsPlatformAdmin();
+
+        $subscription = Subscription::factory()->create();
+        SubscriptionFeature::factory()->enabled()->create([
+            'subscription_id' => $subscription->id,
+            'feature' => Features::POS->value,
+        ]);
+
+        $this->get(route('admin.subscriptions.features.edit', $subscription))
+            ->assertOk()
+            ->assertSee('Subscription features')
+            ->assertSee('name="features[pos][feature]"', false)
+            ->assertSee('feature_assigned_pos', false);
+    });
+
+    it('updates this subscription without changing the plan', function () {
+        actingAsPlatformAdmin();
+
+        $plan = Plan::factory()->create();
+        $plan->planFeatures()->create([
+            'feature' => Features::POS->value,
+            'value' => '0',
+            'is_unlimited' => false,
+        ]);
+        $subscription = Subscription::factory()->create(['plan_id' => $plan->id]);
+        SubscriptionFeature::factory()->disabled()->create([
+            'subscription_id' => $subscription->id,
+            'feature' => Features::POS->value,
+        ]);
+        SubscriptionFeature::factory()->create([
+            'subscription_id' => $subscription->id,
+            'feature' => Features::PRODUCTS->value,
+            'value' => '2',
+        ]);
+
+        $this->from(route('admin.subscriptions.features.edit', $subscription))
+            ->put(route('admin.subscriptions.features.update', $subscription), [
+                'features' => [
+                    Features::POS->value => [
+                        'assigned' => '1',
+                        'feature' => Features::POS->value,
+                        'value' => '1',
+                    ],
+                    Features::STORES->value => [
+                        'assigned' => '1',
+                        'feature' => Features::STORES->value,
+                        'value' => '4',
+                        'is_unlimited' => '0',
+                    ],
+                    Features::PRODUCTS->value => [
+                        'assigned' => '0',
+                        'feature' => Features::PRODUCTS->value,
+                        'value' => '2',
+                    ],
+                ],
+            ])
+            ->assertRedirect(route('admin.subscriptions.show', $subscription));
+
+        $this->assertDatabaseHas('subscription_features', [
+            'subscription_id' => $subscription->id,
+            'feature' => Features::POS->value,
+            'value' => '1',
+        ]);
+        $this->assertDatabaseHas('subscription_features', [
+            'subscription_id' => $subscription->id,
+            'feature' => Features::STORES->value,
+            'value' => '4',
+            'is_unlimited' => 0,
+        ]);
+        $this->assertDatabaseMissing('subscription_features', [
+            'subscription_id' => $subscription->id,
+            'feature' => Features::PRODUCTS->value,
+        ]);
+        $this->assertDatabaseHas('plan_features', [
+            'plan_id' => $plan->id,
+            'feature' => Features::POS->value,
+            'value' => '0',
+        ]);
+        $this->assertDatabaseMissing('plan_features', [
+            'plan_id' => $plan->id,
+            'feature' => Features::STORES->value,
+        ]);
+    });
+
+    it('rejects a limit feature without a value', function () {
+        actingAsPlatformAdmin();
+
+        $subscription = Subscription::factory()->create();
+
+        $this->from(route('admin.subscriptions.features.edit', $subscription))
+            ->put(route('admin.subscriptions.features.update', $subscription), [
+                'features' => [
+                    Features::PRODUCTS->value => [
+                        'assigned' => '1',
+                        'feature' => Features::PRODUCTS->value,
+                        'value' => '',
+                        'is_unlimited' => '0',
+                    ],
+                ],
+            ])
+            ->assertRedirect(route('admin.subscriptions.features.edit', $subscription))
+            ->assertSessionHasErrors(['features.'.Features::PRODUCTS->value.'.value']);
+
+        $this->assertDatabaseCount('subscription_features', 0);
     });
 });
 

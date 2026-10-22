@@ -21,7 +21,9 @@ use Illuminate\Support\Facades\Notification;
 
 class SubscriptionService
 {
-    public function __construct(private ActivateTenantAccess $activateTenantAccess) {}
+    public function __construct(
+        private ActivateTenantAccess $activateTenantAccess,
+    ) {}
 
     public function create(CreateSubscriptionDTO $dto): Subscription
     {
@@ -76,6 +78,9 @@ class SubscriptionService
                 $subscription->current_period_start = $startsAt;
                 $subscription->current_period_end = $this->periodEnd($startsAt, $plan->billing_interval);
             }
+
+            $subscription->features = $plan->features;
+            $subscription->limit_features = $plan->limit_features;
 
             $subscription->save();
 
@@ -555,6 +560,8 @@ class SubscriptionService
             $oldStatus = $subscription->status;
             $subscription->plan_id = $plan->id;
             $subscription->save();
+
+            $this->copyPlanFeatures->handle($subscription, $plan);
 
             $subscription->items()
                 ->where('item_type', SubscriptionItemType::Plan->value)

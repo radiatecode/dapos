@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
@@ -52,6 +51,8 @@ class Plan extends Model
             'price' => 'decimal:2',
             'trial_days' => 'integer',
             'is_active' => 'boolean',
+            'features' => 'array',
+            'limit_features' => 'array',
         ];
     }
 
@@ -61,25 +62,6 @@ class Plan extends Model
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class);
-    }
-
-    /**
-     * @return HasMany<PlanFeature, $this>
-     */
-    public function planFeatures(): HasMany
-    {
-        return $this->hasMany(PlanFeature::class);
-    }
-
-    /**
-     * @return BelongsToMany<Feature, $this>
-     */
-    public function features(): BelongsToMany
-    {
-        return $this->belongsToMany(Feature::class, 'plan_features')
-            ->using(PlanFeature::class)
-            ->withPivot(['value', 'is_unlimited'])
-            ->withTimestamps();
     }
 
     /**

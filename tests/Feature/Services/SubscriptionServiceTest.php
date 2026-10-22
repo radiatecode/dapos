@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use DA\Admin\DTO\CreateSubscriptionDTO;
+use DA\Admin\Enums\Features;
 use DA\Admin\Enums\SubscriptionEventType;
 use DA\Admin\Enums\SubscriptionItemType;
 use DA\Admin\Enums\SubscriptionStatus;
@@ -62,6 +63,64 @@ it('activates an inactive tenant and its super admin when a plan is subscribed',
         'id' => $staff->id,
         'is_active' => 0,
         'is_super_admin' => 0,
+    ]);
+});
+
+it('copies plan features onto the subscription and keeps later plan edits separate', function () {
+    $tenant = Tenant::factory()->create();
+    $plan = Plan::factory()->create();
+    $plan->planFeatures()->create([
+        'feature' => Features::POS->value,
+        'value' => '1',
+        'is_unlimited' => false,
+    ]);
+
+    $subscription = app(SubscriptionService::class)->create(createSubscriptionDTO($tenant, $plan, startTrial: false));
+
+    $this->assertDatabaseHas('subscription_features', [
+        'subscription_id' => $subscription->id,
+        'feature' => Features::POS->value,
+        'value' => '1',
+        'is_unlimited' => 0,
+    ]);
+
+    $subscription->subscriptionFeatures()->where('feature', Features::POS->value)->update(['value' => '0']);
+
+    expect($plan->planFeatures()->where('feature', Features::POS->value)->value('value'))->toBe('1')
+        ->and($subscription->fresh()->hasFeature('pos'))->toBeFalse();
+
+    $plan->planFeatures()->where('feature', Features::POS->value)->update(['value' => '0']);
+
+    expect($subscription->subscriptionFeatures()->where('feature', Features::POS->value)->value('value'))->toBe('0');
+});
+
+it('replaces subscription features when the plan changes', function () {
+    $tenant = Tenant::factory()->create();
+    $current = Plan::factory()->create(['price' => '19.00']);
+    $current->planFeatures()->create([
+        'feature' => Features::POS->value,
+        'value' => '1',
+        'is_unlimited' => false,
+    ]);
+    $next = Plan::factory()->create(['price' => '49.00']);
+    $next->planFeatures()->create([
+        'feature' => Features::SALES->value,
+        'value' => '1',
+        'is_unlimited' => false,
+    ]);
+
+    $subscription = app(SubscriptionService::class)->create(createSubscriptionDTO($tenant, $current, startTrial: false));
+
+    app(SubscriptionService::class)->changePlan($subscription, $next);
+
+    $this->assertDatabaseMissing('subscription_features', [
+        'subscription_id' => $subscription->id,
+        'feature' => Features::POS->value,
+    ]);
+    $this->assertDatabaseHas('subscription_features', [
+        'subscription_id' => $subscription->id,
+        'feature' => Features::SALES->value,
+        'value' => '1',
     ]);
 });
 

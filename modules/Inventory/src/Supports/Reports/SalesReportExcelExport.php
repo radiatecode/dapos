@@ -35,10 +35,12 @@ class SalesReportExcelExport implements FromArray, ShouldAutoSize, WithColumnFor
         $sheet[] = ['Summary'];
         $sheet[] = ['Products sold', $totals['total_products']];
         $sheet[] = ['Quantity sold', (float) $totals['sold_quantity']];
+
         $sheet[] = ['Sold amount', (float) $totals['sold_amount']];
         $sheet[] = ['Paid amount', (float) $totals['paid_amount']];
         $sheet[] = ['Collected', $this->report->collectedPercent()];
         $sheet[] = ['Due amount', (float) $totals['due_amount']];
+        
         $sheet[] = [null];
         $sheet[] = $this->headings();
 

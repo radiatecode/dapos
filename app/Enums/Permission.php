@@ -59,11 +59,24 @@ enum Permission: string
     case PurchasingDelete = 'purchasing.delete';
 
     case InventoryView = 'inventory.view';
-    case InventoryCreate = 'inventory.create';
+    case InventoryMovementsView = 'inventory.movements.view';
+    case InventoryLayersView = 'inventory.layers.view';
+
+    case InventoryAdjustmentView = 'inventory.adjustments.view';
+    case InventoryAdjustmentCreate = 'inventory.adjustments.create';
+    case InventoryAdjustmentUpdate = 'inventory.adjustments.update';
+    case InventoryAdjustmentDelete = 'inventory.adjustments.delete';
+
+    case InventoryTransferView = 'inventory.transfers.view';
+    case InventoryTransferCreate = 'inventory.transfers.create';
+    case InventoryTransferUpdate = 'inventory.transfers.update';
+    case InventoryTransferDelete = 'inventory.transfers.delete';
+
     case InventoryUpdate = 'inventory.update';
     case InventoryDelete = 'inventory.delete';
 
     case SalesView = 'sales.view';
+    case SalesQuantityView = 'sales.quantity.view';
     case SalesCreate = 'sales.create';
     case SalesUpdate = 'sales.update';
     case SalesDelete = 'sales.delete';
@@ -80,6 +93,7 @@ enum Permission: string
     case CashRegisterManage = 'cash-register.manage';
 
     case SalesReportsView = 'sales.reports.view';
+    case SalesQuantityReportsView = 'sales.quantity.reports.view';
     case TopSalesReportsView = 'top-sales.reports.view';
     case SalesInvoicesReportsView = 'sales-invoices.reports.view';
     case ProfitReportsView = 'profit.reports.view';
@@ -107,6 +121,7 @@ enum Permission: string
 
     case OnlyCreatorUpdate = 'only-creator.update';
     case OnlyCreatorDelete = 'only-creator.delete';
+    case OnlyTodayData = 'only-today.data';
 
     public function label(): string
     {
@@ -154,9 +169,16 @@ enum Permission: string
             self::PurchasingUpdate => 'Update purchases',
             self::PurchasingDelete => 'Delete purchases',
             self::InventoryView => 'View inventory',
-            self::InventoryCreate => 'Create inventory adjustments',
-            self::InventoryUpdate => 'Update inventory',
-            self::InventoryDelete => 'Delete inventory adjustments',
+            self::InventoryMovementsView => 'View inventory movements',
+            self::InventoryLayersView => 'View inventory layers',
+            self::InventoryAdjustmentView => 'View inventory adjustments',
+            self::InventoryAdjustmentCreate => 'Create inventory adjustments',
+            self::InventoryAdjustmentUpdate => 'Update inventory adjustments',
+            self::InventoryAdjustmentDelete => 'Delete inventory adjustments',
+            self::InventoryTransferView => 'View inventory transfers',
+            self::InventoryTransferCreate => 'Create inventory transfers',
+            self::InventoryTransferUpdate => 'Update inventory transfers',
+            self::InventoryTransferDelete => 'Delete inventory transfers',
             self::SalesView => 'View sales',
             self::SalesCreate => 'Create sales',
             self::SalesUpdate => 'Update sales',
@@ -192,6 +214,7 @@ enum Permission: string
             self::TaxesDelete => 'Delete taxes',
             self::OnlyCreatorUpdate => 'Only creator can update',
             self::OnlyCreatorDelete => 'Only creator can delete',
+            self::OnlyTodayData => 'Only today data',
         };
     }
 
@@ -210,7 +233,9 @@ enum Permission: string
             self::LocationsView, self::LocationsCreate, self::LocationsUpdate, self::LocationsDelete,
             self::StoresView, self::StoresCreate, self::StoresUpdate, self::StoresDelete => 'Locations',
             self::PurchasingView, self::PurchasingCreate, self::PurchasingUpdate, self::PurchasingDelete,
-            self::InventoryView, self::InventoryCreate, self::InventoryUpdate, self::InventoryDelete => 'Inventory',
+            self::InventoryView, self::InventoryMovementsView, self::InventoryLayersView,
+            self::InventoryAdjustmentView, self::InventoryAdjustmentCreate, self::InventoryAdjustmentUpdate, self::InventoryAdjustmentDelete,
+            self::InventoryTransferView, self::InventoryTransferCreate, self::InventoryTransferUpdate, self::InventoryTransferDelete => 'Inventory',
             self::SalesView, self::SalesCreate, self::SalesUpdate, self::SalesDelete,
             self::QuickSalesView, self::QuickSalesCreate,
             self::ReturnsView, self::ReturnsCreate, self::ReturnsUpdate, self::ReturnsDelete,
@@ -221,13 +246,22 @@ enum Permission: string
             self::UsersView, self::UsersCreate, self::UsersUpdate, self::UsersDelete,
             self::RolesView, self::RolesCreate, self::RolesUpdate, self::RolesDelete => 'Access',
             self::TaxesView, self::TaxesCreate, self::TaxesUpdate, self::TaxesDelete => 'Taxes',
-            self::OnlyCreatorUpdate, self::OnlyCreatorDelete => 'Ownership',
+            self::OnlyCreatorUpdate, self::OnlyCreatorDelete, self::OnlyTodayData => 'Ownership',
         };
     }
 
     public static function all(): array
     {
         return array_map(fn (Permission $permission) => $permission->value, self::cases());
+    }
+
+    public static function admin(): array
+    {
+        return array_values(array_diff(self::all(), [
+            self::OnlyCreatorUpdate->value,
+            self::OnlyCreatorDelete->value,
+            self::OnlyTodayData->value,
+        ]));
     }
 
     public static function manager(): array
@@ -247,11 +281,13 @@ enum Permission: string
             self::LocationsView, self::LocationsCreate, self::LocationsUpdate,
             self::StoresView, self::StoresCreate, self::StoresUpdate,
             self::PurchasingView, self::PurchasingCreate, self::PurchasingUpdate,
-            self::InventoryView, self::InventoryCreate,
+            self::InventoryView, self::InventoryMovementsView, self::InventoryLayersView,
+            self::InventoryAdjustmentView, self::InventoryAdjustmentCreate, self::InventoryAdjustmentUpdate, self::InventoryAdjustmentDelete,
+            self::InventoryTransferView, self::InventoryTransferCreate, self::InventoryTransferUpdate, self::InventoryTransferDelete,
             self::SalesView, self::SalesCreate,
             self::QuickSalesView, self::QuickSalesCreate,
             self::ReturnsView, self::ReturnsCreate,
-            self::SalesReportsView, self::TopSalesReportsView, self::SalesInvoicesReportsView, self::ProfitReportsView, self::MinStockReportsView, self::CurrentStockValueReportsView,
+            self::SalesReportsView, self::SalesQuantityReportsView, self::TopSalesReportsView, self::SalesInvoicesReportsView, self::ProfitReportsView, self::MinStockReportsView, self::CurrentStockValueReportsView,
             self::QuickSalesReportsView,
             self::SettingsView,
             self::TaxesView, self::TaxesCreate,
@@ -279,8 +315,13 @@ enum Permission: string
     {
         return [
             self::SalesView, self::SalesCreate, self::SalesUpdate,
+            self::ProductsView, self::LocationsView, self::StoresView, self::BrandsView,
+            self::UnitsView, self::CategoriesView,
             self::QuickSalesView, self::QuickSalesCreate,
+            self::InventoryView, self::InventoryMovementsView, self::InventoryLayersView,
+            self::SalesQuantityReportsView,
             self::OnlyCreatorUpdate,
+            self::OnlyTodayData,
         ];
     }
 }

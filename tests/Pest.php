@@ -5,13 +5,14 @@ use App\Models\User;
 use DA\Admin\Enums\AdminPermission;
 use DA\Admin\Enums\BillingInterval;
 use DA\Admin\Enums\CouponDiscountType;
-use DA\Admin\Enums\FeatureType;
+use DA\Admin\Enums\Features;
 use DA\Admin\Enums\PaymentMethod;
 use DA\Admin\Models\AdminPermission as AdminPermissionModel;
 use DA\Admin\Models\AdminRole;
 use DA\Admin\Models\AdminUser;
 use DA\Admin\Models\Currency;
 use DA\Admin\Models\Plan;
+use DA\Admin\Models\Subscription;
 use DA\Admin\Models\Tenant;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -38,9 +39,39 @@ function actingAsTenantUser(?Tenant $tenant = null, ?array $permissions = null):
         ->withPermissions($permissions)
         ->create();
 
+    grantSubscriptionFeatures($tenant);
+
     Sanctum::actingAs($user);
 
     return $user->fresh(['role']) ?? $user;
+}
+
+/**
+ * Gives the tenant a current subscription that includes every feature.
+ * Existing HTTP tests sign in without a subscription of their own.
+ */
+function grantSubscriptionFeatures(Tenant $tenant): Subscription
+{
+    $subscription = $tenant->subscription;
+
+    if (! $subscription instanceof Subscription) {
+        $subscription = Subscription::factory()->create([
+            'tenant_id' => $tenant->id,
+        ]);
+    }
+
+    $subscription->features = Features::moduleFeatures();
+    $subscription->limit_features = collect(Features::limitFeatures())->map(function (Features $feature) {
+        return [
+            'feature' => $feature->value,
+            'value' => null,
+            'is_unlimited' => true,
+        ];
+    })->toArray();
+
+    $subscription->save();
+
+    return $subscription;
 }
 
 /**
@@ -316,20 +347,6 @@ function planPayload(array $overrides = []): array
     }
 
     return array_replace_recursive($defaults, $overrides);
-}
-
-/**
- * @param  array<string, mixed>  $overrides
- * @return array<string, mixed>
- */
-function featurePayload(array $overrides = []): array
-{
-    return array_replace_recursive([
-        'name' => 'Users',
-        'code' => 'users',
-        'type' => FeatureType::Limit->value,
-        'description' => 'Maximum users on the tenant.',
-    ], $overrides);
 }
 
 /**

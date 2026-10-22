@@ -67,6 +67,10 @@ class AuthController extends Controller
         $user = $request->user();
         assert($user instanceof User);
 
-        return UserResource::make($user->loadMissing(['role', 'tenant']));
+        if ($user->tenant_id === null) {
+            abort(403, 'This area is restricted to tenant users.');
+        }
+
+        return UserResource::make($user->loadMissing(['role', 'tenant.subscription']));
     }
 }

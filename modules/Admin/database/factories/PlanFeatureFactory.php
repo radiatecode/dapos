@@ -2,7 +2,7 @@
 
 namespace DA\Admin\Database\Factories;
 
-use DA\Admin\Models\Feature;
+use DA\Admin\Enums\Features;
 use DA\Admin\Models\Plan;
 use DA\Admin\Models\PlanFeature;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,7 +21,7 @@ class PlanFeatureFactory extends Factory
     {
         return [
             'plan_id' => Plan::factory(),
-            'feature_id' => Feature::factory(),
+            'feature' => Features::PRODUCTS->value,
             'value' => '5',
             'is_unlimited' => false,
         ];

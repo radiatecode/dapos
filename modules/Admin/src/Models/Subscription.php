@@ -70,6 +70,8 @@ class Subscription extends Model
             'ended_at' => 'datetime',
             'paused_at' => 'datetime',
             'paused_from_status' => SubscriptionStatus::class,
+            'features' => 'array',
+            'limit_features' => 'array',
         ];
     }
 

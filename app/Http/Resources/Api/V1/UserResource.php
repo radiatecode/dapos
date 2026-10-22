@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -17,6 +18,8 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $this->resource->loadMissing('role');
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -27,7 +30,10 @@ class UserResource extends JsonResource
             'photo_url' => is_string($this->photo) && $this->photo !== ''
                 ? Storage::disk('public')->url($this->photo)
                 : null,
-            'role' => RoleResource::make($this->whenLoaded('role')),
+            'role' => $this->when(
+                $this->resource->getRelation('role') instanceof Role,
+                fn () => RoleResource::make($this->resource->getRelation('role')),
+            ),
             'tenant' => TenantResource::make($this->whenLoaded('tenant')),
             'permissions' => $this->when(
                 $this->relationLoaded('roles'),

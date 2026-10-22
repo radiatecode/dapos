@@ -84,13 +84,6 @@ class AdminNavigation
                 ],
             ],
             [
-                'label' => 'Features',
-                'icon' => 'fas fa-star',
-                'permission' => AdminPermission::FeaturesView->value,
-                'route' => 'admin.features.index',
-                'active' => ['admin.features.*'],
-            ],
-            [
                 'label' => 'Add-ons',
                 'icon' => 'fas fa-puzzle-piece',
                 'permission' => AdminPermission::AddonsView->value,

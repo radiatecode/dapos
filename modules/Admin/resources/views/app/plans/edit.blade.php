@@ -45,8 +45,12 @@
 @endsection
 
 @push('js')
-    <script src="{{ asset('vendor/admin/js/submit.on.validated.js') }}?v={{ filemtime(public_path('vendor/admin/js/submit.on.validated.js')) }}"></script>
-    <script src="{{ asset('vendor/admin/js/plan-feature-editor.js') }}?v={{ filemtime(public_path('vendor/admin/js/plan-feature-editor.js')) }}"></script>
+    <script
+        src="{{ asset('vendor/admin/js/submit.on.validated.js') }}?v={{ filemtime(public_path('vendor/admin/js/submit.on.validated.js')) }}">
+    </script>
+    <script
+        src="{{ asset('vendor/admin/js/plan-feature-editor.js') }}?v={{ filemtime(public_path('vendor/admin/js/plan-feature-editor.js')) }}">
+    </script>
     <script>
         $(function() {
             bindPlanFeatureEditor();

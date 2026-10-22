@@ -35,6 +35,12 @@ class TenantResource extends JsonResource
             'state' => $this->state,
             'postal_code' => $this->postal_code,
             'phone' => $this->contact_person_phone,
+            'subscription' => $this->when(
+                $this->relationLoaded('subscription'),
+                fn () => $this->subscription === null
+                    ? null
+                    : SubscriptionResource::make($this->subscription),
+            ),
         ];
     }
 }

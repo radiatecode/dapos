@@ -3,11 +3,8 @@
 namespace DA\Admin\Database\Seeders;
 
 use DA\Admin\Enums\BillingInterval;
-use DA\Admin\Enums\FeatureEnforcement;
-use DA\Admin\Enums\FeatureType;
 use DA\Admin\Models\Addon;
 use DA\Admin\Models\Currency;
-use DA\Admin\Models\Feature;
 use Illuminate\Database\Seeder;
 
 class CatalogSeeder extends Seeder
@@ -18,13 +15,6 @@ class CatalogSeeder extends Seeder
             Currency::query()->updateOrCreate(
                 ['code' => $currency['code']],
                 $currency,
-            );
-        }
-
-        foreach ($this->features() as $feature) {
-            Feature::query()->updateOrCreate(
-                ['code' => $feature['code']],
-                $feature,
             );
         }
 
@@ -56,21 +46,6 @@ class CatalogSeeder extends Seeder
             ['code' => 'SAR', 'name' => 'Saudi Riyal', 'symbol' => '﷼', 'is_active' => true],
             ['code' => 'MYR', 'name' => 'Malaysian Ringgit', 'symbol' => 'RM', 'is_active' => true],
             ['code' => 'AUD', 'name' => 'Australian Dollar', 'symbol' => 'A$', 'is_active' => true],
-        ];
-    }
-
-    /**
-     * @return list<array{name: string, code: string, type: FeatureType, enforcement: FeatureEnforcement|null, description: string}>
-     */
-    private function features(): array
-    {
-        return [
-            ['name' => 'Users', 'code' => 'users', 'type' => FeatureType::Limit, 'enforcement' => FeatureEnforcement::Resource, 'description' => 'Maximum users on the tenant.'],
-            ['name' => 'Locations', 'code' => 'locations', 'type' => FeatureType::Limit, 'enforcement' => FeatureEnforcement::Resource, 'description' => 'Maximum store locations.'],
-            ['name' => 'Products', 'code' => 'products', 'type' => FeatureType::Limit, 'enforcement' => FeatureEnforcement::Resource, 'description' => 'Maximum products in the catalog.'],
-            ['name' => 'Invoices', 'code' => 'invoices', 'type' => FeatureType::Limit, 'enforcement' => FeatureEnforcement::Consumption, 'description' => 'Maximum invoices per billing period.'],
-            ['name' => 'Multi-location', 'code' => 'multi_location', 'type' => FeatureType::Boolean, 'enforcement' => null, 'description' => 'Allow more than one location.'],
-            ['name' => 'Advanced reports', 'code' => 'advanced_reports', 'type' => FeatureType::Boolean, 'enforcement' => null, 'description' => 'Unlock advanced reporting.'],
         ];
     }
 

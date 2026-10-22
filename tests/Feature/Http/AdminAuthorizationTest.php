@@ -16,7 +16,6 @@ describe('guests and POS users', function () {
         '/admin/tenants/create',
         '/admin/plans',
         '/admin/plans/create',
-        '/admin/features',
         '/admin/addons',
         '/admin/subscriptions',
         '/admin/subscriptions/create',

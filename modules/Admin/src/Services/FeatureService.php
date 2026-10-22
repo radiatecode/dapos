@@ -2,13 +2,12 @@
 
 namespace DA\Admin\Services;
 
+use DA\Admin\Enums\Features;
 use DA\Admin\Exceptions\FeatureUnavailableException;
 use DA\Admin\Exceptions\LimitExceededException;
 use DA\Admin\Exceptions\SubscriptionExpiredException;
-use DA\Admin\Exceptions\SubscriptionMissingException;
-use DA\Admin\Models\Feature;
-use DA\Admin\Models\PlanFeature;
 use DA\Admin\Models\Subscription;
+use DA\Admin\Models\SubscriptionFeature;
 use DA\Admin\Models\Tenant;
 use DA\Admin\Services\Entitlements\ResourceUsageRegistry;
 use InvalidArgumentException;
@@ -20,21 +19,34 @@ class FeatureService
         private ResourceUsageRegistry $resourceUsage,
     ) {}
 
-    public function hasFeature(Tenant|Subscription $subject, string $code): bool
+    public function hasFeature(Subscription $subscription, string $code): bool
     {
-        $entitlement = $this->entitlement($this->usableSubscription($subject), $code);
+        $this->assertUsable($subscription);
 
-        if ($entitlement === null) {
+        if ($this->isLimitFeature($code)) {
+            $hasAllocated = array_values(array_filter($subscription->limit_features, function ($feature) use ($code) {
+                return $feature['feature'] === $code;
+            }));
+
+            if (empty($hasAllocated)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        return in_array($code, $subscription->features, true);
+    }
+
+    public function isLimitFeature(string $code): bool
+    {
+        $feature = Features::tryFrom($code);
+
+        if (! $feature instanceof Features) {
             return false;
         }
 
-        [$feature, $planFeature] = $entitlement;
-
-        if ($feature->isBoolean()) {
-            return $this->booleanEnabled($planFeature);
-        }
-
-        return true;
+        return $feature->isLimit();
     }
 
     public function can(Tenant|Subscription $subject, string $code): bool
@@ -89,22 +101,9 @@ class FeatureService
         return $feature->isLimit() && $planFeature->is_unlimited === true;
     }
 
-    public function canConsume(Tenant|Subscription $subject, string $code, int $amount = 1): bool
+    public function canConsume(Subscription $subscription, string $code, int $amount = 1): bool
     {
         $this->assertPositiveAmount($amount);
-
-        $subscription = $this->usableSubscription($subject);
-        $entitlement = $this->entitlement($subscription, $code);
-
-        if ($entitlement === null) {
-            return false;
-        }
-
-        [$feature, $planFeature] = $entitlement;
-
-        if ($feature->isBoolean()) {
-            return $this->booleanEnabled($planFeature);
-        }
 
         return $this->hasRemaining($subscription, $feature, $planFeature, $amount);
     }
@@ -128,8 +127,8 @@ class FeatureService
             throw new LimitExceededException("The plan limit for {$code} has been reached.");
         }
 
-        if ($feature->isConsumptionLimit()) {
-            $this->usageService->increment($subscription, $feature, $amount);
+        if ($this->tracksConsumption($feature)) {
+            $this->usageService->increment($subscription, $feature->value, $amount);
         }
     }
 
@@ -140,8 +139,8 @@ class FeatureService
         $subscription = $this->usableSubscription($subject);
         [$feature] = $this->requireEntitlement($subscription, $code);
 
-        if ($feature->isConsumptionLimit()) {
-            $this->usageService->decrement($subscription, $feature, $amount);
+        if ($this->tracksConsumption($feature)) {
+            $this->usageService->decrement($subscription, $feature->value, $amount);
         }
     }
 
@@ -159,20 +158,25 @@ class FeatureService
         return $this->usageOf($subscription, $feature);
     }
 
-    private function usageOf(Subscription $subscription, Feature $feature): int
+    private function usageOf(Subscription $subscription, Features $feature): int
     {
         if ($feature->isBoolean()) {
             return 0;
         }
 
-        if ($feature->isResourceLimit()) {
-            return $this->resourceUsage->count($feature->code, $this->tenantOf($subscription));
+        if ($this->resourceUsage->has($feature->value)) {
+            return $this->resourceUsage->count($feature->value, $this->tenantOf($subscription));
         }
 
-        return $this->usageService->current($subscription, $feature);
+        return $this->usageService->current($subscription, $feature->value);
     }
 
-    private function hasRemaining(Subscription $subscription, Feature $feature, PlanFeature $planFeature, int $amount): bool
+    private function tracksConsumption(Features $feature): bool
+    {
+        return $feature->isLimit() && ! $this->resourceUsage->has($feature->value);
+    }
+
+    private function hasRemaining(Subscription $subscription, Features $feature, SubscriptionFeature $planFeature, int $amount): bool
     {
         if ($planFeature->is_unlimited) {
             return true;
@@ -184,29 +188,7 @@ class FeatureService
     }
 
     /**
-     * @return array{0: Feature, 1: PlanFeature}|null
-     */
-    private function entitlement(Subscription $subscription, string $code): ?array
-    {
-        $feature = Feature::queries()->findByCode($code);
-
-        if (! $feature instanceof Feature) {
-            return null;
-        }
-
-        $subscription->loadMissing('plan.planFeatures');
-
-        $planFeature = $subscription->plan?->planFeatures->firstWhere('feature_id', $feature->id);
-
-        if (! $planFeature instanceof PlanFeature) {
-            return null;
-        }
-
-        return [$feature, $planFeature];
-    }
-
-    /**
-     * @return array{0: Feature, 1: PlanFeature}
+     * @return array{0: Features, 1: SubscriptionFeature}
      */
     private function requireEntitlement(Subscription $subscription, string $code): array
     {
@@ -217,31 +199,6 @@ class FeatureService
         }
 
         return $entitlement;
-    }
-
-    private function usableSubscription(Tenant|Subscription $subject): Subscription
-    {
-        if ($subject instanceof Subscription) {
-            $this->assertUsable($subject);
-
-            return $subject;
-        }
-
-        $current = $subject->subscription;
-
-        if ($current instanceof Subscription) {
-            $this->assertUsable($current);
-
-            return $current;
-        }
-
-        $latest = $subject->subscriptions()->orderByDesc('id')->first();
-
-        if ($latest instanceof Subscription && $latest->isEnded()) {
-            throw new SubscriptionExpiredException;
-        }
-
-        throw new SubscriptionMissingException;
     }
 
     private function assertUsable(Subscription $subscription): void
@@ -262,7 +219,7 @@ class FeatureService
         return Tenant::query()->findOrFail($subscription->tenant_id);
     }
 
-    private function booleanEnabled(PlanFeature $planFeature): bool
+    private function booleanEnabled(SubscriptionFeature $planFeature): bool
     {
         if ($planFeature->is_unlimited) {
             return true;

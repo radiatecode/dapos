@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureFeature;
 use App\Http\Middleware\EnsurePermission;
 use App\Http\Middleware\EnsureTenantUser;
 use DA\Admin\Http\Middleware\EnsureAdminPermission;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => ResolveTenant::class,
             'tenant.user' => EnsureTenantUser::class,
             'permission' => EnsurePermission::class,
+            'feature' => EnsureFeature::class,
             'platform.admin' => EnsurePlatformAdmin::class,
             'admin.permission' => EnsureAdminPermission::class,
         ]);

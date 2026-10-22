@@ -32,8 +32,8 @@
                             @foreach ($defaultType as $type)
                                 <div class="col-md-2 col-sm-12">
                                     <label for="">{{ $type->label() }}</label>
-                                    <x-admin::form.checkbox name="{{ $type->value }}" label="Yes"
-                                        checked-when="{{ in_array($type->value, $default_data) }}"
+                                    <x-admin::form.checkbox class="default-data-checkbox" name="{{ $type->value }}"
+                                        label="Yes" checked-when="{{ in_array($type->value, $default_data) }}"
                                         disabled-when="{{ in_array($type->value, $default_data) }}" />
                                 </div>
                             @endforeach
@@ -41,6 +41,7 @@
                     </div>
                     <div class="card-footer">
                         <x-button />
+                        <x-admin::form.checkbox form-group-class="float-right" name="force_update" label="Force Update" />
                     </div>
                 </form>
             </div>
@@ -55,6 +56,15 @@
         $.ajaxSubmitOnValidated('default-form', {
             loader: 'btn-loader',
             errorType: 'toast',
+        });
+
+        $('#force_update').change(function() {
+            if ($(this).is(':checked')) {
+                $('.default-data-checkbox').removeAttr('disabled-when');
+                $('.default-data-checkbox').removeAttr('disabled');
+            } else {
+                window.location.reload();
+            }
         });
     </script>
 @endpush

@@ -91,6 +91,18 @@ class SaleItemQueries extends BaseQueries
         ];
     }
 
+    public function salesQuantityReportTotals(SalesReportFilterDTO $filters): array
+    {
+        $row = $this->joinCategory($this->completedSaleLines($filters), $filters)
+            ->selectRaw('COUNT(DISTINCT lines.product_variant_id) as total_products, '.$this->salesQuantityReportAggregates())
+            ->first();
+
+        return [
+            'total_products' => (int) ($row?->total_products ?? 0),
+            'sold_quantity' => Decimal::normalize($row?->sold_quantity ?? 0),
+        ];
+    }
+
     /**
      * @return LengthAwarePaginator<int, object>
      */
@@ -406,6 +418,11 @@ class SaleItemQueries extends BaseQueries
         return self::SOLD_QUANTITY_EXPRESSION.' as sold_quantity, '
             .self::SOLD_AMOUNT_EXPRESSION.' as sold_amount, '
             .self::PAID_AMOUNT_EXPRESSION.' as paid_amount';
+    }
+
+    private function salesQuantityReportAggregates(): string
+    {
+        return self::SOLD_QUANTITY_EXPRESSION.' as sold_quantity';
     }
 
     private function profitReportAggregates(): string

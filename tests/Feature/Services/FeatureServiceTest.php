@@ -1,12 +1,12 @@
 <?php
 
 use App\Models\User;
+use DA\Admin\Enums\Features;
 use DA\Admin\Enums\SubscriptionStatus;
 use DA\Admin\Exceptions\FeatureUnavailableException;
 use DA\Admin\Exceptions\LimitExceededException;
 use DA\Admin\Exceptions\SubscriptionExpiredException;
 use DA\Admin\Exceptions\SubscriptionMissingException;
-use DA\Admin\Models\Feature;
 use DA\Admin\Models\Plan;
 use DA\Admin\Models\Subscription;
 use DA\Admin\Models\Tenant;
@@ -16,7 +16,8 @@ use DA\Admin\Services\FeatureService;
 use Tests\Fixtures\FixedResourceUsageCounter;
 
 /**
- * @param  list<array{feature: Feature, value?: string|null, is_unlimited?: bool}>  $assignments
+ * @param  list<array{feature: string, value?: string|null, is_unlimited?: bool}>  $assignments
+ * @param  array<string, mixed>  $subscriptionAttributes
  * @return array{0: Tenant, 1: Subscription}
  */
 function tenantWithEntitlements(array $assignments = [], array $subscriptionAttributes = []): array
@@ -24,18 +25,19 @@ function tenantWithEntitlements(array $assignments = [], array $subscriptionAttr
     $tenant = Tenant::factory()->create();
     $plan = Plan::factory()->create();
 
-    foreach ($assignments as $assignment) {
-        $plan->features()->attach($assignment['feature']->id, [
-            'value' => $assignment['value'] ?? '1',
-            'is_unlimited' => $assignment['is_unlimited'] ?? false,
-        ]);
-    }
-
     $subscription = Subscription::factory()->create([
         ...$subscriptionAttributes,
         'tenant_id' => $tenant->id,
         'plan_id' => $plan->id,
     ]);
+
+    foreach ($assignments as $assignment) {
+        $subscription->subscriptionFeatures()->create([
+            'feature' => $assignment['feature'],
+            'value' => $assignment['value'] ?? '1',
+            'is_unlimited' => $assignment['is_unlimited'] ?? false,
+        ]);
+    }
 
     return [$tenant->fresh(), $subscription->fresh()];
 }
@@ -53,79 +55,73 @@ function createUsersForTenant(Tenant $tenant, int $count = 1): void
 }
 
 it('allows a boolean feature when the plan enables it', function () {
-    $feature = Feature::factory()->boolean()->create(['code' => 'multi_location']);
     [$tenant] = tenantWithEntitlements([
-        ['feature' => $feature, 'value' => '1'],
+        ['feature' => Features::POS->value, 'value' => '1'],
     ]);
 
-    expect($tenant->subscription->can('multi_location'))->toBeTrue()
-        ->and($tenant->subscription->hasFeature('multi_location'))->toBeTrue();
+    expect($tenant->subscription->can('pos'))->toBeTrue()
+        ->and($tenant->subscription->hasFeature('pos'))->toBeTrue();
 });
 
 it('denies a boolean feature when the plan disables it', function () {
-    $feature = Feature::factory()->boolean()->create(['code' => 'multi_location']);
     [$tenant] = tenantWithEntitlements([
-        ['feature' => $feature, 'value' => '0'],
+        ['feature' => Features::POS->value, 'value' => '0'],
     ]);
 
-    expect($tenant->subscription->can('multi_location'))->toBeFalse()
-        ->and($tenant->subscription->hasFeature('multi_location'))->toBeFalse();
+    expect($tenant->subscription->can('pos'))->toBeFalse()
+        ->and($tenant->subscription->hasFeature('pos'))->toBeFalse();
 
-    expect(fn () => $tenant->subscription->consume('multi_location'))
+    expect(fn () => $tenant->subscription->consume('pos'))
         ->toThrow(FeatureUnavailableException::class);
 });
 
 it('returns the numeric plan limit for a resource feature', function () {
-    $feature = Feature::factory()->resource()->create(['code' => 'locations']);
     [$tenant] = tenantWithEntitlements([
-        ['feature' => $feature, 'value' => '5'],
+        ['feature' => Features::STORES->value, 'value' => '5'],
     ]);
 
-    expect($tenant->subscription->limit('locations'))->toBe(5)
-        ->and($tenant->subscription->isUnlimited('locations'))->toBeFalse()
-        ->and($tenant->subscription->can('locations'))->toBeTrue();
+    expect($tenant->subscription->limit('stores'))->toBe(5)
+        ->and($tenant->subscription->isUnlimited('stores'))->toBeFalse()
+        ->and($tenant->subscription->can('stores'))->toBeTrue();
 });
 
 it('treats an unlimited limit as always consumable', function () {
-    $feature = Feature::factory()->consumption()->create(['code' => 'invoices']);
     [$tenant] = tenantWithEntitlements([
-        ['feature' => $feature, 'value' => null, 'is_unlimited' => true],
+        ['feature' => Features::PRODUCTS->value, 'value' => null, 'is_unlimited' => true],
     ]);
 
-    expect($tenant->subscription->isUnlimited('invoices'))->toBeTrue()
-        ->and($tenant->subscription->limit('invoices'))->toBeNull()
-        ->and($tenant->subscription->canConsume('invoices', 100))->toBeTrue();
+    expect($tenant->subscription->isUnlimited('products'))->toBeTrue()
+        ->and($tenant->subscription->limit('products'))->toBeNull()
+        ->and($tenant->subscription->canConsume('products', 100))->toBeTrue();
 
-    $tenant->subscription->consume('invoices', 100);
+    $tenant->subscription->consume('products', 100);
 
-    expect($tenant->subscription->canConsume('invoices'))->toBeTrue();
+    expect($tenant->subscription->canConsume('products'))->toBeTrue();
 });
 
-it('denies creating another location when the resource limit is already reached', function () {
-    $feature = Feature::factory()->resource()->create(['code' => 'locations']);
+it('denies creating another store when the resource limit is already reached', function () {
     [$tenant] = tenantWithEntitlements([
-        ['feature' => $feature, 'value' => '3'],
+        ['feature' => Features::STORES->value, 'value' => '3'],
     ]);
 
     $this->app->instance(ResourceUsageRegistry::class, new ResourceUsageRegistry([
         new UsersResourceCounter,
-        new FixedResourceUsageCounter('locations', 3),
+        new FixedResourceUsageCounter('stores', 3),
     ]));
 
-    expect($tenant->subscription->limit('locations'))->toBe(3)
-        ->and($tenant->subscription->can('locations'))->toBeFalse()
-        ->and($tenant->subscription->canConsume('locations'))->toBeFalse();
+    expect($tenant->subscription->limit('stores'))->toBe(3)
+        ->and($tenant->subscription->can('stores'))->toBeFalse()
+        ->and($tenant->subscription->canConsume('stores'))->toBeFalse();
 
-    expect(fn () => $tenant->subscription->consume('locations'))
-        ->toThrow(LimitExceededException::class, 'The plan limit for locations has been reached.');
+    expect(fn () => $tenant->subscription->consume('stores'))
+        ->toThrow(LimitExceededException::class, 'The plan limit for stores has been reached.');
 
     $this->assertDatabaseCount('tenant_usages', 0);
 });
 
 it('counts tenant users from actual user records', function () {
-    $feature = Feature::factory()->resource()->create(['code' => 'users']);
     [$tenant] = tenantWithEntitlements([
-        ['feature' => $feature, 'value' => '3'],
+        ['feature' => Features::USERS->value, 'value' => '3'],
     ]);
 
     createUsersForTenant($tenant, 3);
@@ -138,40 +134,38 @@ it('counts tenant users from actual user records', function () {
         ->toThrow(LimitExceededException::class);
 });
 
-it('consumes and releases period-scoped invoice usage', function () {
-    $feature = Feature::factory()->consumption()->create(['code' => 'invoices']);
+it('consumes and releases period-scoped product usage', function () {
     [$tenant] = tenantWithEntitlements([
-        ['feature' => $feature, 'value' => '2'],
+        ['feature' => Features::PRODUCTS->value, 'value' => '2'],
     ]);
 
-    $tenant->subscription->consume('invoices');
-    $tenant->subscription->consume('invoices');
+    $tenant->subscription->consume('products');
+    $tenant->subscription->consume('products');
 
-    expect($tenant->subscription->canConsume('invoices'))->toBeFalse()
-        ->and(app(FeatureService::class)->currentUsage($tenant, 'invoices'))->toBe(2);
+    expect($tenant->subscription->canConsume('products'))->toBeFalse()
+        ->and(app(FeatureService::class)->currentUsage($tenant, 'products'))->toBe(2);
 
-    expect(fn () => $tenant->subscription->consume('invoices'))
+    expect(fn () => $tenant->subscription->consume('products'))
         ->toThrow(LimitExceededException::class);
 
-    $tenant->subscription->release('invoices');
+    $tenant->subscription->release('products');
 
-    expect($tenant->subscription->canConsume('invoices'))->toBeTrue()
-        ->and(app(FeatureService::class)->currentUsage($tenant, 'invoices'))->toBe(1);
+    expect($tenant->subscription->canConsume('products'))->toBeTrue()
+        ->and(app(FeatureService::class)->currentUsage($tenant, 'products'))->toBe(1);
 
-    $tenant->subscription->consume('invoices');
+    $tenant->subscription->consume('products');
 
-    expect(app(FeatureService::class)->currentUsage($tenant, 'invoices'))->toBe(2);
+    expect(app(FeatureService::class)->currentUsage($tenant, 'products'))->toBe(2);
 });
 
 it('does not count previous period usage toward the current period', function () {
-    $feature = Feature::factory()->consumption()->create(['code' => 'invoices']);
     [$tenant, $subscription] = tenantWithEntitlements([
-        ['feature' => $feature, 'value' => '1'],
+        ['feature' => Features::PRODUCTS->value, 'value' => '1'],
     ]);
 
-    $subscription->consume('invoices');
+    $subscription->consume('products');
 
-    expect($subscription->canConsume('invoices'))->toBeFalse();
+    expect($subscription->canConsume('products'))->toBeFalse();
 
     $nextStart = $subscription->current_period_end->copy()->addSecond();
     $subscription->update([
@@ -181,19 +175,18 @@ it('does not count previous period usage toward the current period', function ()
 
     $subscription = $subscription->fresh();
 
-    expect($subscription->canConsume('invoices'))->toBeTrue()
-        ->and(app(FeatureService::class)->currentUsage($subscription, 'invoices'))->toBe(0);
+    expect($subscription->canConsume('products'))->toBeTrue()
+        ->and(app(FeatureService::class)->currentUsage($subscription, 'products'))->toBe(0);
 
     $this->assertDatabaseCount('tenant_usages', 1);
 });
 
 it('rejects consume when the feature is not on the plan', function () {
-    Feature::factory()->boolean()->create(['code' => 'advanced_reports']);
     [$tenant] = tenantWithEntitlements();
 
     expect($tenant->subscription->hasFeature('advanced_reports'))->toBeFalse()
         ->and($tenant->subscription->can('advanced_reports'))->toBeFalse()
-        ->and($tenant->subscription->limit('locations'))->toBe(0);
+        ->and($tenant->subscription->limit('stores'))->toBe(0);
 
     expect(fn () => $tenant->subscription->consume('advanced_reports'))
         ->toThrow(FeatureUnavailableException::class);
@@ -202,14 +195,13 @@ it('rejects consume when the feature is not on the plan', function () {
 it('rejects entitlement checks when the tenant has no subscription', function () {
     $tenant = Tenant::factory()->create();
 
-    expect(fn () => app(FeatureService::class)->can($tenant, 'multi_location'))
+    expect(fn () => app(FeatureService::class)->can($tenant, 'pos'))
         ->toThrow(SubscriptionMissingException::class);
 });
 
 it('rejects entitlement checks when the subscription has expired', function () {
-    $feature = Feature::factory()->boolean()->create(['code' => 'multi_location']);
     [$tenant] = tenantWithEntitlements(
-        [['feature' => $feature, 'value' => '1']],
+        [['feature' => Features::POS->value, 'value' => '1']],
         [
             'status' => SubscriptionStatus::Expired,
             'ended_at' => now(),
@@ -218,47 +210,48 @@ it('rejects entitlement checks when the subscription has expired', function () {
 
     expect($tenant->subscription)->toBeNull();
 
-    expect(fn () => app(FeatureService::class)->can($tenant, 'multi_location'))
+    expect(fn () => app(FeatureService::class)->can($tenant, 'pos'))
         ->toThrow(SubscriptionExpiredException::class);
 });
 
 it('rejects entitlement checks when the subscription is cancelled', function () {
-    $feature = Feature::factory()->boolean()->create(['code' => 'multi_location']);
     $plan = Plan::factory()->create();
-    $plan->features()->attach($feature->id, ['value' => '1', 'is_unlimited' => false]);
+    $plan->planFeatures()->create([
+        'feature' => Features::POS->value,
+        'value' => '1',
+        'is_unlimited' => false,
+    ]);
 
     $subscription = Subscription::factory()->cancelled()->create([
         'plan_id' => $plan->id,
     ]);
 
-    expect(fn () => $subscription->can('multi_location'))
+    expect(fn () => $subscription->can('pos'))
         ->toThrow(SubscriptionExpiredException::class);
 });
 
 it('allows entitlement checks while a subscription is in grace', function () {
-    $feature = Feature::factory()->boolean()->create(['code' => 'multi_location']);
     [$tenant] = tenantWithEntitlements(
-        [['feature' => $feature, 'value' => '1']],
+        [['feature' => Features::POS->value, 'value' => '1']],
         [
             'status' => SubscriptionStatus::PastDue,
             'grace_ends_at' => now()->addDays(7),
         ],
     );
 
-    expect($tenant->subscription->can('multi_location'))->toBeTrue();
+    expect($tenant->subscription->can('pos'))->toBeTrue();
 });
 
 it('does not increment another tenant usage when consuming', function () {
-    $feature = Feature::factory()->consumption()->create(['code' => 'invoices']);
     [$tenantA] = tenantWithEntitlements([
-        ['feature' => $feature, 'value' => '5'],
+        ['feature' => Features::PRODUCTS->value, 'value' => '5'],
     ]);
     [$tenantB] = tenantWithEntitlements([
-        ['feature' => $feature, 'value' => '5'],
+        ['feature' => Features::PRODUCTS->value, 'value' => '5'],
     ]);
 
-    $tenantA->subscription->consume('invoices', 2);
+    $tenantA->subscription->consume('products', 2);
 
-    expect(app(FeatureService::class)->currentUsage($tenantA, 'invoices'))->toBe(2)
-        ->and(app(FeatureService::class)->currentUsage($tenantB, 'invoices'))->toBe(0);
+    expect(app(FeatureService::class)->currentUsage($tenantA, 'products'))->toBe(2)
+        ->and(app(FeatureService::class)->currentUsage($tenantB, 'products'))->toBe(0);
 });

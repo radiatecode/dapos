@@ -55,7 +55,7 @@
                         'Code' => $plan->code,
                         'Description' => $plan->description,
                         'Billing interval' => $plan->billing_interval->label(),
-                        'Price' => ($plan->currency?->code ?? '').' '.$plan->price,
+                        'Price' => ($plan->currency?->code ?? '') . ' ' . $plan->price,
                         'Currency' => $plan->currency?->name,
                         'Trial days' => $plan->trial_days,
                         'Status' => $plan->isActive() ? 'Active' : 'Inactive',
@@ -70,18 +70,48 @@
                         <h3 class="card-title mb-0">Features</h3>
                     </div>
                     <div class="card-body">
-                        @if ($plan->planFeatures->isEmpty())
-                            <p class="admin-card-hint mb-0">No features assigned to this plan.</p>
-                        @else
-                            <dl class="tenant-info-grid tenant-info-list mb-0">
-                                @foreach ($plan->planFeatures as $assignment)
-                                    <div class="tenant-info-item">
-                                        <dt>{{ $assignment->feature?->name ?? 'Feature' }}</dt>
-                                        <dd>{{ $assignment->displayValue() }}</dd>
-                                    </div>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Feature</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($plan->features as $feature)
+                                    <tr>
+                                        <td>{{ \DA\Admin\Enums\Features::tryFrom((string) $feature)?->label() ?? $feature }}
+                                        </td>
+                                        <td>--</td>
+                                    </tr>
                                 @endforeach
-                            </dl>
-                        @endif
+                            </tbody>
+                        </table>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Limit Features</th>
+                                </tr>
+                                <tr>
+                                    <th>Feature</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($plan->limit_features as $feature)
+                                    <tr>
+                                        <td>{{ \DA\Admin\Enums\Features::tryFrom((string) $feature['feature'])?->label() ?? $feature['feature'] }}
+                                        </td>
+                                        <td>
+                                            {{ $feature['value'] }}
+                                            @if ($feature['is_unlimited'])
+                                                <span class="text-muted">Unlimited</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -99,7 +129,8 @@
                             </span>
                         </div>
 
-                        <a href="{{ route('admin.plans.edit', $plan) }}" class="btn admin-btn btn-primary tenant-action-btn">
+                        <a href="{{ route('admin.plans.edit', $plan) }}"
+                            class="btn admin-btn btn-primary tenant-action-btn">
                             <i class="fas fa-edit"></i>
                             <span>Edit</span>
                         </a>

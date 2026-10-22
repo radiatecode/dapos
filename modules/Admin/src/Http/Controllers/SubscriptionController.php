@@ -4,12 +4,14 @@ namespace DA\Admin\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use DA\Admin\DataTables\SubscriptionsDataTable;
+use DA\Admin\Enums\Features;
 use DA\Admin\Http\Requests\Subscription\AddAddonRequest;
 use DA\Admin\Http\Requests\Subscription\CancelSubscriptionRequest;
 use DA\Admin\Http\Requests\Subscription\ChangePlanRequest;
 use DA\Admin\Http\Requests\Subscription\StoreSubscriptionRequest;
 use DA\Admin\Http\Requests\Subscription\UpdateAddonQuantityRequest;
 use DA\Admin\Http\Requests\Subscription\UpdateGraceDaysRequest;
+use DA\Admin\Http\Requests\Subscription\UpdateSubscriptionFeaturesRequest;
 use DA\Admin\Models\Addon;
 use DA\Admin\Models\Plan;
 use DA\Admin\Models\Subscription;
@@ -78,6 +80,43 @@ class SubscriptionController extends Controller
             'availableAddons' => $availableAddons,
             'plans' => Plan::queries()->activeOrderedByName(),
         ]);
+    }
+
+    public function editFeatures(Subscription $subscription): View
+    {
+        $subscription->load(['tenant', 'plan']);
+
+        $stored_features = $subscription->features ?? [];
+        $stored_limit_features = $subscription->limit_features ?? [];
+
+        return view('admin::app.subscriptions.features', [
+            'subscription' => $subscription,
+            'moduleFeatures' => Features::moduleFeatures(),
+            'reportFeatures' => Features::reportFeatures(),
+            'limitFeatures' => Features::limitFeatures(),
+            'stored_features' => $stored_features,
+            'stored_limit_features' => $stored_limit_features,
+        ]);
+    }
+
+    public function updateFeatures(
+        UpdateSubscriptionFeaturesRequest $request,
+        Subscription $subscription,
+    ): RedirectResponse|JsonResponse {
+
+        $subscription->features = $request->toDTO()['module'];
+        $subscription->limit_features = $request->toDTO()['limit'];
+
+        $subscription->save();
+
+        if ($request->expectsJson()) {
+            return toJsonWithUpdateFlashMessage([
+                'status' => 'success',
+                'message' => 'Subscription features updated successfully',
+            ]);
+        }
+
+        return toUrlWithUpdatedMessage(route('admin.subscriptions.show', $subscription), 'Subscription features updated successfully');
     }
 
     public function startTrial(Subscription $subscription, SubscriptionService $subscriptions): RedirectResponse|JsonResponse

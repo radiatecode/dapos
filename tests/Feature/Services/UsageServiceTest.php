@@ -1,20 +1,20 @@
 <?php
 
-use DA\Admin\Models\Feature;
+use DA\Admin\Enums\Features;
 use DA\Admin\Models\Subscription;
 use DA\Admin\Models\Tenant;
 use DA\Admin\Models\TenantUsage;
 use DA\Admin\Services\UsageService;
 
 it('increments usage for the current subscription period', function () {
-    $feature = Feature::factory()->consumption()->create(['code' => 'invoices']);
+    $feature = Features::PRODUCTS->value;
     $subscription = Subscription::factory()->create();
 
     $row = app(UsageService::class)->increment($subscription, $feature, 2);
 
     expect($row->usage)->toBe(2)
         ->and($row->tenant_id)->toBe($subscription->tenant_id)
-        ->and($row->feature_id)->toBe($feature->id)
+        ->and($row->feature)->toBe($feature)
         ->and($row->period_start->equalTo($subscription->current_period_start))->toBeTrue()
         ->and($row->period_end->equalTo($subscription->current_period_end))->toBeTrue();
 
@@ -22,7 +22,7 @@ it('increments usage for the current subscription period', function () {
 });
 
 it('does not decrement usage below zero', function () {
-    $feature = Feature::factory()->consumption()->create(['code' => 'invoices']);
+    $feature = Features::PRODUCTS->value;
     $subscription = Subscription::factory()->create();
 
     app(UsageService::class)->increment($subscription, $feature, 1);
@@ -33,7 +33,7 @@ it('does not decrement usage below zero', function () {
 });
 
 it('isolates usage to the subscription period', function () {
-    $feature = Feature::factory()->consumption()->create(['code' => 'invoices']);
+    $feature = Features::PRODUCTS->value;
     $subscription = Subscription::factory()->create();
 
     app(UsageService::class)->increment($subscription, $feature, 3);
@@ -55,18 +55,18 @@ it('isolates usage to the subscription period', function () {
 });
 
 it('scopes usage rows to the owning tenant and feature', function () {
-    $invoices = Feature::factory()->consumption()->create(['code' => 'invoices']);
-    $reports = Feature::factory()->consumption()->create(['code' => 'reports']);
+    $products = Features::PRODUCTS->value;
+    $roles = Features::ROLES->value;
     $tenantA = Tenant::factory()->create();
     $tenantB = Tenant::factory()->create();
     $subscriptionA = Subscription::factory()->create(['tenant_id' => $tenantA->id]);
     $subscriptionB = Subscription::factory()->create(['tenant_id' => $tenantB->id]);
 
-    app(UsageService::class)->increment($subscriptionA, $invoices, 4);
-    app(UsageService::class)->increment($subscriptionA, $reports, 1);
-    app(UsageService::class)->increment($subscriptionB, $invoices, 2);
+    app(UsageService::class)->increment($subscriptionA, $products, 4);
+    app(UsageService::class)->increment($subscriptionA, $roles, 1);
+    app(UsageService::class)->increment($subscriptionB, $products, 2);
 
-    expect(app(UsageService::class)->current($subscriptionA, $invoices))->toBe(4)
-        ->and(app(UsageService::class)->current($subscriptionA, $reports))->toBe(1)
-        ->and(app(UsageService::class)->current($subscriptionB, $invoices))->toBe(2);
+    expect(app(UsageService::class)->current($subscriptionA, $products))->toBe(4)
+        ->and(app(UsageService::class)->current($subscriptionA, $roles))->toBe(1)
+        ->and(app(UsageService::class)->current($subscriptionB, $products))->toBe(2);
 });

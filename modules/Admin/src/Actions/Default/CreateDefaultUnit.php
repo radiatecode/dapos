@@ -39,17 +39,24 @@ class CreateDefaultUnit
         ],
     ];
 
-    public function handle(int $tenantId)
+    public function handle(int $tenantId, bool $forceUpdate = false)
     {
         foreach ($this->units as $unit) {
-            Unit::create([
-                'tenant_id' => $tenantId,
-                'name' => $unit['name'],
-                'code' => $unit['code'],
-                'unit_type' => $unit['unit_type'],
-                'precision' => $unit['precision'],
-                'is_default' => true,
-            ]);
+            if ($forceUpdate) {
+                Unit::updateOrCreate(
+                    ['tenant_id' => $tenantId, 'code' => $unit['code']],
+                    ['name' => $unit['name'], 'unit_type' => $unit['unit_type'], 'precision' => $unit['precision'], 'is_default' => true]
+                );
+            } else {
+                Unit::create([
+                    'tenant_id' => $tenantId,
+                    'name' => $unit['name'],
+                    'code' => $unit['code'],
+                    'unit_type' => $unit['unit_type'],
+                    'precision' => $unit['precision'],
+                    'is_default' => true,
+                ]);
+            }
         }
     }
 }

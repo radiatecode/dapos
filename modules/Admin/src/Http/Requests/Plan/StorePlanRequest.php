@@ -3,11 +3,8 @@
 namespace DA\Admin\Http\Requests\Plan;
 
 use DA\Admin\DTO\PlanDTO;
-use DA\Admin\DTO\PlanFeatureAssignmentDTO;
 use DA\Admin\Enums\BillingInterval;
-use DA\Admin\Enums\FeatureType;
 use DA\Admin\Models\AdminUser;
-use DA\Admin\Models\Feature;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -36,10 +33,7 @@ class StorePlanRequest extends FormRequest
             'trial_days' => ['nullable', 'integer', 'min:0', 'max:365'],
             'is_active' => ['sometimes', 'boolean'],
             'features' => ['nullable', 'array'],
-            'features.*.assigned' => ['sometimes', 'boolean'],
-            'features.*.feature_id' => ['required', 'integer', 'distinct', 'exists:features,id'],
-            'features.*.value' => ['nullable', 'string', 'max:50'],
-            'features.*.is_unlimited' => ['sometimes', 'boolean'],
+            'limit_features' => ['nullable', 'array'],
         ];
     }
 
@@ -79,76 +73,7 @@ class StorePlanRequest extends FormRequest
                 'code' => $this->string('code')->trim()->lower()->toString(),
             ]);
         }
-    }
 
-    /**
-     * @return array<int, \Closure(Validator): void>
-     */
-    public function after(): array
-    {
-        return [
-            function (Validator $validator): void {
-                if ($validator->errors()->has('features') || $validator->errors()->has('features.*')) {
-                    return;
-                }
-
-                /** @var array<int|string, array<string, mixed>> $rows */
-                $rows = $this->input('features', []);
-
-                $assignedFeatureIds = [];
-
-                foreach ($rows as $index => $row) {
-                    if (! is_array($row) || ! $this->rowIsAssigned($row)) {
-                        continue;
-                    }
-
-                    $featureId = (int) ($row['feature_id'] ?? 0);
-                    $feature = Feature::query()->find($featureId);
-
-                    if (! $feature instanceof Feature) {
-                        continue;
-                    }
-
-                    $assignedFeatureIds[] = $featureId;
-
-                    $isUnlimited = filter_var($row['is_unlimited'] ?? false, FILTER_VALIDATE_BOOLEAN);
-                    $value = is_string($row['value'] ?? null) ? trim($row['value']) : '';
-
-                    if ($feature->type === FeatureType::Boolean) {
-                        if ($isUnlimited) {
-                            $validator->errors()->add(
-                                "features.{$index}.is_unlimited",
-                                'Boolean features cannot be unlimited.',
-                            );
-                        }
-
-                        if (! in_array($value, ['0', '1'], true)) {
-                            $validator->errors()->add(
-                                "features.{$index}.value",
-                                'Boolean features must be Yes or No.',
-                            );
-                        }
-
-                        continue;
-                    }
-
-                    if ($isUnlimited) {
-                        continue;
-                    }
-
-                    if ($value === '' || ! is_numeric($value) || (int) $value < 0) {
-                        $validator->errors()->add(
-                            "features.{$index}.value",
-                            'Limit features require a number, or mark them unlimited.',
-                        );
-                    }
-                }
-
-                if (count($assignedFeatureIds) !== count(array_unique($assignedFeatureIds))) {
-                    $validator->errors()->add('features', 'Each feature can only be assigned once.');
-                }
-            },
-        ];
     }
 
     public function toDTO(): PlanDTO
@@ -158,74 +83,37 @@ class StorePlanRequest extends FormRequest
         return new PlanDTO(
             name: $data['name'],
             code: $data['code'],
-            description: $this->nullableString($data['description'] ?? null),
+            description: $data['description'] ?? null,
             billing_interval: BillingInterval::from($data['billing_interval']),
             price: number_format((float) $data['price'], 2, '.', ''),
             currency_id: (int) $data['currency_id'],
             trial_days: (int) ($data['trial_days'] ?? 0),
             is_active: array_key_exists('is_active', $data) ? $this->boolean('is_active') : true,
-            features: $this->featureAssignments($data['features'] ?? []),
+            features: [
+                'module' => $data['features'] ?? [],
+                'limit' => $this->featureLimitAssignments($data['limit_features'] ?? []),
+            ],
         );
     }
 
-    /**
-     * @param  array<int|string, mixed>  $features
-     * @return list<PlanFeatureAssignmentDTO>
-     */
-    private function featureAssignments(array $features): array
+    private function featureLimitAssignments(array $features): array
     {
         $assignments = [];
 
-        foreach ($features as $row) {
-            if (! is_array($row) || ! $this->rowIsAssigned($row)) {
+        foreach ($features as $featureCode => $featureConfig) {
+            if (! is_array($featureConfig)) {
                 continue;
             }
 
-            $feature = Feature::query()->find((int) $row['feature_id']);
+            $isUnlimited = isset($featureConfig['unlimited']) ? true : false;
 
-            if (! $feature instanceof Feature) {
-                continue;
-            }
-
-            $isUnlimited = $feature->isLimit()
-                && filter_var($row['is_unlimited'] ?? false, FILTER_VALIDATE_BOOLEAN);
-
-            $value = is_string($row['value'] ?? null) ? trim($row['value']) : null;
-
-            if ($isUnlimited) {
-                $value = null;
-            } elseif ($feature->isBoolean()) {
-                $value = $value === '1' ? '1' : '0';
-            }
-
-            $assignments[] = new PlanFeatureAssignmentDTO(
-                feature_id: $feature->id,
-                value: $value,
-                is_unlimited: $isUnlimited,
-            );
+            $assignments[] = [
+                'feature' => $featureCode,
+                'value' => $isUnlimited ? null : ($featureConfig['value'] ?? null),
+                'is_unlimited' => $isUnlimited,
+            ];
         }
 
         return $assignments;
-    }
-
-    /**
-     * @param  array<string, mixed>  $row
-     */
-    private function rowIsAssigned(array $row): bool
-    {
-        if (! array_key_exists('assigned', $row)) {
-            return true;
-        }
-
-        return filter_var($row['assigned'], FILTER_VALIDATE_BOOLEAN);
-    }
-
-    private function nullableString(mixed $value): ?string
-    {
-        if (! is_string($value) || $value === '') {
-            return null;
-        }
-
-        return $value;
     }
 }

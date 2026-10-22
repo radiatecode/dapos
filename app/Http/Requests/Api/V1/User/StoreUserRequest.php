@@ -3,10 +3,12 @@
 namespace App\Http\Requests\Api\V1\User;
 
 use App\DTO\User\CreateUserDTO;
+use DA\Admin\Services\FeatureService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Validator;
 
 class StoreUserRequest extends FormRequest
 {
@@ -48,6 +50,23 @@ class StoreUserRequest extends FormRequest
             'role_id.exists' => 'The selected role is invalid.',
         ];
     }
+
+    // public function after(): array
+    // {
+    //     return [
+    //         function (Validator $validator): void {
+    //             $featureService = app(FeatureService::class);
+
+    //             if ($featureService->canConsume(auth()->user()->tenant->subscription, 'users', 1)) {
+    //                 throw new \Exception('You have reached the maximum number of users for your subscription.');
+    //             }
+
+    //             // if ($this->input('from_store_id') !== null && $this->input('from_store_id') === $this->input('to_store_id')) {
+    //             //     $validator->errors()->add('to_store_id', 'The destination store must be different from the source store.');
+    //             // }
+    //         },
+    //     ];
+    // }
 
     public function toDTO(): CreateUserDTO
     {

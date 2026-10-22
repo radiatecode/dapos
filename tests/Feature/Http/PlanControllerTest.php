@@ -1,8 +1,8 @@
 <?php
 
 use DA\Admin\Enums\BillingInterval;
+use DA\Admin\Enums\Features;
 use DA\Admin\Models\Currency;
-use DA\Admin\Models\Feature;
 use DA\Admin\Models\Plan;
 use DA\Admin\Models\PlanFeature;
 
@@ -36,8 +36,6 @@ describe('create', function () {
         actingAsPlatformAdmin();
 
         $currency = Currency::factory()->usd()->create();
-        Feature::factory()->limit()->create(['name' => 'Products', 'code' => 'products']);
-        Feature::factory()->boolean()->create(['name' => 'Multi-location', 'code' => 'multi_location']);
 
         $this->get(route('admin.plans.create'))
             ->assertOk()
@@ -51,7 +49,8 @@ describe('create', function () {
             ->assertSee('name="trial_days"', false)
             ->assertSee('USD')
             ->assertSee('Products')
-            ->assertSee('Multi-location')
+            ->assertSee('POS')
+            ->assertSee('Sales Report')
             ->assertSee('Unlimited')
             ->assertSee((string) $currency->id, false);
     });
@@ -69,29 +68,26 @@ describe('store', function () {
         actingAsPlatformAdmin();
 
         $currency = Currency::factory()->usd()->create();
-        $locations = Feature::factory()->limit()->create(['code' => 'locations']);
-        $products = Feature::factory()->limit()->create(['code' => 'products']);
-        $multiLocation = Feature::factory()->boolean()->create(['code' => 'multi_location']);
 
         $this->from(route('admin.plans.create'))
             ->post(route('admin.plans.store'), planPayload([
                 'currency_id' => $currency->id,
                 'features' => [
-                    $locations->id => [
+                    Features::STORES->value => [
                         'assigned' => '1',
-                        'feature_id' => $locations->id,
+                        'feature' => Features::STORES->value,
                         'value' => '5',
                         'is_unlimited' => '0',
                     ],
-                    $products->id => [
+                    Features::PRODUCTS->value => [
                         'assigned' => '1',
-                        'feature_id' => $products->id,
+                        'feature' => Features::PRODUCTS->value,
                         'value' => '',
                         'is_unlimited' => '1',
                     ],
-                    $multiLocation->id => [
+                    Features::POS->value => [
                         'assigned' => '1',
-                        'feature_id' => $multiLocation->id,
+                        'feature' => Features::POS->value,
                         'value' => '0',
                         'is_unlimited' => '0',
                     ],
@@ -113,19 +109,19 @@ describe('store', function () {
 
         $this->assertDatabaseHas('plan_features', [
             'plan_id' => $plan->id,
-            'feature_id' => $locations->id,
+            'feature' => Features::STORES->value,
             'value' => '5',
             'is_unlimited' => 0,
         ]);
         $this->assertDatabaseHas('plan_features', [
             'plan_id' => $plan->id,
-            'feature_id' => $products->id,
+            'feature' => Features::PRODUCTS->value,
             'value' => null,
             'is_unlimited' => 1,
         ]);
         $this->assertDatabaseHas('plan_features', [
             'plan_id' => $plan->id,
-            'feature_id' => $multiLocation->id,
+            'feature' => Features::POS->value,
             'value' => '0',
             'is_unlimited' => 0,
         ]);
@@ -145,21 +141,19 @@ describe('store', function () {
     it('rejects a boolean feature marked unlimited', function () {
         actingAsPlatformAdmin();
 
-        $feature = Feature::factory()->boolean()->create(['code' => 'advanced_reports']);
-
         $this->from(route('admin.plans.create'))
             ->post(route('admin.plans.store'), planPayload([
                 'features' => [
-                    $feature->id => [
+                    Features::POS->value => [
                         'assigned' => '1',
-                        'feature_id' => $feature->id,
+                        'feature' => Features::POS->value,
                         'value' => '1',
                         'is_unlimited' => '1',
                     ],
                 ],
             ]))
             ->assertRedirect(route('admin.plans.create'))
-            ->assertSessionHasErrors(['features.'.$feature->id.'.is_unlimited']);
+            ->assertSessionHasErrors(['features.'.Features::POS->value.'.is_unlimited']);
 
         $this->assertDatabaseMissing('plans', ['code' => 'starter']);
     });
@@ -167,21 +161,19 @@ describe('store', function () {
     it('rejects a limit feature without a value when it is not unlimited', function () {
         actingAsPlatformAdmin();
 
-        $feature = Feature::factory()->limit()->create(['code' => 'invoices']);
-
         $this->from(route('admin.plans.create'))
             ->post(route('admin.plans.store'), planPayload([
                 'features' => [
-                    $feature->id => [
+                    Features::PRODUCTS->value => [
                         'assigned' => '1',
-                        'feature_id' => $feature->id,
+                        'feature' => Features::PRODUCTS->value,
                         'value' => '',
                         'is_unlimited' => '0',
                     ],
                 ],
             ]))
             ->assertRedirect(route('admin.plans.create'))
-            ->assertSessionHasErrors(['features.'.$feature->id.'.value']);
+            ->assertSessionHasErrors(['features.'.Features::PRODUCTS->value.'.value']);
 
         $this->assertDatabaseMissing('plans', ['code' => 'starter']);
     });
@@ -247,17 +239,15 @@ describe('update', function () {
         actingAsPlatformAdmin();
 
         $plan = Plan::factory()->create(['name' => 'Old Plan', 'code' => 'old-plan']);
-        $kept = Feature::factory()->limit()->create(['code' => 'users']);
-        $removed = Feature::factory()->boolean()->create(['code' => 'advanced_reports']);
 
         PlanFeature::factory()->create([
             'plan_id' => $plan->id,
-            'feature_id' => $kept->id,
+            'feature' => Features::USERS->value,
             'value' => '3',
         ]);
         PlanFeature::factory()->disabled()->create([
             'plan_id' => $plan->id,
-            'feature_id' => $removed->id,
+            'feature' => Features::POS->value,
         ]);
 
         $this->from(route('admin.plans.edit', $plan))
@@ -267,15 +257,15 @@ describe('update', function () {
                 'code' => 'pro',
                 'price' => '49.00',
                 'features' => [
-                    $kept->id => [
+                    Features::USERS->value => [
                         'assigned' => '1',
-                        'feature_id' => $kept->id,
+                        'feature' => Features::USERS->value,
                         'value' => '',
                         'is_unlimited' => '1',
                     ],
-                    $removed->id => [
+                    Features::POS->value => [
                         'assigned' => '0',
-                        'feature_id' => $removed->id,
+                        'feature' => Features::POS->value,
                         'value' => '1',
                         'is_unlimited' => '0',
                     ],
@@ -291,13 +281,13 @@ describe('update', function () {
         ]);
         $this->assertDatabaseHas('plan_features', [
             'plan_id' => $plan->id,
-            'feature_id' => $kept->id,
+            'feature' => Features::USERS->value,
             'value' => null,
             'is_unlimited' => 1,
         ]);
         $this->assertDatabaseMissing('plan_features', [
             'plan_id' => $plan->id,
-            'feature_id' => $removed->id,
+            'feature' => Features::POS->value,
         ]);
     });
 
@@ -335,10 +325,9 @@ describe('show', function () {
             'code' => 'starter',
             'price' => '19.00',
         ]);
-        $feature = Feature::factory()->limit()->create(['name' => 'Locations', 'code' => 'locations']);
         PlanFeature::factory()->create([
             'plan_id' => $plan->id,
-            'feature_id' => $feature->id,
+            'feature' => Features::STORES->value,
             'value' => '1',
         ]);
 
@@ -346,7 +335,7 @@ describe('show', function () {
             ->assertOk()
             ->assertSee('Starter')
             ->assertSee('starter')
-            ->assertSee('Locations')
+            ->assertSee('Stores')
             ->assertSee('Deactivate')
             ->assertSee(route('admin.plans.edit', $plan), false)
             ->assertSee(route('admin.plans.deactivate', $plan), false)

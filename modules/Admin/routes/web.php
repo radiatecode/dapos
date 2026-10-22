@@ -4,7 +4,6 @@ use DA\Admin\Http\Controllers\AddonController;
 use DA\Admin\Http\Controllers\Auth\AuthenticatedSessionController;
 use DA\Admin\Http\Controllers\CouponController;
 use DA\Admin\Http\Controllers\DashboardController;
-use DA\Admin\Http\Controllers\FeatureController;
 use DA\Admin\Http\Controllers\InvoiceController;
 use DA\Admin\Http\Controllers\PaymentController;
 use DA\Admin\Http\Controllers\PermissionController;
@@ -48,10 +47,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('plans/{plan}/deactivate', [PlanController::class, 'deactivate'])->name('plans.deactivate');
         Route::resource('plans', PlanController::class)->except(['destroy']);
 
-        Route::get('features', [FeatureController::class, 'index'])->name('features.index');
-        Route::post('features', [FeatureController::class, 'store'])->name('features.store');
-        Route::put('features/{feature}', [FeatureController::class, 'update'])->name('features.update');
-
         Route::get('addons', [AddonController::class, 'index'])->name('addons.index');
         Route::post('addons', [AddonController::class, 'store'])->name('addons.store');
         Route::put('addons/{addon}', [AddonController::class, 'update'])->name('addons.update');
@@ -69,6 +64,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         Route::middleware('admin.permission:subscriptions.manage')->group(function () {
+            Route::get('subscriptions/{subscription}/features', [SubscriptionController::class, 'editFeatures'])->name('subscriptions.features.edit');
+            Route::put('subscriptions/{subscription}/features', [SubscriptionController::class, 'updateFeatures'])->name('subscriptions.features.update');
             Route::patch('subscriptions/{subscription}/start-trial', [SubscriptionController::class, 'startTrial'])->name('subscriptions.start-trial');
             Route::patch('subscriptions/{subscription}/activate', [SubscriptionController::class, 'activate'])->name('subscriptions.activate');
             Route::patch('subscriptions/{subscription}/pause', [SubscriptionController::class, 'pause'])->name('subscriptions.pause');

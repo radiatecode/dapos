@@ -8,10 +8,10 @@ use DA\Admin\Actions\Plan\CreatePlan;
 use DA\Admin\Actions\Plan\UpdatePlan;
 use DA\Admin\DataTables\PlansDataTable;
 use DA\Admin\Enums\BillingInterval;
+use DA\Admin\Enums\Features;
 use DA\Admin\Http\Requests\Plan\StorePlanRequest;
 use DA\Admin\Http\Requests\Plan\UpdatePlanRequest;
 use DA\Admin\Models\Currency;
-use DA\Admin\Models\Feature;
 use DA\Admin\Models\Plan;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -29,7 +29,11 @@ class PlanController extends Controller
 
     public function create(): View
     {
-        return view('admin::app.plans.create', $this->formOptions());
+        return view('admin::app.plans.create', [
+            ...$this->formOptions(),
+            'stored_features' => [],
+            'stored_limit_features' => [],
+        ]);
     }
 
     public function store(StorePlanRequest $request, CreatePlan $createPlan): RedirectResponse|JsonResponse
@@ -48,17 +52,17 @@ class PlanController extends Controller
 
     public function show(Plan $plan): View
     {
-        $plan->load(['currency', 'planFeatures.feature']);
+        $plan->load(['currency']);
 
         return view('admin::app.plans.show', compact('plan'));
     }
 
     public function edit(Plan $plan): View
     {
-        $plan->load('planFeatures');
-
         return view('admin::app.plans.edit', [
             'plan' => $plan,
+            'stored_features' => $plan->features ?? [],
+            'stored_limit_features' => $plan->limit_features ?? [],
             ...$this->formOptions(),
         ]);
     }
@@ -92,13 +96,15 @@ class PlanController extends Controller
     }
 
     /**
-     * @return array{currencies: Collection<int, Currency>, features: Collection<int, Feature>, billingIntervals: list<BillingInterval>}
+     * @return array{currencies: Collection<int, Currency>, features: array<string, array{label: string, type: string}>, billingIntervals: list<BillingInterval>}
      */
     private function formOptions(): array
     {
         return [
             'currencies' => Currency::queries()->activeOrderedByCode(),
-            'features' => Feature::queries()->orderedForAssignment(),
+            'moduleFeatures' => Features::moduleFeatures(),
+            'reportFeatures' => Features::reportFeatures(),
+            'limitFeatures' => Features::limitFeatures(),
             'billingIntervals' => BillingInterval::cases(),
         ];
     }

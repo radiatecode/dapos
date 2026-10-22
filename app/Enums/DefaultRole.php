@@ -22,7 +22,7 @@ enum DefaultRole: string
     public function permissions(): array
     {
         return match ($this) {
-            self::Admin => Permission::all(),
+            self::Admin => Permission::admin(),
             self::Manager => Permission::manager(),
             self::Staff => Permission::staff(),
             self::Cashier => Permission::cashier(),

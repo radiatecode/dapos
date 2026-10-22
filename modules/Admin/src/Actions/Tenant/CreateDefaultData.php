@@ -18,10 +18,14 @@ class CreateDefaultData
 
             $submittedDefaultData = array_keys(array_filter($data->toArray()));
 
-            $this->generateDefaultData($submittedDefaultData, $id);
+            $this->generateDefaultData($submittedDefaultData, $id, $data->force_update);
 
             // store which default data is created in the tenant default_data json column
-            $tenant->default_data = json_encode(array_merge(json_decode($tenant->default_data, true) ?? [], $submittedDefaultData));
+            $tenant->default_data = json_encode(
+                array_unique(
+                    array_merge(json_decode($tenant->default_data, true) ?? [], $submittedDefaultData)
+                )
+            );
 
             $tenant->save();
 
@@ -29,14 +33,14 @@ class CreateDefaultData
         });
     }
 
-    public function generateDefaultData(array $defaultData, int $tenantId)
+    public function generateDefaultData(array $defaultData, int $tenantId, bool $forceUpdate = false)
     {
         foreach ($defaultData as $data) {
             if ($data == DefaultDataType::DEFAULT_ROLES->value) {
-                (new CreateDefaultRole)->handle($tenantId);
+                (new CreateDefaultRole)->handle($tenantId, $forceUpdate);
             }
             if ($data == DefaultDataType::DEFAULT_UNIT->value) {
-                (new CreateDefaultUnit)->handle($tenantId);
+                (new CreateDefaultUnit)->handle($tenantId, $forceUpdate);
             }
         }
     }

@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'tenant_id',
-    'feature_id',
+    'feature',
     'usage',
     'period_start',
     'period_end',
@@ -53,14 +53,6 @@ class TenantUsage extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
-    }
-
-    /**
-     * @return BelongsTo<Feature, $this>
-     */
-    public function feature(): BelongsTo
-    {
-        return $this->belongsTo(Feature::class);
     }
 
     protected static function newFactory(): TenantUsageFactory

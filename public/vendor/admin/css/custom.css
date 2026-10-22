@@ -815,9 +815,48 @@ span.help-block {
     font-weight: 800;
 }
 
+.plan-feature-section {
+    margin-top: 1rem;
+    padding: 1rem 1rem 0.35rem;
+    border: 1px solid var(--ui-line);
+    border-radius: 16px;
+    background: var(--ui-surface);
+    color: var(--ui-ink);
+}
+
+.plan-feature-section__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.plan-feature-section__head h4 {
+    margin: 0 0 0.2rem;
+    font-weight: 800;
+    color: var(--ui-ink);
+}
+
+.plan-feature-table tbody td {
+    background: transparent;
+    color: var(--ui-ink);
+}
+
+.plan-feature-name {
+    color: var(--ui-ink);
+    font-weight: 700;
+}
+
+.plan-feature-code {
+    color: var(--ui-muted);
+    font-size: 0.8rem;
+}
+
 .plan-limit-controls {
     display: grid;
     gap: 0.55rem;
+    max-width: 220px;
 }
 
 .admin-table-wrap {

@@ -2,7 +2,7 @@
 
 namespace DA\Admin\Database\Factories;
 
-use DA\Admin\Models\Feature;
+use DA\Admin\Enums\Features;
 use DA\Admin\Models\Tenant;
 use DA\Admin\Models\TenantUsage;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,7 +23,7 @@ class TenantUsageFactory extends Factory
 
         return [
             'tenant_id' => Tenant::factory(),
-            'feature_id' => Feature::factory()->consumption(),
+            'feature' => Features::PRODUCTS->value,
             'usage' => 0,
             'period_start' => $periodStart,
             'period_end' => $periodStart->copy()->endOfMonth(),

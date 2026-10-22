@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models\Queries;
 
+use App\Enums\Permission;
 use Carbon\CarbonImmutable;
 use DA\Inventory\Enums\SalePaymentStatus;
 use DA\Inventory\Enums\SaleStatus;
@@ -250,15 +251,25 @@ class SaleQueries extends BaseQueries
             ->when($paymentStatus !== null, fn (Builder $query) => $query->where('payment_status', $paymentStatus))
             ->when($customerId !== null, fn (Builder $query) => $query->where('customer_id', $customerId))
             ->when($storeId !== null, fn (Builder $query) => $query->where('store_id', $storeId))
-            ->when($dateFrom !== null, fn (Builder $query) => $query->whereDate('sale_date', '>=', $dateFrom))
-            ->when($dateTo !== null, fn (Builder $query) => $query->whereDate('sale_date', '<=', $dateTo))
+            ->when(
+                $dateFrom !== null && $dateTo !== null,
+                fn (Builder $query) => $query->whereDate('sale_date', '>=', $dateFrom)->whereDate('sale_date', '<=', $dateTo)
+            )
+            ->when(
+                auth()->user()->hasPermission(Permission::OnlyTodayData->value),
+                fn (Builder $query) => $query->whereDate('sale_date', '=', now()->toDateString())
+            )
             ->when($term !== '', function (Builder $query) use ($term): void {
                 $like = '%'.addcslashes($term, '%_\\').'%';
                 $query->where(function (Builder $inner) use ($like): void {
                     $inner->where('invoice_number', 'like', $like)
                         ->orWhereHas('customer', fn (Builder $customer) => $customer->where('name', 'like', $like));
                 });
-            });
+            })
+            ->when(
+                auth()->user()->hasPermission(Permission::OnlyCreatorUpdate->value),
+                fn (Builder $query) => $query->where('cashier_id', auth()->user()->id)
+            );
     }
 
     /**
