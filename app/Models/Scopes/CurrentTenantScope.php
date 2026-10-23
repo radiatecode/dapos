@@ -14,14 +14,20 @@ class CurrentTenantScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        $actor = auth()->user();
+        $guard = auth()->guard();
+
+        // The authenticatable model boots while the guard is still resolving
+        // the user. hasUser() reads the cached user and does not start another lookup.
+        if (! $guard->hasUser()) {
+            return;
+        }
+
+        $actor = $guard->user();
 
         if (! $actor instanceof User || $actor->tenant_id === null) {
             return;
         }
 
-        $tenantId = $actor->tenant_id;
-
-        $builder->where($model->qualifyColumn('tenant_id'), $tenantId);
+        $builder->where($model->qualifyColumn('tenant_id'), $actor->tenant_id);
     }
 }

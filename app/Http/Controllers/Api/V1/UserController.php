@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\StoreUserRequest;
 use App\Http\Requests\Api\V1\User\UpdateUserRequest;
 use App\Http\Resources\Api\V1\UserResource;
+use App\Http\Resources\Api\V1\UsersResource;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +21,7 @@ class UserController extends Controller
 {
     public function index(Request $request, UserService $users): AnonymousResourceCollection
     {
-        return UserResource::collection(
+        return UsersResource::collection(
             $users->paginate($request->integer('per_page', $request->integer('limit', 15))),
         );
     }
