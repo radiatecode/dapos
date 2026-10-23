@@ -62,21 +62,4 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
             ]);
         });
     }
-
-    protected function authorization()
-    {
-        $this->gate();
-
-        Telescope::auth(function ($request) {
-            if (app()->environment('local')) {
-                return true;
-            }
-
-            $admin = $request->user('admin');
-
-            return $admin !== null && in_array($admin->email, [
-                'nur.radiate126@gmail.com',
-            ], true);
-        });
-    }
 }
