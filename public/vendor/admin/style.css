@@ -326,6 +326,52 @@ body.admin-guest {
     grid-template-columns: 1.1fr 0.9fr;
 }
 
+.guest-brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+}
+
+.guest-brand__logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 5.25rem;
+    height: 5.25rem;
+    overflow: hidden;
+}
+
+.guest-brand__logo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+}
+
+.guest-brand__copy {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.guest-brand__copy strong {
+    color: #f8f8f8;
+    font-size: 1.85rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+}
+
+.guest-brand__copy small {
+    display: block;
+    margin-top: 0.15rem;
+    color: #9a9a9a;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
 .guest-hero {
     padding: 3rem;
     display: flex;

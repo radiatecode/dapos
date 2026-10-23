@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models;
 
+use App\Models\Concerns\RestrictsToAllocatedStore;
 use App\Models\Concerns\ScopedToCurrentTenant;
 use App\Models\User;
 use DA\Inventory\Concerns\OwnershipActionAuthorize;
@@ -35,7 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class PurchaseReturn extends Model
 {
     /** @use HasFactory<PurchaseReturnFactory> */
-    use HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant;
+    use HasFactory, OwnershipActionAuthorize, RestrictsToAllocatedStore, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

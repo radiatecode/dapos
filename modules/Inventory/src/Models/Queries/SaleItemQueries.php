@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models\Queries;
 
+use App\Services\AllocatedStores;
 use Carbon\CarbonImmutable;
 use DA\Inventory\DTO\Report\ProfitReportFilterDTO;
 use DA\Inventory\DTO\Report\SalesReportFilterDTO;
@@ -229,6 +230,9 @@ class SaleItemQueries extends BaseQueries
             ->where('s.tenant_id', $tenantId)
             ->where('si.tenant_id', $tenantId)
             ->where('s.status', SaleStatus::Completed->value)
+            ->when(AllocatedStores::ids() !== null, function (Builder $query): void {
+                AllocatedStores::constrain($query, 's.store_id');
+            })
             ->where('s.sale_date', '>=', $currentMonthStart->subMonth()->toDateString())
             ->where('s.sale_date', '<', $currentMonthStart->addMonth()->toDateString())
             ->select(['si.total', 'si.tax_amount', 'si.cogs', 's.grand_total', 's.sale_date'])
@@ -326,6 +330,9 @@ class SaleItemQueries extends BaseQueries
             ->where('s.tenant_id', $tenantId)
             ->where('si.tenant_id', $tenantId)
             ->where('s.status', SaleStatus::Completed->value)
+            ->when(AllocatedStores::ids() !== null, function (Builder $query): void {
+                AllocatedStores::constrain($query, 's.store_id');
+            })
             ->when($filters->storeId !== null, fn (Builder $query) => $query->where('s.store_id', $filters->storeId))
             ->when($filters->dateFrom !== null, fn (Builder $query) => $query->where('s.sale_date', '>=', $filters->dateFrom))
             ->when($filters->dateTo !== null, fn (Builder $query) => $query->where(

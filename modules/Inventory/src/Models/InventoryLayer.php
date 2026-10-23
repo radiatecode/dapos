@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models;
 
+use App\Models\Concerns\RestrictsToAllocatedStore;
 use App\Models\Concerns\ScopedToCurrentTenant;
 use DA\Inventory\Database\Factories\InventoryLayerFactory;
 use DA\Inventory\Enums\InventoryLayerSourceType;
@@ -32,7 +33,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class InventoryLayer extends Model
 {
     /** @use HasFactory<InventoryLayerFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, RestrictsToAllocatedStore, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

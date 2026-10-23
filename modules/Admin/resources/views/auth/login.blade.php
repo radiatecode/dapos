@@ -6,12 +6,14 @@
     <div class="guest-grid">
         <section class="guest-hero">
             <div>
-                <div class="d-flex align-items-center gap-3 mb-5">
-                    <span class="admin-brand-mark">DA</span>
-                    <div>
-                        <div class="text-uppercase small" style="letter-spacing: .16em; color: #fbbf24;">Radiate POS</div>
-                        <strong>Provider control plane</strong>
-                    </div>
+                <div class="guest-brand">
+                    <span class="guest-brand__logo">
+                        <img src="{{ asset('vendor/admin/dapos-new-thumb.jpg') }}" alt="">
+                    </span>
+                    <span class="guest-brand__copy">
+                        <strong>DaPOS</strong>
+                        <small>Point Of Sale</small>
+                    </span>
                 </div>
                 <h1 class="display-5 fw-bold mb-3" style="letter-spacing: -0.05em;">Operate every tenant from one beautiful
                     cockpit.</h1>

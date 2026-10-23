@@ -32,6 +32,8 @@ class StoreUserRequest extends FormRequest
                 Rule::exists('roles', 'id')
                     ->where(fn ($query) => $query->where('tenant_id', $tenantId)),
             ],
+            'store_ids' => ['sometimes', 'array'],
+            'store_ids.*' => ['integer', 'distinct'],
         ];
     }
 
@@ -48,6 +50,9 @@ class StoreUserRequest extends FormRequest
             'password.required' => 'The password field is required.',
             'password.confirmed' => 'The password confirmation does not match.',
             'role_id.exists' => 'The selected role is invalid.',
+            'store_ids.array' => 'The stores field must be a list.',
+            'store_ids.*.integer' => 'The selected store is invalid.',
+            'store_ids.*.distinct' => 'The selected store is duplicated.',
         ];
     }
 
@@ -77,6 +82,7 @@ class StoreUserRequest extends FormRequest
             email: $data['email'],
             password: $data['password'],
             role_id: $data['role_id'] ?? null,
+            storeIds: array_values(array_unique(array_map(intval(...), $data['store_ids'] ?? []))),
         );
     }
 }

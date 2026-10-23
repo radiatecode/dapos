@@ -3,6 +3,7 @@
 namespace DA\Inventory\Models;
 
 use App\Models\Concerns\ScopedToCurrentTenant;
+use App\Models\Scopes\AllocatedStoreScope;
 use DA\Inventory\Concerns\OwnershipActionAuthorize;
 use DA\Inventory\Database\Factories\StoreFactory;
 use DA\Inventory\Models\Queries\StoreQueries;
@@ -45,5 +46,10 @@ class Store extends Model
     protected static function newFactory(): StoreFactory
     {
         return StoreFactory::new();
+    }
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new AllocatedStoreScope('id'));
     }
 }

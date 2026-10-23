@@ -71,6 +71,6 @@ class AuthController extends Controller
             abort(403, 'This area is restricted to tenant users.');
         }
 
-        return UserResource::make($user->loadMissing(['role', 'tenant.subscription']));
+        return UserResource::make($user->loadMissing(['role', 'stores', 'tenant.subscription']));
     }
 }

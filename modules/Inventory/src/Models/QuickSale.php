@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models;
 
+use App\Models\Concerns\RestrictsToAllocatedStore;
 use App\Models\Concerns\ScopedToCurrentTenant;
 use App\Models\User;
 use DA\Inventory\Database\Factories\QuickSaleFactory;
@@ -29,7 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class QuickSale extends Model
 {
     /** @use HasFactory<QuickSaleFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, RestrictsToAllocatedStore, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

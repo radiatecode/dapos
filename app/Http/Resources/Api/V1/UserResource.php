@@ -4,6 +4,7 @@ namespace App\Http\Resources\Api\V1;
 
 use App\Models\Role;
 use App\Models\User;
+use DA\Inventory\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -33,6 +34,17 @@ class UserResource extends JsonResource
             'role' => $this->when(
                 $this->resource->getRelation('role') instanceof Role,
                 fn () => RoleResource::make($this->resource->getRelation('role')),
+            ),
+            'stores' => $this->when(
+                $this->relationLoaded('stores'),
+                fn (): array => $this->stores->map(fn (Store $store): array => [
+                    'id' => $store->id,
+                    'name' => $store->name,
+                ])->values()->all(),
+            ),
+            'manages_all_stores' => $this->when(
+                $this->relationLoaded('stores'),
+                fn (): bool => $this->stores->isEmpty(),
             ),
             'tenant' => TenantResource::make($this->whenLoaded('tenant')),
             'permissions' => $this->when(

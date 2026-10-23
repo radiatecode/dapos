@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models;
 
+use App\Models\Concerns\RestrictsToAllocatedStore;
 use App\Models\Concerns\ScopedToCurrentTenant;
 use App\Models\User;
 use DA\Inventory\Concerns\OwnershipActionAuthorize;
@@ -32,7 +33,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class StockAdjustment extends Model
 {
     /** @use HasFactory<StockAdjustmentFactory> */
-    use HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant;
+    use HasFactory, OwnershipActionAuthorize, RestrictsToAllocatedStore, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

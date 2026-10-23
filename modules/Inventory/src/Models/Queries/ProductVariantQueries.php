@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models\Queries;
 
+use App\Services\AllocatedStores;
 use DA\Inventory\DTO\Product\BarcodeLabelFilterDTO;
 use DA\Inventory\DTO\Report\MinStockReportFilterDTO;
 use DA\Inventory\Enums\MinStockReportSortColumn;
@@ -210,6 +211,9 @@ class ProductVariantQueries extends BaseQueries
             ->select('product_variant_id')
             ->selectRaw('SUM(available_quantity) as current_stock')
             ->where('tenant_id', $tenantId)
+            ->when(AllocatedStores::ids() !== null, function (Builder $query): void {
+                AllocatedStores::constrain($query, 'store_id');
+            })
             ->when($filters->storeId !== null, fn (Builder $query) => $query->where('store_id', $filters->storeId))
             ->groupBy('product_variant_id');
 

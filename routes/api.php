@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AssignedUserRoleController;
+use App\Http\Controllers\Api\V1\AssignedUserStoreController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\PermissionController;
 use App\Http\Controllers\Api\V1\RoleController;
@@ -51,6 +52,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::put('users/{id}/role', [AssignedUserRoleController::class, 'update'])
                 ->middleware('permission:users.update')
                 ->name('users.roles.update');
+            Route::put('users/{id}/stores', [AssignedUserStoreController::class, 'update'])
+                ->middleware('permission:users.update')
+                ->name('users.stores.update');
         });
 
         Route::middleware('feature:roles')->group(function (): void {

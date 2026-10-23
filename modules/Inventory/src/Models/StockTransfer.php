@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models;
 
+use App\Models\Concerns\RestrictsToAllocatedStockTransfer;
 use App\Models\Concerns\ScopedToCurrentTenant;
 use App\Models\User;
 use DA\Inventory\Concerns\OwnershipActionAuthorize;
@@ -28,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class StockTransfer extends Model
 {
     /** @use HasFactory<StockTransferFactory> */
-    use HasFactory, OwnershipActionAuthorize, ScopedToCurrentTenant;
+    use HasFactory, OwnershipActionAuthorize, RestrictsToAllocatedStockTransfer, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

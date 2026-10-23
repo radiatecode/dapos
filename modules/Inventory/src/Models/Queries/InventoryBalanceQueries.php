@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models\Queries;
 
+use App\Services\AllocatedStores;
 use DA\Inventory\DTO\Report\CurrentStockValueReportFilterDTO;
 use DA\Inventory\Enums\CurrentStockAvailability;
 use DA\Inventory\Enums\CurrentStockValueReportSortColumn;
@@ -156,6 +157,9 @@ class InventoryBalanceQueries extends BaseQueries
             ->selectRaw('SUM(available_quantity) as available_quantity')
             ->selectRaw('SUM(stock_value) as stock_value')
             ->where('tenant_id', $tenantId)
+            ->when(AllocatedStores::ids() !== null, function (QueryBuilder $query): void {
+                AllocatedStores::constrain($query, 'store_id');
+            })
             ->when($filters->storeId !== null, fn (QueryBuilder $query) => $query->where('store_id', $filters->storeId))
             ->groupBy('product_variant_id')
             ->havingRaw('SUM(quantity) > 0');

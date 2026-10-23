@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models\Queries;
 
+use App\Models\Scopes\AllocatedStoreScope;
 use DA\Inventory\Models\Store;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,6 +26,28 @@ class StoreQueries extends BaseQueries
         $store = $this->forAuthenticatedTenant()->findOrFail($id);
 
         return $store;
+    }
+
+    /**
+     * Store ids that belong to the tenant. Allocation is ignored so assignment
+     * can tell a missing store from a store the actor is not allowed to give.
+     *
+     * @param  list<int>  $ids
+     * @return list<int>
+     */
+    public function idsExistingInTenant(array $ids, int $tenantId): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        return $this->eloquentBuilder()
+            ->withoutGlobalScope(AllocatedStoreScope::class)
+            ->where('tenant_id', $tenantId)
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->map(fn (mixed $id): int => (int) $id)
+            ->all();
     }
 
     public function select2(?string $search = null): Builder

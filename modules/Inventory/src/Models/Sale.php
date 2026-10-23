@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models;
 
+use App\Models\Concerns\RestrictsToAllocatedStore;
 use App\Models\Concerns\ScopedToCurrentTenant;
 use App\Models\User;
 use DA\Inventory\Database\Factories\SaleFactory;
@@ -33,7 +34,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Sale extends Model
 {
     /** @use HasFactory<SaleFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, RestrictsToAllocatedStore, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

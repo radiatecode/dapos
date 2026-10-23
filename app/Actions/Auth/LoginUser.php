@@ -39,6 +39,6 @@ class LoginUser
 
         $token = $user->createToken($dto->device_name)->plainTextToken;
 
-        return new LoginResult($user->load('role', 'tenant.subscription'), $token);
+        return new LoginResult($user->load('role', 'stores', 'tenant.subscription'), $token);
     }
 }

@@ -1,11 +1,11 @@
 <aside class="main-sidebar admin-sidebar elevation-4">
     <a href="{{ route('admin.dashboard') }}" class="brand-link admin-brand">
         <span class="admin-brand__mark">
-            <img src="{{ asset('vendor/admin/pos-logo-thumb.jpeg') }}" alt="Logo" class="brand-image">
+            <img src="{{ asset('vendor/admin/dapos-new-thumb.jpg') }}" alt="" class="brand-image">
         </span>
         <span class="brand-text admin-brand__copy">
-            <small>Provider</small>
-            <strong>{{ config('app.name') }}</strong>
+            <strong>DaPOS</strong>
+            <small>Point Of Sale</small>
         </span>
     </a>
 

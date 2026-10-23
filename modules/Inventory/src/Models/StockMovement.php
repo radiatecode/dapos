@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models;
 
+use App\Models\Concerns\RestrictsToAllocatedStore;
 use App\Models\Concerns\ScopedToCurrentTenant;
 use App\Models\User;
 use DA\Inventory\Database\Factories\StockMovementFactory;
@@ -36,7 +37,7 @@ class StockMovement extends Model
     public const UPDATED_AT = null;
 
     /** @use HasFactory<StockMovementFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, RestrictsToAllocatedStore, ScopedToCurrentTenant;
 
     public static function queries(): StockMovementQueries
     {

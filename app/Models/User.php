@@ -5,9 +5,12 @@ namespace App\Models;
 use App\Models\Concerns\HasPermissions;
 use App\Models\Concerns\ScopedToCurrentTenant;
 use App\Models\Queries\UserQueries;
+use App\Models\Scopes\AllocatedStoreScope;
+use DA\Inventory\Models\Store;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -45,5 +48,24 @@ class User extends Authenticatable
     public function isActive(): bool
     {
         return $this->is_active !== false;
+    }
+
+    /**
+     * Stores this user is allowed to manage. An empty relation means every store.
+     *
+     * The allocation scope is removed so the saved assignment stays visible to
+     * the person editing users, including stores outside that person's own limit.
+     *
+     * @return BelongsToMany<Store, $this>
+     */
+    public function stores(): BelongsToMany
+    {
+        $relation = $this->belongsToMany(Store::class, 'store_user')
+            ->withPivot('tenant_id')
+            ->withTimestamps();
+
+        $relation->getQuery()->withoutGlobalScope(AllocatedStoreScope::class);
+
+        return $relation;
     }
 }

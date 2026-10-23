@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models;
 
+use App\Models\Concerns\RestrictsToAllocatedStore;
 use App\Models\Concerns\ScopedToCurrentTenant;
 use DA\Inventory\Database\Factories\InventoryAllocationFactory;
 use DA\Inventory\Enums\AllocationSourceType;
@@ -28,7 +29,7 @@ class InventoryAllocation extends Model
     public const UPDATED_AT = null;
 
     /** @use HasFactory<InventoryAllocationFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, RestrictsToAllocatedStore, ScopedToCurrentTenant;
 
     public static function queries(): InventoryAllocationQueries
     {

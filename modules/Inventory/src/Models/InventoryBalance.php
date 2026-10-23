@@ -2,6 +2,7 @@
 
 namespace DA\Inventory\Models;
 
+use App\Models\Concerns\RestrictsToAllocatedStore;
 use App\Models\Concerns\ScopedToCurrentTenant;
 use DA\Inventory\Database\Factories\InventoryBalanceFactory;
 use DA\Inventory\Models\Queries\InventoryBalanceQueries;
@@ -23,7 +24,7 @@ class InventoryBalance extends Model
     public const CREATED_AT = null;
 
     /** @use HasFactory<InventoryBalanceFactory> */
-    use HasFactory, ScopedToCurrentTenant;
+    use HasFactory, RestrictsToAllocatedStore, ScopedToCurrentTenant;
 
     /**
      * @var array<string, mixed>

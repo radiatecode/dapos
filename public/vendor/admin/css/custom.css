@@ -1000,14 +1000,11 @@ span.help-block {
 }
 
 .admin-brand__mark {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.9rem;
+    width: 2.75rem;
+    height: 2.75rem;
     display: grid;
     place-items: center;
     overflow: hidden;
-    background: linear-gradient(135deg, var(--ui-accent), #f97316);
-    box-shadow: 0 8px 18px rgba(245, 185, 66, 0.28);
     flex-shrink: 0;
 }
 
@@ -1018,7 +1015,8 @@ span.help-block {
     height: 100%;
     margin: 0;
     max-height: none;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
     opacity: 1;
 }
 
@@ -1029,11 +1027,9 @@ span.help-block {
 }
 
 .admin-brand__copy small {
-    color: var(--ui-accent);
-    font-size: 0.64rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.68rem;
+    font-weight: 500;
 }
 
 .admin-brand__copy strong {
