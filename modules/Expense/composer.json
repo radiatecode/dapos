@@ -1,0 +1,25 @@
+{
+    "name": "da/expense",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nur Alam",
+            "email": "nurmamun@monicotechnologies.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "DA\\Expense\\": "src/",
+            "DA\\Expense\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "DA\\Expense\\Providers\\ExpenseServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "minimum-stability": "dev"
+}

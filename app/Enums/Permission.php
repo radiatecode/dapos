@@ -100,6 +100,8 @@ enum Permission: string
     case MinStockReportsView = 'min-stock.reports.view';
     case CurrentStockValueReportsView = 'current-stock-value.reports.view';
     case QuickSalesReportsView = 'quick-sales.reports.view';
+    case ExpensesReportsView = 'expenses.reports.view';
+    case PurchasesReportsView = 'purchases.reports.view';
 
     case SettingsView = 'settings.view';
     case SettingsUpdate = 'settings.update';
@@ -118,6 +120,17 @@ enum Permission: string
     case TaxesCreate = 'taxes.create';
     case TaxesUpdate = 'taxes.update';
     case TaxesDelete = 'taxes.delete';
+
+    case ExpenseCategoriesView = 'expense-categories.view';
+    case ExpenseCategoriesCreate = 'expense-categories.create';
+    case ExpenseCategoriesUpdate = 'expense-categories.update';
+    case ExpenseCategoriesDelete = 'expense-categories.delete';
+
+    case ExpensesView = 'expenses.view';
+    case ExpensesCreate = 'expenses.create';
+    case ExpensesUpdate = 'expenses.update';
+    case ExpensesDelete = 'expenses.delete';
+    case ExpensesApprove = 'expenses.approve';
 
     case OnlyCreatorUpdate = 'only-creator.update';
     case OnlyCreatorDelete = 'only-creator.delete';
@@ -179,7 +192,10 @@ enum Permission: string
             self::InventoryTransferCreate => 'Create inventory transfers',
             self::InventoryTransferUpdate => 'Update inventory transfers',
             self::InventoryTransferDelete => 'Delete inventory transfers',
+            self::InventoryUpdate => 'Update inventory',
+            self::InventoryDelete => 'Delete inventory',
             self::SalesView => 'View sales',
+            self::SalesQuantityView => 'View sales quantity',
             self::SalesCreate => 'Create sales',
             self::SalesUpdate => 'Update sales',
             self::SalesDelete => 'Delete sales',
@@ -192,12 +208,15 @@ enum Permission: string
             self::CashRegisterView => 'View cash register',
             self::CashRegisterManage => 'Manage cash register',
             self::SalesReportsView => 'View sales reports',
+            self::SalesQuantityReportsView => 'View sales quantity reports',
             self::TopSalesReportsView => 'View top sales reports',
             self::SalesInvoicesReportsView => 'View sales invoices reports',
             self::ProfitReportsView => 'View profit reports',
             self::MinStockReportsView => 'View min stock reports',
             self::CurrentStockValueReportsView => 'View current stock value reports',
             self::QuickSalesReportsView => 'View quick sales reports',
+            self::ExpensesReportsView => 'View expense reports',
+            self::PurchasesReportsView => 'View purchase reports',
             self::SettingsView => 'View settings',
             self::SettingsUpdate => 'Update settings',
             self::UsersView => 'View users',
@@ -212,6 +231,15 @@ enum Permission: string
             self::TaxesCreate => 'Create taxes',
             self::TaxesUpdate => 'Update taxes',
             self::TaxesDelete => 'Delete taxes',
+            self::ExpenseCategoriesView => 'View expense categories',
+            self::ExpenseCategoriesCreate => 'Create expense categories',
+            self::ExpenseCategoriesUpdate => 'Update expense categories',
+            self::ExpenseCategoriesDelete => 'Delete expense categories',
+            self::ExpensesView => 'View expenses',
+            self::ExpensesCreate => 'Create expenses',
+            self::ExpensesUpdate => 'Update expenses',
+            self::ExpensesDelete => 'Delete expenses',
+            self::ExpensesApprove => 'Approve or reject expenses',
             self::OnlyCreatorUpdate => 'Only creator can update',
             self::OnlyCreatorDelete => 'Only creator can delete',
             self::OnlyTodayData => 'Only today data',
@@ -235,17 +263,20 @@ enum Permission: string
             self::PurchasingView, self::PurchasingCreate, self::PurchasingUpdate, self::PurchasingDelete,
             self::InventoryView, self::InventoryMovementsView, self::InventoryLayersView,
             self::InventoryAdjustmentView, self::InventoryAdjustmentCreate, self::InventoryAdjustmentUpdate, self::InventoryAdjustmentDelete,
-            self::InventoryTransferView, self::InventoryTransferCreate, self::InventoryTransferUpdate, self::InventoryTransferDelete => 'Inventory',
-            self::SalesView, self::SalesCreate, self::SalesUpdate, self::SalesDelete,
+            self::InventoryTransferView, self::InventoryTransferCreate, self::InventoryTransferUpdate, self::InventoryTransferDelete,
+            self::InventoryUpdate, self::InventoryDelete => 'Inventory',
+            self::SalesView, self::SalesQuantityView, self::SalesCreate, self::SalesUpdate, self::SalesDelete,
             self::QuickSalesView, self::QuickSalesCreate,
             self::ReturnsView, self::ReturnsCreate, self::ReturnsUpdate, self::ReturnsDelete,
             self::CashRegisterView, self::CashRegisterManage => 'Sales',
-            self::SalesReportsView, self::TopSalesReportsView, self::SalesInvoicesReportsView, self::ProfitReportsView, self::MinStockReportsView, self::CurrentStockValueReportsView,
-            self::QuickSalesReportsView => 'Reports',
+            self::SalesReportsView, self::SalesQuantityReportsView, self::TopSalesReportsView, self::SalesInvoicesReportsView, self::ProfitReportsView, self::MinStockReportsView, self::CurrentStockValueReportsView,
+            self::QuickSalesReportsView, self::ExpensesReportsView, self::PurchasesReportsView => 'Reports',
             self::SettingsView, self::SettingsUpdate => 'Settings',
             self::UsersView, self::UsersCreate, self::UsersUpdate, self::UsersDelete,
             self::RolesView, self::RolesCreate, self::RolesUpdate, self::RolesDelete => 'Access',
             self::TaxesView, self::TaxesCreate, self::TaxesUpdate, self::TaxesDelete => 'Taxes',
+            self::ExpenseCategoriesView, self::ExpenseCategoriesCreate, self::ExpenseCategoriesUpdate, self::ExpenseCategoriesDelete,
+            self::ExpensesView, self::ExpensesCreate, self::ExpensesUpdate, self::ExpensesDelete, self::ExpensesApprove => 'Expenses',
             self::OnlyCreatorUpdate, self::OnlyCreatorDelete, self::OnlyTodayData => 'Ownership',
         };
     }
@@ -289,8 +320,12 @@ enum Permission: string
             self::ReturnsView, self::ReturnsCreate,
             self::SalesReportsView, self::SalesQuantityReportsView, self::TopSalesReportsView, self::SalesInvoicesReportsView, self::ProfitReportsView, self::MinStockReportsView, self::CurrentStockValueReportsView,
             self::QuickSalesReportsView,
+            self::ExpensesReportsView,
+            self::PurchasesReportsView,
             self::SettingsView,
             self::TaxesView, self::TaxesCreate,
+            self::ExpenseCategoriesView, self::ExpenseCategoriesCreate, self::ExpenseCategoriesUpdate,
+            self::ExpensesView, self::ExpensesCreate, self::ExpensesUpdate, self::ExpensesApprove,
         ];
     }
 
@@ -307,6 +342,8 @@ enum Permission: string
             self::LocationsView, self::LocationsCreate, self::LocationsUpdate,
             self::StoresView, self::StoresCreate, self::StoresUpdate,
             self::PurchasingView, self::PurchasingCreate, self::PurchasingUpdate,
+            self::ExpenseCategoriesView, self::ExpenseCategoriesCreate, self::ExpenseCategoriesUpdate,
+            self::ExpensesView, self::ExpensesCreate, self::ExpensesUpdate,
             self::OnlyCreatorUpdate,
         ];
     }
