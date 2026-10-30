@@ -1,8 +1,13 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use DA\Admin\Providers\AdminServiceProvider;
+use DA\Expense\Providers\ExpenseServiceProvider;
+use DA\Inventory\Providers\InventoryServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\TelescopeServiceProvider::class,
-    DA\Admin\Providers\AdminServiceProvider::class,
-    DA\Inventory\Providers\InventoryServiceProvider::class,
+    AppServiceProvider::class,
+    AdminServiceProvider::class,
+    InventoryServiceProvider::class,
+    ExpenseServiceProvider::class,
 ];

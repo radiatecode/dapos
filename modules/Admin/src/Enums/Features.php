@@ -15,6 +15,7 @@ enum Features: string
     case QUICK_SALES = 'quick_sales';
     case PURCHASES = 'purchases';
     case PURCHASE_RETURNS = 'purchase_returns';
+    case EXPENSES = 'expenses';
     case CUSTOMERS = 'customers';
     case PRODUCT_VARIANTS = 'product_variants';
     case TAX_SETTINGS = 'tax_settings';
@@ -31,6 +32,8 @@ enum Features: string
     case PROFIT_REPORT = 'profit_report';
     case LOW_STOCK_REPORT = 'low_stock_report';
     case CURRENT_STOCK_REPORT = 'current_stock_report';
+    case EXPENSE_REPORT = 'expense_report';
+    case PURCHASE_REPORT = 'purchase_report';
 
     // limit type features
     case STORES = 'stores';
@@ -52,6 +55,7 @@ enum Features: string
             self::QUICK_SALES => 'Quick Sales',
             self::PURCHASES => 'Purchases',
             self::PURCHASE_RETURNS => 'Purchase Return',
+            self::EXPENSES => 'Expenses',
             self::CUSTOMERS => 'Customers',
             self::PRODUCT_VARIANTS => 'Product Variants',
             self::TAX_SETTINGS => 'Tax Settings',
@@ -66,6 +70,8 @@ enum Features: string
             self::PROFIT_REPORT => 'Profit (Reports)',
             self::LOW_STOCK_REPORT => 'Low Stock (Reports)',
             self::CURRENT_STOCK_REPORT => 'Current Stock (Reports)',
+            self::EXPENSE_REPORT => 'Expense (Reports)',
+            self::PURCHASE_REPORT => 'Purchase (Reports)',
 
             // limit type features
             self::STORES => 'Stores',
@@ -79,7 +85,7 @@ enum Features: string
     public function type(): string
     {
         return match ($this) {
-            self::SALES_REPORT, self::SALES_QUANTITY_REPORT, self::SALES_INVOICE_REPORT, self::QUICK_SALE_REPORT, self::TOP_SALE_REPORT, self::PROFIT_REPORT, self::LOW_STOCK_REPORT, self::CURRENT_STOCK_REPORT => 'report',
+            self::SALES_REPORT, self::SALES_QUANTITY_REPORT, self::SALES_INVOICE_REPORT, self::QUICK_SALE_REPORT, self::TOP_SALE_REPORT, self::PROFIT_REPORT, self::LOW_STOCK_REPORT, self::CURRENT_STOCK_REPORT, self::EXPENSE_REPORT, self::PURCHASE_REPORT => 'report',
             self::STORES, self::PRODUCTS, self::USERS, self::ROLES, self::ADMIN_ROLE => 'limit',
             default => 'boolean',
         };
@@ -125,6 +131,7 @@ enum Features: string
             self::QUICK_SALES,
             self::PURCHASES,
             self::PURCHASE_RETURNS,
+            self::EXPENSES,
             self::CUSTOMERS,
             self::PRODUCT_VARIANTS,
             self::TAX_SETTINGS,
@@ -145,6 +152,8 @@ enum Features: string
             self::PROFIT_REPORT,
             self::LOW_STOCK_REPORT,
             self::CURRENT_STOCK_REPORT,
+            self::EXPENSE_REPORT,
+            self::PURCHASE_REPORT,
         ];
     }
 

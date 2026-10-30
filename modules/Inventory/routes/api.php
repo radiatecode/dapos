@@ -27,6 +27,7 @@ use DA\Inventory\Http\Controllers\Api\V1\ProductBatchController;
 use DA\Inventory\Http\Controllers\Api\V1\ProductController;
 use DA\Inventory\Http\Controllers\Api\V1\ProfitReportController;
 use DA\Inventory\Http\Controllers\Api\V1\PurchaseController;
+use DA\Inventory\Http\Controllers\Api\V1\PurchaseReportController;
 use DA\Inventory\Http\Controllers\Api\V1\PurchaseReturnController;
 use DA\Inventory\Http\Controllers\Api\V1\QuickSaleController;
 use DA\Inventory\Http\Controllers\Api\V1\QuickSalesReportController;
@@ -368,6 +369,16 @@ Route::prefix('v1')->name('api.v1.')->middleware(['auth:sanctum'])->group(functi
             Route::get('summary', [TopSalesReportController::class, 'summary'])->name('summary');
             Route::get('export/pdf', [TopSalesReportController::class, 'exportPdf'])->name('export.pdf');
             Route::get('export/excel', [TopSalesReportController::class, 'exportExcel'])->name('export.excel');
+        });
+
+    Route::prefix('reports/purchases')
+        ->name('reports.purchases.')
+        ->middleware(['permission:'.Permission::PurchasesReportsView->value, 'feature:purchase_report'])
+        ->group(function (): void {
+            Route::get('/', [PurchaseReportController::class, 'index'])->name('index');
+            Route::get('summary', [PurchaseReportController::class, 'summary'])->name('summary');
+            Route::get('export/pdf', [PurchaseReportController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('export/excel', [PurchaseReportController::class, 'exportExcel'])->name('export.excel');
         });
 
     Route::prefix('reports/sales-invoices')

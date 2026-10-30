@@ -3,12 +3,14 @@
 namespace DA\Inventory\Models\Queries;
 
 use Carbon\CarbonImmutable;
+use DA\Inventory\DTO\Report\PurchaseReportFilterDTO;
 use DA\Inventory\Enums\PurchasePaymentStatus;
 use DA\Inventory\Enums\PurchaseStatus;
 use DA\Inventory\Models\Purchase;
 use DA\Inventory\Services\Decimal;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class PurchaseQueries extends BaseQueries
 {
@@ -111,6 +113,66 @@ class PurchaseQueries extends BaseQueries
         ];
     }
 
+    /**
+     * @return LengthAwarePaginator<int, Purchase>
+     */
+    public function paginateReport(PurchaseReportFilterDTO $filters, int $perPage): LengthAwarePaginator
+    {
+        return $this->reportRowsQuery($filters)->paginate($perPage);
+    }
+
+    /**
+     * Payment status is omitted so the report totals stay in place when a payment pill filters the list.
+     *
+     * @return array{
+     *     total_purchases: int,
+     *     total_amount: string,
+     *     total_paid: string,
+     *     total_due: string,
+     *     paid_count: int,
+     *     unpaid_count: int,
+     *     partial_count: int
+     * }
+     */
+    public function reportTotals(PurchaseReportFilterDTO $filters): array
+    {
+        $row = $this->reportFiltered($filters, false)
+            ->toBase()
+            ->selectRaw(
+                'COUNT(*) as total_purchases,
+                COALESCE(SUM(grand_total), 0) as total_amount,
+                COALESCE(SUM(paid_amount), 0) as total_paid,
+                COALESCE(SUM(due_amount), 0) as total_due,
+                COALESCE(SUM(payment_status = ?), 0) as paid_count,
+                COALESCE(SUM(payment_status = ?), 0) as unpaid_count,
+                COALESCE(SUM(payment_status = ?), 0) as partial_count',
+                [
+                    PurchasePaymentStatus::Paid->value,
+                    PurchasePaymentStatus::Unpaid->value,
+                    PurchasePaymentStatus::Partial->value,
+                ],
+            )
+            ->first();
+
+        return [
+            'total_purchases' => (int) ($row?->total_purchases ?? 0),
+            'total_amount' => Decimal::normalize($row?->total_amount ?? 0),
+            'total_paid' => Decimal::normalize($row?->total_paid ?? 0),
+            'total_due' => Decimal::normalize($row?->total_due ?? 0),
+            'paid_count' => (int) ($row?->paid_count ?? 0),
+            'unpaid_count' => (int) ($row?->unpaid_count ?? 0),
+            'partial_count' => (int) ($row?->partial_count ?? 0),
+        ];
+    }
+
+    /**
+     * @return Collection<int, Purchase>
+     */
+    public function reportRows(PurchaseReportFilterDTO $filters): Collection
+    {
+        return $this->reportRowsQuery($filters)->get();
+    }
+
     public function findForTenant(int $id): Purchase
     {
         return $this->forAuthenticatedTenant()->findOrFail($id);
@@ -176,6 +238,39 @@ class PurchaseQueries extends BaseQueries
             ->when($supplierId !== null, fn (Builder $query) => $query->where('supplier_id', $supplierId))
             ->when($dateFrom !== null, fn (Builder $query) => $query->whereDate('order_date', '>=', $dateFrom))
             ->when($dateTo !== null, fn (Builder $query) => $query->whereDate('order_date', '<=', $dateTo))
+            ->when($term !== '', function (Builder $query) use ($term): void {
+                $like = '%'.addcslashes($term, '%_\\').'%';
+                $query->where(function (Builder $inner) use ($like): void {
+                    $inner->where('po_number', 'like', $like)
+                        ->orWhereHas('supplier', fn (Builder $supplier) => $supplier->where('name', 'like', $like));
+                });
+            });
+    }
+
+    /**
+     * @return Builder<Purchase>
+     */
+    private function reportRowsQuery(PurchaseReportFilterDTO $filters): Builder
+    {
+        return $this->reportFiltered($filters, true)
+            ->with(['supplier', 'store'])
+            ->orderByDesc('order_date')
+            ->orderByDesc('id');
+    }
+
+    /**
+     * @return Builder<Purchase>
+     */
+    private function reportFiltered(PurchaseReportFilterDTO $filters, bool $includePayment): Builder
+    {
+        $term = trim((string) $filters->search);
+
+        return $this->forAuthenticatedTenant()
+            ->when($includePayment && $filters->paymentStatus !== null, fn (Builder $query) => $query->where('payment_status', $filters->paymentStatus))
+            ->when($filters->supplierId !== null, fn (Builder $query) => $query->where('supplier_id', $filters->supplierId))
+            ->when($filters->storeId !== null, fn (Builder $query) => $query->where('store_id', $filters->storeId))
+            ->when(filled($filters->dateFrom), fn (Builder $query) => $query->whereDate('order_date', '>=', $filters->dateFrom))
+            ->when(filled($filters->dateTo), fn (Builder $query) => $query->whereDate('order_date', '<=', $filters->dateTo))
             ->when($term !== '', function (Builder $query) use ($term): void {
                 $like = '%'.addcslashes($term, '%_\\').'%';
                 $query->where(function (Builder $inner) use ($like): void {

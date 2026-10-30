@@ -42,7 +42,9 @@
             "DA\\Admin\\Database\\Seeders\\": "modules/Admin/database/seeders/",
             "DA\\Inventory\\": "modules/Inventory/src",
             "DA\\Inventory\\Database\\Factories\\": "modules/Inventory/database/factories/",
-            "DA\\Inventory\\Database\\Seeders\\": "modules/Inventory/database/seeders/"
+            "DA\\Inventory\\Database\\Seeders\\": "modules/Inventory/database/seeders/",
+            "DA\\Expense\\": "modules/Expense/src",
+            "DA\\Expense\\Database\\Factories\\": "modules/Expense/database/factories/"
         },
         "files": [
             "bootstrap/helpers.php"

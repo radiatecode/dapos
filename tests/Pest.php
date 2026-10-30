@@ -180,6 +180,31 @@ function storePayload(array $overrides = []): array
  * @param  array<string, mixed>  $overrides
  * @return array<string, mixed>
  */
+function expenseCategoryPayload(array $overrides = []): array
+{
+    return array_replace([
+        'category_name' => 'Rent',
+        'is_active' => true,
+    ], $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function expensePayload(array $overrides = []): array
+{
+    return array_replace([
+        'description' => 'October rent',
+        'amount' => '1500.50',
+        'expense_date' => '2026-10-30',
+    ], $overrides);
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
 function purchasePayload(array $overrides = []): array
 {
     return array_replace([
